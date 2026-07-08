@@ -1,5 +1,9 @@
 package com.ecotrack.ecotrack_backend.security;
 
+import org.springframework.beans.factory.annotation.Value;
+import jakarta.annotation.PostConstruct;
+import io.jsonwebtoken.security.Keys;
+
 import io.jsonwebtoken.Jwts;
 import org.springframework.stereotype.Component;
 
@@ -9,8 +13,17 @@ import java.util.Date;
 @Component
 public class JwtUtil {
 
-    private final SecretKey secretKey = Jwts.SIG.HS256.key().build();
-    private final long expirationTimeMs = 1000 * 60 * 60; //Expiration time : 1 hour
+    @Value("${jwt.secret}")
+    private String secretKeyString;
+
+    private SecretKey secretKey;
+
+    @PostConstruct
+    public void init() {
+        this.secretKey = Keys.hmacShaKeyFor(secretKeyString.getBytes());
+    }
+
+    private final long expirationTimeMs = 1000 * 60 * 60; // Expiration time : 1 hour
 
     public String generateToken(String email) {
         Date now = new Date();
