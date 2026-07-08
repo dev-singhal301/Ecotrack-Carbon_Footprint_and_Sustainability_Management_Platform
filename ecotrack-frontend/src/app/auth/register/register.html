@@ -20,11 +20,19 @@
         <div class="form-group">
             <label for="password">Password</label>
             <input id="password" type="password" formControlName="password" />
-            @if (registerForm.get('password')?.invalid && registerForm.get('password')?.touched) {
+            @if (registerForm.get('password')?.hasError('required') && registerForm.get('password')?.touched) {
+            <span class="error">Password is required</span>
+            }
+            @if (registerForm.get('password')?.hasError('whitespace') && registerForm.get('password')?.touched) {
+            <span class="error">Password cannot be just spaces</span>
+            }
+            @if (registerForm.get('password')?.hasError('minlength') && registerForm.get('password')?.touched) {
             <span class="error">Password must be at least 6 characters</span>
             }
         </div>
 
-        <button type="submit">Register</button>
+        <button type="submit" [disabled]="isSubmitting()">
+            {{ isSubmitting() ? 'Registering...' : 'Register' }}
+        </button>
     </form>
 </div>

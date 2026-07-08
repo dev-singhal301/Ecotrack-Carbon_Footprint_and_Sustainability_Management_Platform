@@ -1,5 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { notOnlyWhitespace } from '../validators';
 
 @Component({
   selector: 'app-register',
@@ -10,12 +11,13 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angula
 })
 export class Register {
   registerForm: FormGroup;
+  isSubmitting = signal(false);
 
   constructor(private fb: FormBuilder) {
     this.registerForm = this.fb.group({
       name: ['', [Validators.required, Validators.minLength(2)]],
       email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(6)]],
+      password: ['', [Validators.required, Validators.minLength(6), notOnlyWhitespace]],
     });
   }
 
@@ -24,7 +26,12 @@ export class Register {
       this.registerForm.markAllAsTouched();
       return;
     }
+
+    this.isSubmitting.set(true);
     console.log('Register form value:', this.registerForm.value);
-    // No backend call yet — Person A's endpoints aren't ready.
+
+    setTimeout(() => {
+      this.isSubmitting.set(false);
+    }, 1000);
   }
 }
