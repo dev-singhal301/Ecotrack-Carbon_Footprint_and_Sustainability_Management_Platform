@@ -1,6 +1,8 @@
 import { Component, signal } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { notOnlyWhitespace } from '../validators';
+import { Auth } from '../auth';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-register',
@@ -12,8 +14,9 @@ import { notOnlyWhitespace } from '../validators';
 export class Register {
   registerForm: FormGroup;
   isSubmitting = signal(false);
+  errorMessage = '';
 
-  constructor(private fb: FormBuilder) {
+  constructor(private fb: FormBuilder, private auth: Auth, private router: Router) {
     this.registerForm = this.fb.group({
       name: ['', [Validators.required, Validators.minLength(2)]],
       email: ['', [Validators.required, Validators.email]],
@@ -26,12 +29,18 @@ export class Register {
       this.registerForm.markAllAsTouched();
       return;
     }
-
     this.isSubmitting.set(true);
-    console.log('Register form value:', this.registerForm.value);
+    this.errorMessage = '';
 
-    setTimeout(() => {
-      this.isSubmitting.set(false);
-    }, 1000);
+    this.auth.register(this.registerForm.value).subscribe({
+      next: () => {
+        this.isSubmitting.set(false);
+        this.router.navigate(['/login']); // register succeeded — go log in
+      },
+      error: (err) => {
+        this.isSubmitting.set(false);
+        this.errorMessage = err.error?.message || 'Registration failed.';
+      },
+    });
   }
 }

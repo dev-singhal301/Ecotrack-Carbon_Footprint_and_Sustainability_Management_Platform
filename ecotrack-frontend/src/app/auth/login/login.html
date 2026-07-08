@@ -23,6 +23,10 @@
             }
         </div>
 
+        @if (errorMessage) {
+        <p class="error">{{ errorMessage }}</p>
+        }
+
         <button type="submit" [disabled]="isSubmitting()">
             {{ isSubmitting() ? 'Logging in...' : 'Login' }}
         </button>
