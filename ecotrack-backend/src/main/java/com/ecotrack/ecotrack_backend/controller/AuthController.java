@@ -4,20 +4,25 @@ import com.ecotrack.ecotrack_backend.dto.AuthResponse;
 import com.ecotrack.ecotrack_backend.dto.LoginRequest;
 import com.ecotrack.ecotrack_backend.dto.RegisterRequest;
 import com.ecotrack.ecotrack_backend.service.AuthService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Map;
+import java.util.stream.Collectors;
+
 /*
-* REST controller for authentication.
-* Receives authentication requests from the frontend
-* and delegates them to AuthService.
-*/
+ * REST entry point for authentication. Thin by design: it only converts
+ * JSON <-> DTOs and delegates to AuthService. No database access, password
+ * handling, or JWT logic happens here — see AuthService for that.
+ */
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
@@ -29,40 +34,65 @@ public class AuthController {
     }
 
     /*
-    * Registers a new user account.
-    * Returns HTTP 201 Created after successful registration.
-    */
+     * POST /api/auth/register
+     * Creates a new account. Returns 201 Created with no JWT — the
+     * frontend is expected to redirect to the login page after this.
+     */
     @PostMapping("/register")
-    public ResponseEntity<AuthResponse> register(@RequestBody RegisterRequest request) {
+    public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
         AuthResponse response = authService.register(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     /*
-    * Authenticates an existing user.
-    * Returns HTTP 200 OK with a JWT and user information.
-    */
+     * POST /api/auth/login
+     * Authenticates an existing account. Returns 200 OK with a JWT and
+     * basic user info on success.
+     */
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest request) {
+    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
         AuthResponse response = authService.login(request);
         return ResponseEntity.ok(response);
     }
 
     /*
-    * Handles registration-related errors.
-    * Returns HTTP 409 Conflict.
-    */
+     * Maps a duplicate-email registration attempt (thrown by AuthService
+     * as IllegalStateException) to 409 Conflict instead of a raw 500.
+     */
     @ExceptionHandler(IllegalStateException.class)
-    public ResponseEntity<String> handleIllegalState(IllegalStateException ex) {
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(ex.getMessage());
+    public ResponseEntity<Map<String, String>> handleIllegalState(IllegalStateException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorBody(ex.getMessage()));
     }
 
     /*
-    * Handles authentication failures.
-    * Returns HTTP 401 Unauthorized.
-    */
+     * Maps a failed login (bad credentials, disabled account, etc. —
+     * thrown by AuthenticationManager inside AuthService.login()) to
+     * 401 Unauthorized instead of a raw 500.
+     */
     @ExceptionHandler(AuthenticationException.class)
-    public ResponseEntity<String> handleAuthenticationException(AuthenticationException ex) {
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid email or password");
+    public ResponseEntity<Map<String, String>> handleAuthenticationException(AuthenticationException ex) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorBody("Invalid email or password"));
+    }
+
+    /*
+     * Maps a @Valid failure on RegisterRequest/LoginRequest (e.g. blank
+     * name, malformed email, password too short) to 400 Bad Request.
+     * Collects every field error into one readable message, since a
+     * single request can fail multiple constraints at once.
+     */
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<Map<String, String>> handleValidationException(MethodArgumentNotValidException ex) {
+        String message = ex.getBindingResult().getFieldErrors().stream()
+                .map(error -> error.getField() + ": " + error.getDefaultMessage())
+                .collect(Collectors.joining("; "));
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorBody(message));
+    }
+
+    /*
+     * Shared helper so every error response has the same shape the
+     * frontend expects: { "message": "..." }, accessible via err.error.message.
+     */
+    private Map<String, String> errorBody(String message) {
+        return Map.of("message", message);
     }
 }
