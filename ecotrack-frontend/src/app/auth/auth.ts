@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
-import { tap } from 'rxjs/operators';
+import { Observable, throwError } from 'rxjs';
+import { tap, catchError } from 'rxjs/operators';
 
 interface RegisterData {
   name: string;
@@ -30,13 +30,22 @@ export class Auth {
   constructor(private http: HttpClient) { }
 
   register(data: RegisterData): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`${this.baseUrl}/register`, data);
+    return this.http.post<AuthResponse>(`${this.baseUrl}/register`, data).pipe(
+      catchError((error) => {
+        const message = error.error?.message || 'Registration failed. Please try again.';
+        return throwError(() => new Error(message));
+      })
+    );
   }
 
   login(data: LoginData): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(`${this.baseUrl}/login`, data).pipe(
       tap((response) => {
         this.token = response.token; // store in memory
+      }),
+      catchError((error) => {
+        const message = error.error?.message || 'Invalid email or password.';
+        return throwError(() => new Error(message));
       })
     );
   }

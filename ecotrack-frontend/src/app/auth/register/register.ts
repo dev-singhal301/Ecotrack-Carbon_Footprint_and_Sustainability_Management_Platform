@@ -39,7 +39,7 @@ export class Register {
       },
       error: (err) => {
         this.isSubmitting.set(false);
-        this.errorMessage = err.error?.message || 'Registration failed.';
+        this.errorMessage = err.message || 'Registration failed.';
       },
     });
   }

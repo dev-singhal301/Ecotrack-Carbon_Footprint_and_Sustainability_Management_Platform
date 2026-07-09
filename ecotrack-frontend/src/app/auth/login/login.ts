@@ -39,7 +39,7 @@ export class Login {
       },
       error: (err) => {
         this.isSubmitting.set(false);
-        this.errorMessage = err.error?.message || 'Login failed. Check your credentials.';
+        this.errorMessage = err.message || 'Login failed. Check your credentials.';
       },
     });
   }
