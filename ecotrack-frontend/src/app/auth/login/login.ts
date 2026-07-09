@@ -35,8 +35,7 @@ export class Login {
     this.auth.login(this.loginForm.value).subscribe({
       next: () => {
         this.isSubmitting.set(false);
-        console.log('Login successful, token:', this.auth.getToken());
-        // TODO: redirect to dashboard once that route exists
+        this.router.navigate(['/home']);
       },
       error: (err) => {
         this.isSubmitting.set(false);
