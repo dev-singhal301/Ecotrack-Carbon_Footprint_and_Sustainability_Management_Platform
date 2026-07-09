@@ -24,12 +24,13 @@ export class Login {
   }
 
   onSubmit() {
+    this.errorMessage = '';
     if (this.loginForm.invalid) {
       this.loginForm.markAllAsTouched();
       return;
     }
     this.isSubmitting.set(true);
-    this.errorMessage = '';
+
 
     this.auth.login(this.loginForm.value).subscribe({
       next: () => {

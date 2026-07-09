@@ -25,12 +25,13 @@ export class Register {
   }
 
   onSubmit() {
+    this.errorMessage = '';
     if (this.registerForm.invalid) {
       this.registerForm.markAllAsTouched();
       return;
     }
     this.isSubmitting.set(true);
-    this.errorMessage = '';
+
 
     this.auth.register(this.registerForm.value).subscribe({
       next: () => {

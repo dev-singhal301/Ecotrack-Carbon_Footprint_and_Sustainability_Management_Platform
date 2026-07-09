@@ -3,9 +3,15 @@
     max-width: 320px;
     margin: 50px auto;
     padding: 20px;
-    border: 1px solid #ccc;
-    border-radius: 8px;
+    background-color: var(--white-color);
+    border: 1px solid var(--medium-gray-color);
+    border-radius: var(--border-radius-s);
     box-sizing: border-box;
+}
+
+h2 {
+    color: var(--primary-color);
+    font-weight: var(--font-weight-bold);
 }
 
 .form-group {
@@ -15,21 +21,44 @@
 label {
     display: block;
     margin-bottom: 5px;
+    font-size: var(--font-size-n);
+    color: var(--dark-color);
 }
 
 input {
     width: 100%;
     padding: 8px;
     box-sizing: border-box;
+    border: 1px solid var(--medium-gray-color);
+    border-radius: var(--border-radius-s);
+}
+
+input:focus {
+    outline: none;
+    border-color: var(--primary-color);
 }
 
 .error {
-    color: red;
-    font-size: 12px;
+    color: var(--error-color);
+    font-size: var(--font-size-s);
 }
 
 button {
     width: 100%;
     padding: 10px;
     cursor: pointer;
+    background-color: var(--primary-color);
+    color: var(--white-color);
+    border: none;
+    border-radius: var(--border-radius-s);
+    font-weight: var(--font-weight-medium);
+}
+
+button:hover {
+    background-color: var(--secondary-color);
+}
+
+button:disabled {
+    background-color: var(--medium-gray-color);
+    cursor: not-allowed;
 }

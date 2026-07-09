@@ -1,1 +1,38 @@
 /* You can add global styles to this file, and also import other style files */
+:root {
+    /* Colors */
+    --primary-color: #659287;
+    --secondary-color: #88bda4;
+    --accent-color: #b1d3b9;
+    --background-color: #e6f2dd;
+    --white-color: #ffffff;
+    --dark-color: #252525;
+    --error-color: #d9534f;
+    --medium-gray-color: #ccc;
+
+    /* Font Size */
+    --font-size-s: 0.9rem;
+    --font-size-n: 1rem;
+    --font-size-m: 1.12rem;
+    --font-size-l: 1.5rem;
+    --font-size-xl: 2rem;
+
+    /* Font Weight */
+    --font-weight-normal: 400;
+    --font-weight-medium: 500;
+    --font-weight-bold: 700;
+
+    /* Border radius */
+    --border-radius-s: 8px;
+    --border-radius-m: 20px;
+
+    /* Layout */
+    --site-max-width: 1300px;
+}
+
+body {
+    background-color: var(--background-color);
+    margin: 0;
+    font-family: 'Georgia', serif;
+    /* or whatever matches your current font */
+}
