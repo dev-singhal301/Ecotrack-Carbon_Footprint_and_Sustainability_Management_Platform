@@ -1,3 +1,53 @@
+.auth-page {
+    display: flex;
+    min-height: 100vh;
+    position: relative;
+}
+
+.image-side {
+    flex: 1;
+    background-image: url('/login.avif');
+    background-size: cover;
+    background-position: center;
+}
+
+.form-side {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 1;
+}
+
+@media (max-width: 768px) {
+    .auth-page {
+        display: block;
+    }
+
+    .image-side {
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        background-image: url('/login.avif');
+        background-size: cover;
+        background-position: center;
+    }
+
+    .image-side::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background-color: rgba(0, 0, 0, 0.4);
+    }
+
+    .form-side {
+        position: relative;
+        z-index: 1;
+        min-height: 100vh;
+    }
+}
+
 .register-container {
     width: 90%;
     max-width: 320px;
@@ -7,6 +57,7 @@
     border: 1px solid var(--medium-gray-color);
     border-radius: var(--border-radius-s);
     box-sizing: border-box;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
 }
 
 h2 {
