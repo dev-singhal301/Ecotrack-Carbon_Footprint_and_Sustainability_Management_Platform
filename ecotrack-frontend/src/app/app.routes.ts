@@ -1,11 +1,15 @@
 import { Routes } from '@angular/router';
-import { Login } from './auth/login/login';
-import { Register } from './auth/register/register';
+import { AuthForm } from './auth/auth-form/auth-form';
 import { Home } from './home/home';
 
 export const routes: Routes = [
-    { path: 'login', component: Login },
-    { path: 'register', component: Register },
+    // Unify both under a single clean authentication route path
+    { path: 'auth', component: AuthForm },
     { path: 'home', component: Home },
-    { path: '', redirectTo: 'login', pathMatch: 'full' }, // default route
+    
+    // Redirect the empty base URL to your new unified auth page
+    { path: '', redirectTo: 'auth', pathMatch: 'full' },
+    
+    // Optional wildcard: Catch any stray typings or old bookmarks and send them to auth
+    { path: '**', redirectTo: 'auth' }
 ];
