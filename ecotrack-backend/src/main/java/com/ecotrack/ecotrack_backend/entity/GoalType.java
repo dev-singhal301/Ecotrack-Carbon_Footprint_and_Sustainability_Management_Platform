@@ -1,0 +1,11 @@
+package com.ecotrack.ecotrack_backend.entity;
+
+public enum GoalType {
+    REDUCE_CARBON_EMISSIONS,
+    REDUCE_ELECTRICITY_CONSUMPTION,
+    REDUCE_WATER_USAGE,
+    INCREASE_RECYCLING,
+    REDUCE_PLASTIC_USAGE,
+    USE_PUBLIC_TRANSPORT,
+    PLANT_TREES
+}
