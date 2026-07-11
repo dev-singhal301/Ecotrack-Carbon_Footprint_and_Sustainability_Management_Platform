@@ -6,8 +6,9 @@ import { Auth } from '../auth';
 
 /**
  * Single unified authentication component. Replaces the separate Login and
- * Register components — toggling between the two is a client-side signal
- * flip (isLoginMode), not a route change, per the design spec.
+ * Register components — toggling between modes is a client-side signal
+ * flip, not a route change, per the design spec. Supports Login, Registration,
+ * and a sliding Forgot Password dynamic view state.
  */
 @Component({
   selector: 'app-auth-form',
@@ -18,41 +19,54 @@ import { Auth } from '../auth';
 })
 export class AuthForm {
   isLoginMode = signal(true);
+  isForgotPasswordMode = signal(false); // Third dynamic state state link
   isSubmitting = signal(false);
   errorMessage = signal('');
   successMessage = signal('');
 
   authForm: FormGroup;
 
-  headerText = computed(() => (this.isLoginMode() ? 'Welcome Back' : 'Sign Up for Free'));
+  // Header rewrites dynamically across all 3 view orientations
+  headerText = computed(() => {
+    if (this.isForgotPasswordMode()) {
+      return 'Reset Password';
+    }
+    return this.isLoginMode() ? 'Welcome Back' : 'Sign Up for Free';
+  });
 
+  // Action labels match processing operations exactly
   submitLabel = computed(() => {
     if (this.isSubmitting()) {
+      if (this.isForgotPasswordMode()) return 'Sending request...';
       return this.isLoginMode() ? 'Logging in...' : 'Registering...';
     }
+    if (this.isForgotPasswordMode()) return 'SEND RESET LINK';
     return this.isLoginMode() ? 'LOGIN' : 'GET STARTED';
   });
 
   constructor(private fb: FormBuilder, private auth: Auth, private router: Router) {
-    // 'name' starts with no validators since the default mode is Log In.
-    // updateValidators() below applies the right rules for the starting mode.
     this.authForm = this.fb.group({
       name: [''],
-      email: ['', [Validators.required, Validators.email]],
+      // Enforce strict syntax formatting via Regex to completely filter out incomplete inputs
+      email: ['', [
+        Validators.required, 
+        Validators.email,
+        Validators.pattern(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/)
+      ]],
       password: ['', [Validators.required, Validators.minLength(6), notOnlyWhitespace]],
     });
     this.updateValidators();
   }
 
   /**
-   * Flips between Sign Up and Log In. Clears the form and re-applies
-   * validators so the hidden field (name, in Log In mode) never blocks
-   * submission — per spec section 4.
+   * Flips between Sign Up and Log In styles. Clears the form values and resets 
+   * custom flags so components scale cleanly.
    */
   switchMode(toLogin: boolean): void {
-    if (this.isLoginMode() === toLogin) {
+    if (this.isLoginMode() === toLogin && !this.isForgotPasswordMode()) {
       return;
     }
+    this.isForgotPasswordMode.set(false); // Pull out of password recovery mode if moving models
     this.isLoginMode.set(toLogin);
     this.errorMessage.set('');
     this.successMessage.set('');
@@ -60,17 +74,79 @@ export class AuthForm {
     this.updateValidators();
   }
 
+  /**
+   * Controls the in-place slide state transition overlay to handle forgot password logic
+   */
+  toggleForgotPassword(show: boolean): void {
+    this.isForgotPasswordMode.set(show);
+    this.errorMessage.set('');
+    this.successMessage.set('');
+    
+    // Clear the validators and reset fields safely
+    this.authForm.get('name')?.setValue('');
+    this.authForm.get('password')?.setValue('');
+    this.updateValidators();
+  }
+
   private updateValidators(): void {
     const nameControl = this.authForm.get('name');
-    if (this.isLoginMode()) {
+    const passwordControl = this.authForm.get('password');
+
+    // If password state is active, only email is validated
+    if (this.isForgotPasswordMode()) {
       nameControl?.clearValidators();
+      passwordControl?.clearValidators();
     } else {
-      nameControl?.setValidators([Validators.required, Validators.minLength(2)]);
+      // Standard auth state configurations
+      passwordControl?.setValidators([Validators.required, Validators.minLength(6), notOnlyWhitespace]);
+      if (this.isLoginMode()) {
+        nameControl?.clearValidators();
+      } else {
+        nameControl?.setValidators([Validators.required, Validators.minLength(2)]);
+      }
     }
+
     nameControl?.updateValueAndValidity();
+    passwordControl?.updateValueAndValidity();
+  }
+
+  /**
+   * Separate handler method dedicated to sending the validated password recovery payload
+   */
+  handleForgotPasswordRequest(): void {
+    const emailControl = this.authForm.get('email');
+    
+    if (emailControl?.invalid) {
+      emailControl.markAsTouched();
+      return;
+    }
+
+    this.isSubmitting.set(true);
+    this.errorMessage.set('');
+    this.successMessage.set('');
+
+    const email = emailControl?.value;
+    
+    // Ensure you add forgotPassword(email) to your frontend Auth file
+    this.auth.forgotPassword(email).subscribe({
+      next: (res: any) => {
+        this.isSubmitting.set(false);
+        this.successMessage.set(res?.message || 'A secure password recovery link has been generated.');
+      },
+      error: (err) => {
+        this.isSubmitting.set(false);
+        const msg = err.error?.message || err.message || 'Recovery attempt failed. Please check the email entered.';
+        this.errorMessage.set(msg);
+      }
+    });
   }
 
   onSubmit(): void {
+    if (this.isForgotPasswordMode()) {
+      this.handleForgotPasswordRequest();
+      return;
+    }
+
     this.errorMessage.set('');
     this.successMessage.set('');
 
@@ -90,13 +166,11 @@ export class AuthForm {
         },
         error: (err) => {
           this.isSubmitting.set(false);
-          // FIXED: Use err.message fallback just like the old login.ts
           const msg = err.error?.message || err.message || 'Login failed. Check your credentials.';
           this.errorMessage.set(msg);
         },
       });
     } else {
-      // For registration, pass the values clearly matching the old structure
       const { name, email, password } = this.authForm.value;
       this.auth.register({ name, email, password }).subscribe({
         next: () => {
@@ -107,7 +181,6 @@ export class AuthForm {
         },
         error: (err) => {
           this.isSubmitting.set(false);
-          // FIXED: Use err.message fallback just like old register.ts
           const msg = err.error?.message || err.message || 'Registration failed.';
           this.errorMessage.set(msg);
         },

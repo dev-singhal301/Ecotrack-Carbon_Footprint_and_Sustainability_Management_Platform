@@ -13,6 +13,9 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.util.UUID;
+
 /*
  * Handles the authentication business logic.
  * Responsible for user registration and login.
@@ -28,10 +31,9 @@ public class AuthService {
     private final JwtUtil jwtUtil;
 
     /*
-    * Injects all required dependencies used for authentication.
-    * Spring automatically provides these beans at runtime.
-    */
-   
+     * Injects all required dependencies used for authentication.
+     * Spring automatically provides these beans at runtime.
+     */
     public AuthService(UserRepository userRepository,
                         RoleRepository roleRepository,
                         PasswordEncoder passwordEncoder,
@@ -45,11 +47,11 @@ public class AuthService {
     }
 
     /*
-    * Registers a new user.
-    * Checks for duplicate emails, assigns the default role, hashes the password, and saves the user.
-    * Registration does not generate a JWT.
-    * Users must log in separately.
-    */
+     * Registers a new user.
+     * Checks for duplicate emails, assigns the default role, hashes the password, and saves the user.
+     * Registration does not generate a JWT.
+     * Users must log in separately.
+     */
     public AuthResponse register(RegisterRequest request) {
 
         if (userRepository.existsByEmail(request.getEmail())) {
@@ -77,11 +79,11 @@ public class AuthService {
     }
 
     /*
-    * Authenticates an existing user.
-    * Spring Security verifies the user's credentials.
-    * If authentication succeeds, a JWT is generated
-    * and returned to the client.
-    */
+     * Authenticates an existing user.
+     * Spring Security verifies the user's credentials.
+     * If authentication succeeds, a JWT is generated
+     * and returned to the client.
+     */
     public AuthResponse login(LoginRequest request) {
 
         authenticationManager.authenticate(
@@ -97,5 +99,22 @@ public class AuthService {
         String token = jwtUtil.generateToken(user.getEmail());
 
         return new AuthResponse(token, user.getName(), user.getEmail());
+    }
+
+    /*
+     * Generates a temporary, secure token for password recovery.
+     * Finds the user by email, assigns a UUID string, sets a strict 15-minute expiration,
+     * and persists the update back to MySQL.
+     */
+    public String generateResetPasswordToken(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("No account found with this email address."));
+
+        String token = UUID.randomUUID().toString();
+        user.setResetPasswordToken(token);
+        user.setTokenExpiryDate(LocalDateTime.now().plusMinutes(15));
+
+        userRepository.save(user);
+        return token;
     }
 }

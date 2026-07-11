@@ -151,12 +151,24 @@ input {
     border-radius: 8px;
     color: var(--eco-text-main);
     font-size: 0.95rem;
-    transition: border-color 0.2s;
+    transition: all 0.2s ease;
 }
 
 input:focus {
     outline: none;
     border-color: var(--eco-green);
+    box-shadow: 0 0 0 3px rgba(96, 186, 117, 0.15);
+}
+
+/* Red outline and glow style for form structural errors */
+input.invalid-input {
+    border-color: var(--eco-red) !important;
+    background-color: rgba(239, 68, 68, 0.02);
+}
+
+input.invalid-input:focus {
+    border-color: var(--eco-red) !important;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
 }
 
 .field-error {
@@ -164,6 +176,7 @@ input:focus {
     margin-top: 4px;
     color: var(--eco-red);
     font-size: 0.8rem;
+    font-weight: 500;
 }
 
 .error-banner {

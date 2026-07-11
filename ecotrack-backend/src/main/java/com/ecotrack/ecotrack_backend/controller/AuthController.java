@@ -3,6 +3,7 @@ package com.ecotrack.ecotrack_backend.controller;
 import com.ecotrack.ecotrack_backend.dto.AuthResponse;
 import com.ecotrack.ecotrack_backend.dto.LoginRequest;
 import com.ecotrack.ecotrack_backend.dto.RegisterRequest;
+import com.ecotrack.ecotrack_backend.dto.ForgotPasswordRequest;
 import com.ecotrack.ecotrack_backend.service.AuthService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -56,6 +57,34 @@ public class AuthController {
     }
 
     /*
+     * POST /api/auth/forgot-password
+     * Initiates password recovery. Validates the email request structure,
+     * generates a time-sensitive secure token string via AuthService, 
+     * and confirms tracking back to the application.
+     */
+    @PostMapping("/forgot-password")
+    public ResponseEntity<Map<String, String>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        String token = authService.generateResetPasswordToken(request.getEmail());
+        
+        // Note for Internship Presentation: We print the token out here to verify operations locally 
+        // without forcing a real production SMTP configuration setup right away.
+        System.out.println("====== SYSTEM RESET TOKEN GENERATED FOR " + request.getEmail() + " ======");
+        System.out.println("TOKEN VALUE: " + token);
+        System.out.println("==================================================================");
+        
+        return ResponseEntity.ok(Map.of("message", "Password reset processing initiated successfully."));
+    }
+
+    /*
+     * Maps an invalid email look up during recovery (thrown by AuthService
+     * as IllegalArgumentException) to 404 Not Found instead of a raw 500.
+     */
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Map<String, String>> handleIllegalArgument(IllegalArgumentException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorBody(ex.getMessage()));
+    }
+
+    /*
      * Maps a duplicate-email registration attempt (thrown by AuthService
      * as IllegalStateException) to 409 Conflict instead of a raw 500.
      */
@@ -75,8 +104,8 @@ public class AuthController {
     }
 
     /*
-     * Maps a @Valid failure on RegisterRequest/LoginRequest (e.g. blank
-     * name, malformed email, password too short) to 400 Bad Request.
+     * Maps a @Valid failure on RegisterRequest/LoginRequest/ForgotPasswordRequest
+     * (e.g. blank name, malformed email, password too short) to 400 Bad Request.
      * Collects every field error into one readable message, since a
      * single request can fail multiple constraints at once.
      */

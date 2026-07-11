@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { AuthForm } from './auth/auth-form/auth-form';
 import { Home } from './home/home';
+import { ResetPasswordComponent } from './auth/reset-password/reset-password';
 
 export const routes: Routes = [
     // Unify both under a single clean authentication route path
@@ -9,6 +10,8 @@ export const routes: Routes = [
     
     // Redirect the empty base URL to your new unified auth page
     { path: '', redirectTo: 'auth', pathMatch: 'full' },
+
+    { path: 'reset-password', component: ResetPasswordComponent },
     
     // Optional wildcard: Catch any stray typings or old bookmarks and send them to auth
     { path: '**', redirectTo: 'auth' }
