@@ -1,4 +1,4 @@
-/* Create ecotrack_db in MySQL and execute the following commands
+/* Create ecotrack_db in PostgreSQL and execute the following commands
 to create roles table and users table */
 
 CREATE TABLE IF NOT EXISTS roles (
@@ -21,16 +21,8 @@ CREATE TABLE IF NOT EXISTS users (
     oauth_provider VARCHAR(30),
     oauth_id VARCHAR(255) UNIQUE,
     enabled BOOLEAN NOT NULL DEFAULT TRUE,
-<<<<<<< HEAD
     reset_password_token VARCHAR(255) DEFAULT NULL,
     token_expiry_date TIMESTAMP DEFAULT NULL,
-=======
-    
-    /* New Recovery Management Columns */
-    reset_password_token VARCHAR(255) DEFAULT NULL,
-    token_expiry_date DATETIME DEFAULT NULL,
-    
->>>>>>> ee45eac (WIP: Reset password flow UI and endpoints)
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
@@ -63,8 +55,6 @@ CREATE TABLE IF NOT EXISTS carbon_entries (
 );
  
 -- Seed data — one factor per tracking category (Module 3 categories).
--- Placeholder values; confirm real-world figures with the team if time allows,
--- but don't block on this — reasonable defaults let the calculation engine work now.
 INSERT INTO emission_factors (category, unit, factor_value) VALUES
 ('TRANSPORTATION', 'km', 0.21),
 ('ELECTRICITY', 'kWh', 0.45),
@@ -120,9 +110,7 @@ CREATE TABLE IF NOT EXISTS carbon_footprint (
 CREATE INDEX IF NOT EXISTS idx_carbon_footprint_user_id ON carbon_footprint(user_id);
 
 
-
--- Postgres equivalent of MySQL's "ON UPDATE CURRENT_TIMESTAMP":
--- a trigger that stamps updated_at with the current time on every row update.
+-- Postgres equivalent of MySQL's "ON UPDATE CURRENT_TIMESTAMP"
 CREATE OR REPLACE FUNCTION set_updated_at() RETURNS TRIGGER AS '
 BEGIN NEW.updated_at = CURRENT_TIMESTAMP; RETURN NEW; END;
 ' LANGUAGE plpgsql;

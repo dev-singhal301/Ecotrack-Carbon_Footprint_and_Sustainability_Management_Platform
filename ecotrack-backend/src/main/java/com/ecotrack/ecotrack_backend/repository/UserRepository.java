@@ -44,4 +44,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * to also pass the provider name on every lookup.
      */
     Optional<User> findByOauthId(String oauthId);
+
+    // Added: needed by AuthService.resetPassword() to look up the user
+    // a given reset token belongs to.
+    Optional<User> findByResetPasswordToken(String resetPasswordToken);
 }

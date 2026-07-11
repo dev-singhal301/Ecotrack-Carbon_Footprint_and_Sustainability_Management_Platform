@@ -18,7 +18,7 @@ import java.util.UUID;
 
 /*
  * Handles the authentication business logic.
- * Responsible for user registration and login.
+ * Responsible for user registration, login, and password recovery.
  * Works with repositories for database operations and delegates credential verification to Spring Security.
  */
 @Service
@@ -30,10 +30,6 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final JwtUtil jwtUtil;
 
-    /*
-     * Injects all required dependencies used for authentication.
-     * Spring automatically provides these beans at runtime.
-     */
     public AuthService(UserRepository userRepository,
                         RoleRepository roleRepository,
                         PasswordEncoder passwordEncoder,
@@ -46,12 +42,6 @@ public class AuthService {
         this.jwtUtil = jwtUtil;
     }
 
-    /*
-     * Registers a new user.
-     * Checks for duplicate emails, assigns the default role, hashes the password, and saves the user.
-     * Registration does not generate a JWT.
-     * Users must log in separately.
-     */
     public AuthResponse register(RegisterRequest request) {
 
         if (userRepository.existsByEmail(request.getEmail())) {
@@ -68,30 +58,18 @@ public class AuthService {
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setRole(userRole);
         user.setEnabled(true);
-        // OAuth fields remain null for email/password registration.
-        // They will be used later for Google OAuth login.
 
         userRepository.save(user);
 
-        // Registration is complete.
-        // The user must log in to receive a JWT.
         return new AuthResponse(null, user.getName(), user.getEmail());
     }
 
-    /*
-     * Authenticates an existing user.
-     * Spring Security verifies the user's credentials.
-     * If authentication succeeds, a JWT is generated
-     * and returned to the client.
-     */
     public AuthResponse login(LoginRequest request) {
 
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
         );
 
-        // Authentication was successful.
-        // Retrieve user details to build the response.
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new IllegalStateException(
                         "Authenticated user could not be reloaded: " + request.getEmail()));
@@ -104,7 +82,7 @@ public class AuthService {
     /*
      * Generates a temporary, secure token for password recovery.
      * Finds the user by email, assigns a UUID string, sets a strict 15-minute expiration,
-     * and persists the update back to MySQL.
+     * and persists the update back to the database.
      */
     public String generateResetPasswordToken(String email) {
         User user = userRepository.findByEmail(email)
@@ -116,5 +94,29 @@ public class AuthService {
 
         userRepository.save(user);
         return token;
+    }
+
+    /*
+     * Completes the password reset flow. This was previously missing entirely,
+     * which is why the update never reached PostgreSQL: nothing existed to call.
+     *
+     * Steps: look up the user by the reset token, reject it if it doesn't exist
+     * or has expired, hash the new password through the same PasswordEncoder
+     * used everywhere else, save, then null out both reset fields so the token
+     * cannot be reused (one-time use, per the spec's replay-attack requirement).
+     */
+    public void resetPassword(String token, String newPassword) {
+        User user = userRepository.findByResetPasswordToken(token)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid or expired password reset token."));
+
+        if (user.getTokenExpiryDate() == null || user.getTokenExpiryDate().isBefore(LocalDateTime.now())) {
+            throw new IllegalArgumentException("Invalid or expired password reset token.");
+        }
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        user.setResetPasswordToken(null);
+        user.setTokenExpiryDate(null);
+
+        userRepository.save(user);
     }
 }

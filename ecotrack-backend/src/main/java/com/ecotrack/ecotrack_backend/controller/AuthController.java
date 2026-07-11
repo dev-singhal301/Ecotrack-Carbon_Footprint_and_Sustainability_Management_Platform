@@ -4,6 +4,7 @@ import com.ecotrack.ecotrack_backend.dto.AuthResponse;
 import com.ecotrack.ecotrack_backend.dto.LoginRequest;
 import com.ecotrack.ecotrack_backend.dto.RegisterRequest;
 import com.ecotrack.ecotrack_backend.dto.ForgotPasswordRequest;
+import com.ecotrack.ecotrack_backend.dto.ResetPasswordRequest;
 import com.ecotrack.ecotrack_backend.service.AuthService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -19,11 +20,6 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-/*
- * REST entry point for authentication. Thin by design: it only converts
- * JSON <-> DTOs and delegates to AuthService. No database access, password
- * handling, or JWT logic happens here — see AuthService for that.
- */
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
@@ -34,94 +30,68 @@ public class AuthController {
         this.authService = authService;
     }
 
-    /*
-     * POST /api/auth/register
-     * Creates a new account. Returns 201 Created with no JWT — the
-     * frontend is expected to redirect to the login page after this.
-     */
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
         AuthResponse response = authService.register(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    /*
-     * POST /api/auth/login
-     * Authenticates an existing account. Returns 200 OK with a JWT and
-     * basic user info on success.
-     */
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
         AuthResponse response = authService.login(request);
         return ResponseEntity.ok(response);
     }
 
-    /*
-     * POST /api/auth/forgot-password
-     * Initiates password recovery. Validates the email request structure,
-     * generates a time-sensitive secure token string via AuthService, 
-     * and confirms tracking back to the application.
-     */
     @PostMapping("/forgot-password")
     public ResponseEntity<Map<String, String>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
         String token = authService.generateResetPasswordToken(request.getEmail());
-        
-        // Note for Internship Presentation: We print the token out here to verify operations locally 
-        // without forcing a real production SMTP configuration setup right away.
+
+        // Placeholder until an email service is wired up (Milestone 2+).
+        // Never leave this in a build that touches production data.
         System.out.println("====== SYSTEM RESET TOKEN GENERATED FOR " + request.getEmail() + " ======");
         System.out.println("TOKEN VALUE: " + token);
         System.out.println("==================================================================");
-        
-        return ResponseEntity.ok(Map.of("message", "Password reset processing initiated successfully."));
+
+        return ResponseEntity.ok(messageBody("Password reset processing initiated successfully."));
     }
 
-    /*
-     * Maps an invalid email look up during recovery (thrown by AuthService
-     * as IllegalArgumentException) to 404 Not Found instead of a raw 500.
+    /**
+     * Completes the reset flow: validates the token via AuthService and
+     * persists the new hashed password. This endpoint did not exist before —
+     * it's the missing piece that was causing the "update doesn't persist" bug.
      */
+    @PostMapping("/reset-password")
+    public ResponseEntity<Map<String, String>> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        authService.resetPassword(request.getToken(), request.getNewPassword());
+        return ResponseEntity.ok(messageBody("Password has been reset successfully. You can now log in."));
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, String>> handleIllegalArgument(IllegalArgumentException ex) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorBody(ex.getMessage()));
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(messageBody(ex.getMessage()));
     }
 
-    /*
-     * Maps a duplicate-email registration attempt (thrown by AuthService
-     * as IllegalStateException) to 409 Conflict instead of a raw 500.
-     */
     @ExceptionHandler(IllegalStateException.class)
     public ResponseEntity<Map<String, String>> handleIllegalState(IllegalStateException ex) {
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorBody(ex.getMessage()));
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(messageBody(ex.getMessage()));
     }
 
-    /*
-     * Maps a failed login (bad credentials, disabled account, etc. —
-     * thrown by AuthenticationManager inside AuthService.login()) to
-     * 401 Unauthorized instead of a raw 500.
-     */
     @ExceptionHandler(AuthenticationException.class)
     public ResponseEntity<Map<String, String>> handleAuthenticationException(AuthenticationException ex) {
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorBody("Invalid email or password"));
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(messageBody("Invalid email or password"));
     }
 
-    /*
-     * Maps a @Valid failure on RegisterRequest/LoginRequest/ForgotPasswordRequest
-     * (e.g. blank name, malformed email, password too short) to 400 Bad Request.
-     * Collects every field error into one readable message, since a
-     * single request can fail multiple constraints at once.
-     */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, String>> handleValidationException(MethodArgumentNotValidException ex) {
         String message = ex.getBindingResult().getFieldErrors().stream()
                 .map(error -> error.getField() + ": " + error.getDefaultMessage())
                 .collect(Collectors.joining("; "));
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorBody(message));
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(messageBody(message));
     }
 
-    /*
-     * Shared helper so every error response has the same shape the
-     * frontend expects: { "message": "..." }, accessible via err.error.message.
-     */
-    private Map<String, String> errorBody(String message) {
+    // Renamed from errorBody -> messageBody: it now also wraps success
+    // messages (forgot-password, reset-password), not just errors.
+    private Map<String, String> messageBody(String message) {
         return Map.of("message", message);
     }
 }
