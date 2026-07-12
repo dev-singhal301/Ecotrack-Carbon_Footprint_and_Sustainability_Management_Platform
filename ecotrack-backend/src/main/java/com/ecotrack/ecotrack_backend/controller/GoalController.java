@@ -57,8 +57,10 @@ public class GoalController {
     @PutMapping("/{goalId}")
     public ResponseEntity<GoalResponse> updateGoal(
             @PathVariable Long goalId,
-            @Valid @RequestBody GoalRequest request) {
-        return ResponseEntity.ok(goalService.updateGoal(goalId, request));
+            @Valid @RequestBody GoalRequest request,
+            @AuthenticationPrincipal UserDetails principal) {
+        Long userId = extractUserId(principal);
+        return ResponseEntity.ok(goalService.updateGoal(userId, goalId, request));
     }
 
     @GetMapping("/{goalId}/progress")
@@ -82,11 +84,13 @@ public class GoalController {
         return ResponseEntity.badRequest().body(Map.of("message", ex.getMessage()));
     }
 
-    // ── Helper: JwtAuthFilter's principal only carries email (see CustomUserDetailsService),
+    // ── Helper: JwtAuthFilter's principal only carries email (see
+    // CustomUserDetailsService),
     // so we look the user back up by email to get their actual database ID.
     private Long extractUserId(UserDetails principal) {
         User user = userRepository.findByEmail(principal.getUsername())
-                .orElseThrow(() -> new IllegalArgumentException("Authenticated user not found: " + principal.getUsername()));
+                .orElseThrow(
+                        () -> new IllegalArgumentException("Authenticated user not found: " + principal.getUsername()));
         return user.getId();
     }
 }

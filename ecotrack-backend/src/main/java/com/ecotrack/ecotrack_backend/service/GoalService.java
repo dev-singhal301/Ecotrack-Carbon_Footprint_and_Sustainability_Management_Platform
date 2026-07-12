@@ -64,25 +64,29 @@ public class GoalService {
     }
 
     // ── Update ──
-    public GoalResponse updateGoal(Long goalId, GoalRequest request) {
-        Goal goal = goalRepository.findById(goalId)
-                .orElseThrow(() -> new IllegalArgumentException("Goal not found: " + goalId));
+public GoalResponse updateGoal(Long userId, Long goalId, GoalRequest request) {
+    Goal goal = goalRepository.findById(goalId)
+            .orElseThrow(() -> new IllegalArgumentException("Goal not found: " + goalId));
 
-        validateDateOrder(request);
-        GoalType parsedType = parseGoalType(request.getGoalType());
-
-        goal.setGoalName(request.getGoalName());
-        goal.setGoalType(parsedType.name());
-        goal.setTargetValue(request.getTargetValue());
-        goal.setStartDate(request.getStartDate());
-        goal.setEndDate(request.getEndDate());
-        if (request.getRewardPoints() != null) {
-            goal.setRewardPoints(request.getRewardPoints());
-        }
-
-        Goal saved = goalRepository.save(goal);
-        return mapToResponse(saved);
+    if (!goal.getUser().getId().equals(userId)) {
+        throw new IllegalArgumentException("You do not have permission to update this goal");
     }
+
+    validateDateOrder(request);
+    GoalType parsedType = parseGoalType(request.getGoalType());
+
+    goal.setGoalName(request.getGoalName());
+    goal.setGoalType(parsedType.name());
+    goal.setTargetValue(request.getTargetValue());
+    goal.setStartDate(request.getStartDate());
+    goal.setEndDate(request.getEndDate());
+    if (request.getRewardPoints() != null) {
+        goal.setRewardPoints(request.getRewardPoints());
+    }
+
+    Goal saved = goalRepository.save(goal);
+    return mapToResponse(saved);
+}
 
     // ── Read ──
     public List<GoalResponse> getGoalsForUser(Long userId) {
