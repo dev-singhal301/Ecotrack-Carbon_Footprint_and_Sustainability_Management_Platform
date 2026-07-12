@@ -1,0 +1,92 @@
+package com.ecotrack.ecotrack_backend.controller;
+
+import com.ecotrack.ecotrack_backend.dto.GoalRequest;
+import com.ecotrack.ecotrack_backend.dto.GoalResponse;
+import com.ecotrack.ecotrack_backend.dto.GoalProgressResponse;
+import com.ecotrack.ecotrack_backend.entity.User;
+import com.ecotrack.ecotrack_backend.repository.UserRepository;
+import com.ecotrack.ecotrack_backend.service.GoalService;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Map;
+
+@RestController
+@RequestMapping("/api/goals")
+public class GoalController {
+
+    private final GoalService goalService;
+    private final UserRepository userRepository;
+
+    public GoalController(GoalService goalService, UserRepository userRepository) {
+        this.goalService = goalService;
+        this.userRepository = userRepository;
+    }
+
+    @PostMapping
+    public ResponseEntity<GoalResponse> createGoal(
+            @Valid @RequestBody GoalRequest request,
+            @AuthenticationPrincipal UserDetails principal) {
+        Long userId = extractUserId(principal);
+        GoalResponse response = goalService.createGoal(userId, request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @GetMapping
+    public ResponseEntity<List<GoalResponse>> getGoals(
+            @AuthenticationPrincipal UserDetails principal,
+            @RequestParam(required = false) String status) {
+        Long userId = extractUserId(principal);
+        List<GoalResponse> goals = (status != null)
+                ? goalService.getGoalsForUserByStatus(userId, status)
+                : goalService.getGoalsForUser(userId);
+        return ResponseEntity.ok(goals);
+    }
+
+    @GetMapping("/{goalId}")
+    public ResponseEntity<GoalResponse> getGoalById(@PathVariable Long goalId) {
+        return ResponseEntity.ok(goalService.getGoalById(goalId));
+    }
+
+    @PutMapping("/{goalId}")
+    public ResponseEntity<GoalResponse> updateGoal(
+            @PathVariable Long goalId,
+            @Valid @RequestBody GoalRequest request) {
+        return ResponseEntity.ok(goalService.updateGoal(goalId, request));
+    }
+
+    @GetMapping("/{goalId}/progress")
+    public ResponseEntity<GoalProgressResponse> getProgress(@PathVariable Long goalId) {
+        return ResponseEntity.ok(goalService.getProgress(goalId));
+    }
+
+    // ── Exception handlers ──
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<Map<String, String>> handleValidation(MethodArgumentNotValidException ex) {
+        String message = ex.getBindingResult().getFieldErrors().stream()
+                .findFirst()
+                .map(err -> err.getField() + ": " + err.getDefaultMessage())
+                .orElse("Validation failed");
+        return ResponseEntity.badRequest().body(Map.of("message", message));
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Map<String, String>> handleBadRequest(IllegalArgumentException ex) {
+        return ResponseEntity.badRequest().body(Map.of("message", ex.getMessage()));
+    }
+
+    // ── Helper: JwtAuthFilter's principal only carries email (see CustomUserDetailsService),
+    // so we look the user back up by email to get their actual database ID.
+    private Long extractUserId(UserDetails principal) {
+        User user = userRepository.findByEmail(principal.getUsername())
+                .orElseThrow(() -> new IllegalArgumentException("Authenticated user not found: " + principal.getUsername()));
+        return user.getId();
+    }
+}
