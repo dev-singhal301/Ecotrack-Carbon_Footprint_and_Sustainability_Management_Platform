@@ -1,4 +1,73 @@
 <div class="home-container">
-    <h2>Welcome to EcoTrack</h2>
-    <p>Login successful! This is a placeholder home page for Milestone 1.</p>
+
+    <!-- Navigation Section Sidebar -->
+    <aside class="sidebar">
+
+        <div class="logo">
+            <h1>Ecotrack</h1>
+        </div>
+
+        <nav class="nav-menu">
+
+            <a routerLink="dashboard" routerLinkActive="active">
+                <i class=""></i>
+                <span>Dashboard</span>
+            </a>
+
+            <a routerLink="tracking" routerLinkActive="active">
+                <i class=""></i>
+                <span>Tracking</span>
+            </a>
+
+            <a routerLink="goals" routerLinkActive="active">
+                <i class=""></i>
+                <span>Goals</span>
+            </a>
+
+            <a routerLink="challenges" routerLinkActive="active">
+                <i class=""></i>
+                <span>Challenges</span>
+            </a>
+
+            <a routerLink="ai-tips" routerLinkActive="active">
+                <i class=""></i>
+                <span>AI Tips</span>
+            </a>
+
+            <a routerLink="analytics" routerLinkActive="active">
+                <i class=""></i>
+                <span>Analytics</span>
+            </a>
+
+            <a routerLink="leaderboard" routerLinkActive="active">
+                <i class=""></i>
+                <span>Leaderboard</span>
+            </a>
+
+            <a routerLink="profile" routerLinkActive="active">
+                <i class=""></i>
+                <span>Profile</span>
+            </a>
+
+            <a routerLink="settings" routerLinkActive="active">
+                <i class=""></i>
+                <span>Settings</span>
+            </a>
+
+            <a routerLink="logout" routerLinkActive="active">
+                <i class=""></i>
+                <span>Logout</span>
+            </a>
+
+        </nav>
+
+    </aside>
+
+    <!-- Dynamic Content -->
+    <main class="content">
+
+        <router-outlet></router-outlet>
+
+    </main>
+
 </div>
