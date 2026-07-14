@@ -29,6 +29,8 @@ public class GoalRequest {
     @PositiveOrZero
     private Integer rewardPoints; 
 
+    private Integer baselinePeriodDays; // optional, defaults to 30 if not provided
+
     public GoalRequest() {}
 
     public String getGoalName() { return goalName; }
@@ -47,5 +49,8 @@ public class GoalRequest {
     public void setEndDate(LocalDate endDate) { this.endDate = endDate; }
 
     public Integer getRewardPoints() { return rewardPoints; }
-    public void setRewardPoints(Integer rewardPoints) { this.rewardPoints = rewardPoints; }
+    public void setRewardPoints(Integer rewardPoints) { this.rewardPoints = rewardPoints;}
+
+    public Integer getBaselinePeriodDays() { return baselinePeriodDays; }
+    public void setBaselinePeriodDays(Integer baselinePeriodDays) { this.baselinePeriodDays = baselinePeriodDays; }
 }

@@ -25,8 +25,8 @@ public class GoalService {
     private final UserRepository userRepository;
 
     public GoalService(GoalRepository goalRepository,
-                        GoalProgressRepository goalProgressRepository,
-                        UserRepository userRepository) {
+            GoalProgressRepository goalProgressRepository,
+            UserRepository userRepository) {
         this.goalRepository = goalRepository;
         this.goalProgressRepository = goalProgressRepository;
         this.userRepository = userRepository;
@@ -52,7 +52,8 @@ public class GoalService {
 
         Goal saved = goalRepository.save(goal);
 
-        // create an initial zeroed progress row so /progress never 404s right after creation
+        // create an initial zeroed progress row so /progress never 404s right after
+        // creation
         GoalProgress progress = new GoalProgress();
         progress.setGoal(saved);
         progress.setCurrentValue(BigDecimal.ZERO);
@@ -65,28 +66,28 @@ public class GoalService {
 
     // ── Update ──
     public GoalResponse updateGoal(Long userId, Long goalId, GoalRequest request) {
-    Goal goal = goalRepository.findById(goalId)
-            .orElseThrow(() -> new IllegalArgumentException("Goal not found: " + goalId));
+        Goal goal = goalRepository.findById(goalId)
+                .orElseThrow(() -> new IllegalArgumentException("Goal not found: " + goalId));
 
-    if (!goal.getUser().getId().equals(userId)) {
-        throw new IllegalArgumentException("You do not have permission to update this goal");
+        if (!goal.getUser().getId().equals(userId)) {
+            throw new IllegalArgumentException("You do not have permission to update this goal");
+        }
+
+        validateDateOrder(request);
+        GoalType parsedType = parseGoalType(request.getGoalType());
+
+        goal.setGoalName(request.getGoalName());
+        goal.setGoalType(parsedType.name());
+        goal.setTargetValue(request.getTargetValue());
+        goal.setStartDate(request.getStartDate());
+        goal.setEndDate(request.getEndDate());
+        if (request.getRewardPoints() != null) {
+            goal.setRewardPoints(request.getRewardPoints());
+        }
+
+        Goal saved = goalRepository.save(goal);
+        return mapToResponse(saved);
     }
-
-    validateDateOrder(request);
-    GoalType parsedType = parseGoalType(request.getGoalType());
-
-    goal.setGoalName(request.getGoalName());
-    goal.setGoalType(parsedType.name());
-    goal.setTargetValue(request.getTargetValue());
-    goal.setStartDate(request.getStartDate());
-    goal.setEndDate(request.getEndDate());
-    if (request.getRewardPoints() != null) {
-        goal.setRewardPoints(request.getRewardPoints());
-    }
-
-    Goal saved = goalRepository.save(goal);
-    return mapToResponse(saved);
-}
 
     // ── Read ──
     public List<GoalResponse> getGoalsForUser(Long userId) {
@@ -123,10 +124,10 @@ public class GoalService {
                 goalId,
                 progress.getCurrentValue(),
                 goal.getTargetValue(),
+                goal.getBaselineValue(),
                 progress.getCompletionPercentage(),
                 progress.isCompleted(),
-                progress.getLastUpdated()
-        );
+                progress.getLastUpdated());
     }
 
     // ── Validation helpers ──
@@ -151,10 +152,10 @@ public class GoalService {
                 goal.getGoalName(),
                 goal.getGoalType(),
                 goal.getTargetValue(),
+                goal.getBaselineValue(),
                 goal.getRewardPoints(),
                 goal.getStatus(),
                 goal.getStartDate(),
-                goal.getEndDate()
-        );
+                goal.getEndDate());
     }
 }

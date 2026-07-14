@@ -13,42 +13,94 @@ public class GoalResponse {
     private String status;
     private LocalDate startDate;
     private LocalDate endDate;
+    private BigDecimal baselineValue;
 
-    public GoalResponse() {}
+    public GoalResponse() {
+    }
 
     public GoalResponse(Long goalId, String goalName, String goalType, BigDecimal targetValue,
-                         Integer rewardPoints, String status, LocalDate startDate, LocalDate endDate) {
+            BigDecimal baselineValue, Integer rewardPoints, String status,
+            LocalDate startDate, LocalDate endDate) {
         this.goalId = goalId;
         this.goalName = goalName;
         this.goalType = goalType;
         this.targetValue = targetValue;
+        this.baselineValue = baselineValue;
         this.rewardPoints = rewardPoints;
         this.status = status;
         this.startDate = startDate;
         this.endDate = endDate;
     }
 
-    public Long getGoalId() { return goalId; }
-    public void setGoalId(Long goalId) { this.goalId = goalId; }
+    public Long getGoalId() {
+        return goalId;
+    }
 
-    public String getGoalName() { return goalName; }
-    public void setGoalName(String goalName) { this.goalName = goalName; }
+    public void setGoalId(Long goalId) {
+        this.goalId = goalId;
+    }
 
-    public String getGoalType() { return goalType; }
-    public void setGoalType(String goalType) { this.goalType = goalType; }
+    public String getGoalName() {
+        return goalName;
+    }
 
-    public BigDecimal getTargetValue() { return targetValue; }
-    public void setTargetValue(BigDecimal targetValue) { this.targetValue = targetValue; }
+    public void setGoalName(String goalName) {
+        this.goalName = goalName;
+    }
 
-    public Integer getRewardPoints() { return rewardPoints; }
-    public void setRewardPoints(Integer rewardPoints) { this.rewardPoints = rewardPoints; }
+    public String getGoalType() {
+        return goalType;
+    }
 
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
+    public void setGoalType(String goalType) {
+        this.goalType = goalType;
+    }
 
-    public LocalDate getStartDate() { return startDate; }
-    public void setStartDate(LocalDate startDate) { this.startDate = startDate; }
+    public BigDecimal getTargetValue() {
+        return targetValue;
+    }
 
-    public LocalDate getEndDate() { return endDate; }
-    public void setEndDate(LocalDate endDate) { this.endDate = endDate; }
+    public void setTargetValue(BigDecimal targetValue) {
+        this.targetValue = targetValue;
+    }
+
+    public Integer getRewardPoints() {
+        return rewardPoints;
+    }
+
+    public void setRewardPoints(Integer rewardPoints) {
+        this.rewardPoints = rewardPoints;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public LocalDate getStartDate() {
+        return startDate;
+    }
+
+    public void setStartDate(LocalDate startDate) {
+        this.startDate = startDate;
+    }
+
+    public LocalDate getEndDate() {
+        return endDate;
+    }
+
+    public void setEndDate(LocalDate endDate) {
+        this.endDate = endDate;
+    }
+
+    public BigDecimal getBaselineValue() {
+        return baselineValue;
+    }
+
+    public void setBaselineValue(BigDecimal baselineValue) {
+        this.baselineValue = baselineValue;
+    }
 }

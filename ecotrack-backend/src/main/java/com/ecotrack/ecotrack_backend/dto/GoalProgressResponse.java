@@ -11,34 +11,76 @@ public class GoalProgressResponse {
     private BigDecimal completionPercentage;
     private boolean completed;
     private LocalDateTime lastUpdated;
+    private BigDecimal baselineValue;
 
-    public GoalProgressResponse() {}
+    public GoalProgressResponse() {
+    }
 
     public GoalProgressResponse(Long goalId, BigDecimal currentValue, BigDecimal targetValue,
-                                 BigDecimal completionPercentage, boolean completed, LocalDateTime lastUpdated) {
+            BigDecimal baselineValue, BigDecimal completionPercentage,
+            boolean completed, LocalDateTime lastUpdated) {
         this.goalId = goalId;
         this.currentValue = currentValue;
         this.targetValue = targetValue;
+        this.baselineValue = baselineValue;
         this.completionPercentage = completionPercentage;
         this.completed = completed;
         this.lastUpdated = lastUpdated;
     }
 
-    public Long getGoalId() { return goalId; }
-    public void setGoalId(Long goalId) { this.goalId = goalId; }
+    public Long getGoalId() {
+        return goalId;
+    }
 
-    public BigDecimal getCurrentValue() { return currentValue; }
-    public void setCurrentValue(BigDecimal currentValue) { this.currentValue = currentValue; }
+    public void setGoalId(Long goalId) {
+        this.goalId = goalId;
+    }
 
-    public BigDecimal getTargetValue() { return targetValue; }
-    public void setTargetValue(BigDecimal targetValue) { this.targetValue = targetValue; }
+    public BigDecimal getCurrentValue() {
+        return currentValue;
+    }
 
-    public BigDecimal getCompletionPercentage() { return completionPercentage; }
-    public void setCompletionPercentage(BigDecimal completionPercentage) { this.completionPercentage = completionPercentage; }
+    public void setCurrentValue(BigDecimal currentValue) {
+        this.currentValue = currentValue;
+    }
 
-    public boolean isCompleted() { return completed; }
-    public void setCompleted(boolean completed) { this.completed = completed; }
+    public BigDecimal getTargetValue() {
+        return targetValue;
+    }
 
-    public LocalDateTime getLastUpdated() { return lastUpdated; }
-    public void setLastUpdated(LocalDateTime lastUpdated) { this.lastUpdated = lastUpdated; }
+    public void setTargetValue(BigDecimal targetValue) {
+        this.targetValue = targetValue;
+    }
+
+    public BigDecimal getCompletionPercentage() {
+        return completionPercentage;
+    }
+
+    public void setCompletionPercentage(BigDecimal completionPercentage) {
+        this.completionPercentage = completionPercentage;
+    }
+
+    public boolean isCompleted() {
+        return completed;
+    }
+
+    public void setCompleted(boolean completed) {
+        this.completed = completed;
+    }
+
+    public LocalDateTime getLastUpdated() {
+        return lastUpdated;
+    }
+
+    public void setLastUpdated(LocalDateTime lastUpdated) {
+        this.lastUpdated = lastUpdated;
+    }
+
+    public BigDecimal getBaselineValue() {
+        return baselineValue;
+    }
+
+    public void setBaselineValue(BigDecimal baselineValue) {
+        this.baselineValue = baselineValue;
+    }
 }
