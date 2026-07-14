@@ -1,1 +1,34 @@
-<p>tracking works!</p>
+<div class="tracking-container">
+  <h2>Log Daily Carbon Activity</h2>
+  
+  <form (submit)="onLogSubmit($event)">
+    <div class="form-group">
+      <label for="category">Activity Category</label>
+      <select id="category" name="category" required>
+        <option value="TRANSPORTATION">Transportation</option>
+        <option value="ELECTRICITY">Electricity</option>
+        <option value="FOOD">Food</option>
+        <option value="WASTE">Waste</option>
+        <option value="WATER">Water</option>
+        <option value="FUEL">Fuel</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="amount">Amount / Value</label>
+      <input type="number" id="amount" placeholder="e.g., 150" required>
+    </div>
+
+    <div class="form-group">
+      <label for="unit">Unit of Measurement</label>
+      <input type="text" id="unit" placeholder="e.g., km, kWh, kg, litres" required>
+    </div>
+
+    <div class="form-group">
+      <label for="date">Activity Date</label>
+      <input type="date" id="date" required>
+    </div>
+
+    <button type="submit" class="btn-submit">Save Entry Locally</button>
+  </form>
+</div>

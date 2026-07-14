@@ -1,0 +1,69 @@
+/* ---------- Container styling ---------- */
+.tracking-container {
+    max-width: 500px;
+    margin: 40px auto;
+    padding: 30px;
+    background: #ffffff;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.tracking-container h2 {
+    margin-bottom: 24px;
+    color: #2d6a4f; /* Matches your navigation menu hover color */
+    font-size: 1.6rem;
+    border-bottom: 2px solid #c8ddc7;
+    padding-bottom: 8px;
+}
+
+/* ---------- Organized Form Layout ---------- */
+.form-group {
+    display: flex;
+    flex-direction: column; /* Stacks label on top of input */
+    gap: 6px;
+    margin-bottom: 18px; /* Adds clear separation between rows */
+}
+
+.form-group label {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #333333;
+}
+
+.form-group select,
+.form-group input {
+    width: 100%;
+    padding: 10px;
+    font-size: 1rem;
+    border: 1px solid #cccccc;
+    border-radius: 6px;
+    background-color: #fafafa;
+    transition: border-color 0.2s, background-color 0.2s;
+}
+
+.form-group select:focus,
+.form-group input:focus {
+    outline: none;
+    border-color: #2d6a4f;
+    background-color: #ffffff;
+}
+
+/* ---------- Button Styling ---------- */
+.btn-submit {
+    width: 100%;
+    padding: 12px;
+    font-size: 1rem;
+    font-weight: bold;
+    color: #ffffff;
+    background-color: #2d6a4f;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    margin-top: 10px;
+}
+
+.btn-submit:hover {
+    background-color: #1b4332;
+}

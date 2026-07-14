@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import { AuthForm } from './auth/auth-form/auth-form';
 import { Home } from './home/home';
 import { ResetPassword } from './auth/reset-password/reset-password';
+import { authGuard } from './auth/auth.guard'; // 👈 1. Import your brand new guard
 
 // Import your newly generated dashboard sub-components
 import { Dashboard } from './home/dashboard/dashboard';
@@ -23,6 +24,7 @@ export const routes: Routes = [
     { 
         path: 'home', 
         component: Home,
+        canActivate: [authGuard], // 👈 2. Add the guard here to protect this shell and all its children
         children: [
             // Automatically drops users into the dashboard sub-view when reaching /home
             { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
