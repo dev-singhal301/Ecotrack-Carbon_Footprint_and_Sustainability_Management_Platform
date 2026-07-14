@@ -64,7 +64,7 @@ public class GoalService {
     }
 
     // ── Update ──
-public GoalResponse updateGoal(Long userId, Long goalId, GoalRequest request) {
+    public GoalResponse updateGoal(Long userId, Long goalId, GoalRequest request) {
     Goal goal = goalRepository.findById(goalId)
             .orElseThrow(() -> new IllegalArgumentException("Goal not found: " + goalId));
 

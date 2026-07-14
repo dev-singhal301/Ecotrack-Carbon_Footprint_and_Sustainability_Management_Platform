@@ -26,6 +26,9 @@ public class Goal {
     @Column(name = "target_value", nullable = false)
     private BigDecimal targetValue;
 
+    @Column(name = "baseline_value")
+    private BigDecimal baselineValue = BigDecimal.ZERO;
+
     @Column(name = "reward_points")
     private Integer rewardPoints = 0;
 
@@ -54,6 +57,9 @@ public class Goal {
 
     public BigDecimal getTargetValue() { return targetValue; }
     public void setTargetValue(BigDecimal targetValue) { this.targetValue = targetValue; }
+
+    public BigDecimal getBaselineValue() { return baselineValue; }
+    public void setBaselineValue(BigDecimal baselineValue) { this.baselineValue = baselineValue; }
 
     public Integer getRewardPoints() { return rewardPoints; }
     public void setRewardPoints(Integer rewardPoints) { this.rewardPoints = rewardPoints; }
