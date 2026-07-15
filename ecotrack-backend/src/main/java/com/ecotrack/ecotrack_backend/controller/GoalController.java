@@ -50,8 +50,11 @@ public class GoalController {
     }
 
     @GetMapping("/{goalId}")
-    public ResponseEntity<GoalResponse> getGoalById(@PathVariable Long goalId) {
-        return ResponseEntity.ok(goalService.getGoalById(goalId));
+    public ResponseEntity<GoalResponse> getGoalById(
+            @PathVariable Long goalId,
+            @AuthenticationPrincipal UserDetails principal) {
+        Long userId = extractUserId(principal);
+        return ResponseEntity.ok(goalService.getGoalById(userId, goalId));
     }
 
     @PutMapping("/{goalId}")
@@ -64,8 +67,11 @@ public class GoalController {
     }
 
     @GetMapping("/{goalId}/progress")
-    public ResponseEntity<GoalProgressResponse> getProgress(@PathVariable Long goalId) {
-        return ResponseEntity.ok(goalService.getProgress(goalId));
+    public ResponseEntity<GoalProgressResponse> getProgress(
+            @PathVariable Long goalId,
+            @AuthenticationPrincipal UserDetails principal) {
+        Long userId = extractUserId(principal);
+        return ResponseEntity.ok(goalService.calculateProgress(userId, goalId));
     }
 
     // ── Exception handlers ──

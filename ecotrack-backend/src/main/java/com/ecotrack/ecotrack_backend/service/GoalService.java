@@ -9,12 +9,19 @@ import com.ecotrack.ecotrack_backend.entity.GoalType;
 import com.ecotrack.ecotrack_backend.entity.User;
 import com.ecotrack.ecotrack_backend.repository.GoalRepository;
 import com.ecotrack.ecotrack_backend.repository.GoalProgressRepository;
+import com.ecotrack.ecotrack_backend.entity.CarbonCategory;
+import com.ecotrack.ecotrack_backend.entity.CarbonEntry;
+import com.ecotrack.ecotrack_backend.repository.CarbonEntryRepository;
 import com.ecotrack.ecotrack_backend.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -23,13 +30,19 @@ public class GoalService {
     private final GoalRepository goalRepository;
     private final GoalProgressRepository goalProgressRepository;
     private final UserRepository userRepository;
+    private final CarbonEntryRepository carbonEntryRepository;
+
+    private static final Set<GoalType> AGGREGATE_ALL_CATEGORIES = EnumSet.of(GoalType.REDUCE_CARBON_EMISSIONS);
+    private static final int DEFAULT_BASELINE_DAYS = 30;
 
     public GoalService(GoalRepository goalRepository,
             GoalProgressRepository goalProgressRepository,
-            UserRepository userRepository) {
+            UserRepository userRepository,
+            CarbonEntryRepository carbonEntryRepository) {
         this.goalRepository = goalRepository;
         this.goalProgressRepository = goalProgressRepository;
         this.userRepository = userRepository;
+        this.carbonEntryRepository = carbonEntryRepository;
     }
 
     // ── Create ──
@@ -49,6 +62,16 @@ public class GoalService {
         goal.setEndDate(request.getEndDate());
         goal.setRewardPoints(request.getRewardPoints() != null ? request.getRewardPoints() : 0);
         goal.setStatus("ACTIVE");
+
+        int baselineDays = request.getBaselinePeriodDays() != null
+                ? request.getBaselinePeriodDays()
+                : DEFAULT_BASELINE_DAYS;
+        LocalDate baselineStart = request.getStartDate().minusDays(baselineDays);
+        LocalDate baselineEnd = request.getStartDate().minusDays(1);
+        BigDecimal baselineValue = sumEmissions(userId,
+                AGGREGATE_ALL_CATEGORIES.contains(parsedType) ? null : mapGoalTypeToCategory(parsedType),
+                baselineStart, baselineEnd);
+        goal.setBaselineValue(baselineValue);
 
         Goal saved = goalRepository.save(goal);
 
@@ -102,32 +125,102 @@ public class GoalService {
                 .collect(Collectors.toList());
     }
 
-    public GoalResponse getGoalById(Long goalId) {
+    public GoalResponse getGoalById(Long userId, Long goalId) {
         Goal goal = goalRepository.findById(goalId)
                 .orElseThrow(() -> new IllegalArgumentException("Goal not found: " + goalId));
+
+        if (!goal.getUser().getId().equals(userId)) {
+            throw new IllegalArgumentException("You do not have permission to view this goal");
+        }
+
         return mapToResponse(goal);
     }
 
-    // ── Progress ──
-    // NOTE: this is a placeholder until A's CarbonEntryRepository is confirmed.
-    // Real implementation needs to sum matching CarbonEntry rows for this goal's
-    // category/date range and compare against targetValue. Wiring TBD once
-    // A shares CarbonEntryRepository's exact method signatures.
-    public GoalProgressResponse getProgress(Long goalId) {
-        GoalProgress progress = goalProgressRepository.findByGoalGoalId(goalId)
-                .orElseThrow(() -> new IllegalArgumentException("No progress record for goal: " + goalId));
+    // ── Progress (lazy — only computed when this is called, i.e. on GET) ──
+   public GoalProgressResponse calculateProgress(Long userId, Long goalId) {
+    Goal goal = goalRepository.findById(goalId)
+            .orElseThrow(() -> new IllegalArgumentException("Goal not found: " + goalId));
 
-        Goal goal = goalRepository.findById(goalId)
-                .orElseThrow(() -> new IllegalArgumentException("Goal not found: " + goalId));
+    if (!goal.getUser().getId().equals(userId)) {
+        throw new IllegalArgumentException("You do not have permission to view this goal");
+    }
 
-        return new GoalProgressResponse(
-                goalId,
-                progress.getCurrentValue(),
-                goal.getTargetValue(),
-                goal.getBaselineValue(),
-                progress.getCompletionPercentage(),
-                progress.isCompleted(),
-                progress.getLastUpdated());
+    GoalProgress progress = goalProgressRepository.findByGoalGoalId(goalId)
+            .orElseThrow(() -> new IllegalArgumentException("No progress record for goal: " + goalId));
+
+    GoalType type = parseGoalType(goal.getGoalType());
+    CarbonCategory category = AGGREGATE_ALL_CATEGORIES.contains(type) ? null : mapGoalTypeToCategory(type);
+
+    // ↓↓↓ NEW REPLACEMENT BLOCK STARTS HERE ↓↓↓
+    LocalDate periodEnd = LocalDate.now().isBefore(goal.getEndDate()) ? LocalDate.now() : goal.getEndDate();
+
+    List<CarbonEntry> currentEntries = (category != null)
+            ? carbonEntryRepository.findByUserIdAndCategoryAndActivityDateBetween(userId, category, goal.getStartDate(), periodEnd)
+            : carbonEntryRepository.findByUserIdAndActivityDateBetween(userId, goal.getStartDate(), periodEnd);
+
+    BigDecimal currentValue = currentEntries.stream()
+            .map(CarbonEntry::getCarbonEmission)
+            .filter(Objects::nonNull)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+    BigDecimal completionPercentage;
+    boolean completed;
+
+    if (currentEntries.isEmpty()) {
+        completionPercentage = BigDecimal.ZERO;
+        completed = false;
+    } else {
+        BigDecimal reduction = goal.getBaselineValue().subtract(currentValue);
+        if (reduction.compareTo(BigDecimal.ZERO) < 0) {
+            reduction = BigDecimal.ZERO;
+        }
+        if (goal.getTargetValue().compareTo(BigDecimal.ZERO) == 0) {
+            completionPercentage = BigDecimal.ZERO;
+        } else {
+            completionPercentage = reduction.divide(goal.getTargetValue(), 4, RoundingMode.HALF_UP)
+                    .multiply(BigDecimal.valueOf(100));
+            if (completionPercentage.compareTo(BigDecimal.valueOf(100)) > 0) {
+                completionPercentage = BigDecimal.valueOf(100);
+            }
+        }
+        completed = completionPercentage.compareTo(BigDecimal.valueOf(100)) >= 0;
+    }
+
+    progress.setCurrentValue(currentValue);
+    progress.setCompletionPercentage(completionPercentage);
+    progress.setCompleted(completed);
+    goalProgressRepository.save(progress);
+
+    if (completed && !"COMPLETED".equals(goal.getStatus())) {
+        goal.setStatus("COMPLETED");
+        goalRepository.save(goal);
+    }
+
+    return buildProgressResponse(goal, progress);
+}
+
+    // ── Emission helpers ──
+    private BigDecimal sumEmissions(Long userId, CarbonCategory category, LocalDate from, LocalDate to) {
+        List<CarbonEntry> entries = (category != null)
+                ? carbonEntryRepository.findByUserIdAndCategoryAndActivityDateBetween(userId, category, from, to)
+                : carbonEntryRepository.findByUserIdAndActivityDateBetween(userId, from, to);
+
+        return entries.stream()
+                .map(CarbonEntry::getCarbonEmission)
+                .filter(Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    private CarbonCategory mapGoalTypeToCategory(GoalType goalType) {
+        return switch (goalType) {
+            case REDUCE_ELECTRICITY_CONSUMPTION -> CarbonCategory.ELECTRICITY;
+            case REDUCE_WATER_USAGE -> CarbonCategory.WATER;
+            case REDUCE_TRANSPORTATION_EMISSIONS -> CarbonCategory.TRANSPORTATION;
+            case REDUCE_FUEL_CONSUMPTION -> CarbonCategory.FUEL;
+            case REDUCE_FOOD_EMISSIONS -> CarbonCategory.FOOD;
+            case REDUCE_WASTE_GENERATION -> CarbonCategory.WASTE;
+            case REDUCE_CARBON_EMISSIONS -> null;
+        };
     }
 
     // ── Validation helpers ──
@@ -157,5 +250,16 @@ public class GoalService {
                 goal.getStatus(),
                 goal.getStartDate(),
                 goal.getEndDate());
+    }
+
+    private GoalProgressResponse buildProgressResponse(Goal goal, GoalProgress progress) {
+        return new GoalProgressResponse(
+                goal.getGoalId(),
+                progress.getCurrentValue(),
+                goal.getTargetValue(),
+                goal.getBaselineValue(),
+                progress.getCompletionPercentage(),
+                progress.isCompleted(),
+                progress.getLastUpdated());
     }
 }
