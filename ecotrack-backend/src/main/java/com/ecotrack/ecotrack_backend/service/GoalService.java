@@ -13,6 +13,7 @@ import com.ecotrack.ecotrack_backend.entity.CarbonCategory;
 import com.ecotrack.ecotrack_backend.entity.CarbonEntry;
 import com.ecotrack.ecotrack_backend.repository.CarbonEntryRepository;
 import com.ecotrack.ecotrack_backend.repository.UserRepository;
+import com.ecotrack.ecotrack_backend.exception.GoalAccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -93,7 +94,7 @@ public class GoalService {
                 .orElseThrow(() -> new IllegalArgumentException("Goal not found: " + goalId));
 
         if (!goal.getUser().getId().equals(userId)) {
-            throw new IllegalArgumentException("You do not have permission to update this goal");
+            throw new GoalAccessDeniedException("You do not have permission to update this goal");
         }
 
         validateDateOrder(request);
@@ -130,74 +131,74 @@ public class GoalService {
                 .orElseThrow(() -> new IllegalArgumentException("Goal not found: " + goalId));
 
         if (!goal.getUser().getId().equals(userId)) {
-            throw new IllegalArgumentException("You do not have permission to view this goal");
+            throw new GoalAccessDeniedException("You do not have permission to view this goal");
         }
 
         return mapToResponse(goal);
     }
 
     // ── Progress (lazy — only computed when this is called, i.e. on GET) ──
-   public GoalProgressResponse calculateProgress(Long userId, Long goalId) {
-    Goal goal = goalRepository.findById(goalId)
-            .orElseThrow(() -> new IllegalArgumentException("Goal not found: " + goalId));
+    public GoalProgressResponse calculateProgress(Long userId, Long goalId) {
+        Goal goal = goalRepository.findById(goalId)
+                .orElseThrow(() -> new IllegalArgumentException("Goal not found: " + goalId));
 
-    if (!goal.getUser().getId().equals(userId)) {
-        throw new IllegalArgumentException("You do not have permission to view this goal");
-    }
-
-    GoalProgress progress = goalProgressRepository.findByGoalGoalId(goalId)
-            .orElseThrow(() -> new IllegalArgumentException("No progress record for goal: " + goalId));
-
-    GoalType type = parseGoalType(goal.getGoalType());
-    CarbonCategory category = AGGREGATE_ALL_CATEGORIES.contains(type) ? null : mapGoalTypeToCategory(type);
-
-    // ↓↓↓ NEW REPLACEMENT BLOCK STARTS HERE ↓↓↓
-    LocalDate periodEnd = LocalDate.now().isBefore(goal.getEndDate()) ? LocalDate.now() : goal.getEndDate();
-
-    List<CarbonEntry> currentEntries = (category != null)
-            ? carbonEntryRepository.findByUserIdAndCategoryAndActivityDateBetween(userId, category, goal.getStartDate(), periodEnd)
-            : carbonEntryRepository.findByUserIdAndActivityDateBetween(userId, goal.getStartDate(), periodEnd);
-
-    BigDecimal currentValue = currentEntries.stream()
-            .map(CarbonEntry::getCarbonEmission)
-            .filter(Objects::nonNull)
-            .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-    BigDecimal completionPercentage;
-    boolean completed;
-
-    if (currentEntries.isEmpty()) {
-        completionPercentage = BigDecimal.ZERO;
-        completed = false;
-    } else {
-        BigDecimal reduction = goal.getBaselineValue().subtract(currentValue);
-        if (reduction.compareTo(BigDecimal.ZERO) < 0) {
-            reduction = BigDecimal.ZERO;
+        if (!goal.getUser().getId().equals(userId)) {
+            throw new GoalAccessDeniedException("You do not have permission to view this goal");
         }
-        if (goal.getTargetValue().compareTo(BigDecimal.ZERO) == 0) {
+
+        GoalProgress progress = goalProgressRepository.findByGoalGoalId(goalId)
+                .orElseThrow(() -> new IllegalArgumentException("No progress record for goal: " + goalId));
+
+        GoalType type = parseGoalType(goal.getGoalType());
+        CarbonCategory category = AGGREGATE_ALL_CATEGORIES.contains(type) ? null : mapGoalTypeToCategory(type);
+
+        LocalDate periodEnd = LocalDate.now().isBefore(goal.getEndDate()) ? LocalDate.now() : goal.getEndDate();
+
+        List<CarbonEntry> currentEntries = (category != null)
+                ? carbonEntryRepository.findByUserIdAndCategoryAndActivityDateBetween(userId, category,
+                        goal.getStartDate(), periodEnd)
+                : carbonEntryRepository.findByUserIdAndActivityDateBetween(userId, goal.getStartDate(), periodEnd);
+
+        BigDecimal currentValue = currentEntries.stream()
+                .map(CarbonEntry::getCarbonEmission)
+                .filter(Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal completionPercentage;
+        boolean completed;
+
+        if (currentEntries.isEmpty()) {
             completionPercentage = BigDecimal.ZERO;
+            completed = false;
         } else {
-            completionPercentage = reduction.divide(goal.getTargetValue(), 4, RoundingMode.HALF_UP)
-                    .multiply(BigDecimal.valueOf(100));
-            if (completionPercentage.compareTo(BigDecimal.valueOf(100)) > 0) {
-                completionPercentage = BigDecimal.valueOf(100);
+            BigDecimal reduction = goal.getBaselineValue().subtract(currentValue);
+            if (reduction.compareTo(BigDecimal.ZERO) < 0) {
+                reduction = BigDecimal.ZERO;
             }
+            if (goal.getTargetValue().compareTo(BigDecimal.ZERO) == 0) {
+                completionPercentage = BigDecimal.ZERO;
+            } else {
+                completionPercentage = reduction.divide(goal.getTargetValue(), 4, RoundingMode.HALF_UP)
+                        .multiply(BigDecimal.valueOf(100));
+                if (completionPercentage.compareTo(BigDecimal.valueOf(100)) > 0) {
+                    completionPercentage = BigDecimal.valueOf(100);
+                }
+            }
+            completed = completionPercentage.compareTo(BigDecimal.valueOf(100)) >= 0;
         }
-        completed = completionPercentage.compareTo(BigDecimal.valueOf(100)) >= 0;
+
+        progress.setCurrentValue(currentValue);
+        progress.setCompletionPercentage(completionPercentage);
+        progress.setCompleted(completed);
+        goalProgressRepository.save(progress);
+
+        if (completed && !"COMPLETED".equals(goal.getStatus())) {
+            goal.setStatus("COMPLETED");
+            goalRepository.save(goal);
+        }
+
+        return buildProgressResponse(goal, progress);
     }
-
-    progress.setCurrentValue(currentValue);
-    progress.setCompletionPercentage(completionPercentage);
-    progress.setCompleted(completed);
-    goalProgressRepository.save(progress);
-
-    if (completed && !"COMPLETED".equals(goal.getStatus())) {
-        goal.setStatus("COMPLETED");
-        goalRepository.save(goal);
-    }
-
-    return buildProgressResponse(goal, progress);
-}
 
     // ── Emission helpers ──
     private BigDecimal sumEmissions(Long userId, CarbonCategory category, LocalDate from, LocalDate to) {

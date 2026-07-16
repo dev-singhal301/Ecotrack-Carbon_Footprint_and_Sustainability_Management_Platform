@@ -12,6 +12,7 @@ import com.ecotrack.ecotrack_backend.repository.CarbonEntryRepository;
 import com.ecotrack.ecotrack_backend.repository.GoalProgressRepository;
 import com.ecotrack.ecotrack_backend.repository.GoalRepository;
 import com.ecotrack.ecotrack_backend.repository.UserRepository;
+import com.ecotrack.ecotrack_backend.exception.GoalAccessDeniedException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -328,14 +329,14 @@ class GoalServiceTest {
     // --- calculateProgress: ownership / not-found ---
 
     @Test
-    void calculateProgress_differentUser_throwsIllegalArgumentException() {
+    void calculateProgress_differentUser_throwsGoalAccessDeniedException() {
         Goal goal = buildGoal(10L, testUser, "REDUCE_WATER_USAGE",
                 new BigDecimal("20"), new BigDecimal("6.30"),
                 LocalDate.of(2026, 7, 15), LocalDate.of(2026, 8, 15));
 
         when(goalRepository.findById(10L)).thenReturn(Optional.of(goal));
 
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(GoalAccessDeniedException.class,
                 () -> goalService.calculateProgress(2L, 10L)); // user 2 requesting user 1's goal
         verify(goalProgressRepository, never()).findByGoalGoalId(any());
     }
@@ -376,13 +377,13 @@ class GoalServiceTest {
     }
 
     @Test
-    void getGoalById_belongsToDifferentUser_throwsIllegalArgumentException() {
+    void getGoalById_belongsToDifferentUser_throwsGoalAccessDeniedException() {
         Goal goal = buildGoal(10L, testUser, "REDUCE_WATER_USAGE",
                 new BigDecimal("20"), new BigDecimal("6.30"),
                 LocalDate.of(2026, 7, 15), LocalDate.of(2026, 8, 15));
         when(goalRepository.findById(10L)).thenReturn(Optional.of(goal));
 
-        assertThrows(IllegalArgumentException.class, () -> goalService.getGoalById(2L, 10L));
+        assertThrows(GoalAccessDeniedException.class, () -> goalService.getGoalById(2L, 10L));
     }
 
     @Test
@@ -432,7 +433,7 @@ class GoalServiceTest {
     }
 
     @Test
-    void updateGoal_belongsToDifferentUser_throwsIllegalArgumentException() {
+    void updateGoal_belongsToDifferentUser_throwsGoalAccessDeniedException() {
         Goal goal = buildGoal(10L, testUser, "REDUCE_WATER_USAGE",
                 new BigDecimal("20"), new BigDecimal("6.30"),
                 LocalDate.of(2026, 7, 15), LocalDate.of(2026, 8, 15));
@@ -441,7 +442,7 @@ class GoalServiceTest {
 
         when(goalRepository.findById(10L)).thenReturn(Optional.of(goal));
 
-        assertThrows(IllegalArgumentException.class, () -> goalService.updateGoal(2L, 10L, request));
+        assertThrows(GoalAccessDeniedException.class, () -> goalService.updateGoal(2L, 10L, request));
         verify(goalRepository, never()).save(any());
     }
 

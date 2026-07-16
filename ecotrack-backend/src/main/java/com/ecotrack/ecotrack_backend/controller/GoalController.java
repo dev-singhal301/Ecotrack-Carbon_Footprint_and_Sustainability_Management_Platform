@@ -6,6 +6,7 @@ import com.ecotrack.ecotrack_backend.dto.GoalProgressResponse;
 import com.ecotrack.ecotrack_backend.entity.User;
 import com.ecotrack.ecotrack_backend.repository.UserRepository;
 import com.ecotrack.ecotrack_backend.service.GoalService;
+import com.ecotrack.ecotrack_backend.exception.GoalAccessDeniedException;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -83,6 +84,11 @@ public class GoalController {
                 .map(err -> err.getField() + ": " + err.getDefaultMessage())
                 .orElse("Validation failed");
         return ResponseEntity.badRequest().body(Map.of("message", message));
+    }
+
+    @ExceptionHandler(GoalAccessDeniedException.class)
+    public ResponseEntity<Map<String, String>> handleAccessDenied(GoalAccessDeniedException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", ex.getMessage()));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
