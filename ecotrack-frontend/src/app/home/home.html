@@ -1,73 +1,82 @@
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
+
+<header class="mobile-top-bar">
+  <div class="mobile-logo">
+    <h1>Ecotrack</h1>
+  </div>
+  <button class="menu-toggle-btn" (click)="toggleSidebar()" aria-label="Toggle navigation">
+    <i class="fa-solid fa-bars"></i>
+  </button>
+</header>
+
 <div class="home-container">
 
-    <!-- Navigation Section Sidebar -->
-    <aside class="sidebar">
+  <aside class="sidebar" [class.open]="isSidebarOpen">
 
-        <div class="logo">
-            <h1>Ecotrack</h1>
-        </div>
+    <div class="logo">
+      <h1>Ecotrack</h1>
+    </div>
 
-        <nav class="nav-menu">
+    <nav class="nav-menu">
 
-            <a routerLink="dashboard" routerLinkActive="active">
-                <i class=""></i>
-                <span>Dashboard</span>
-            </a>
+      <a routerLink="dashboard" routerLinkActive="active" (click)="closeSidebar()">
+        <i class="fa-solid fa-chart-line"></i>
+        <span>Dashboard</span>
+      </a>
 
-            <a routerLink="tracking" routerLinkActive="active">
-                <i class=""></i>
-                <span>Tracking</span>
-            </a>
+      <a routerLink="tracking" routerLinkActive="active" (click)="closeSidebar()">
+        <i class="fa-solid fa-route"></i>
+        <span>Tracking</span>
+      </a>
 
-            <a routerLink="goals" routerLinkActive="active">
-                <i class=""></i>
-                <span>Goals</span>
-            </a>
+      <a routerLink="goals" routerLinkActive="active" (click)="closeSidebar()">
+        <i class="fa-solid fa-bullseye"></i>
+        <span>Goals</span>
+      </a>
 
-            <a routerLink="challenges" routerLinkActive="active">
-                <i class=""></i>
-                <span>Challenges</span>
-            </a>
+      <a routerLink="challenges" routerLinkActive="active" (click)="closeSidebar()">
+        <i class="fa-solid fa-trophy"></i>
+        <span>Challenges</span>
+      </a>
 
-            <a routerLink="ai-tips" routerLinkActive="active">
-                <i class=""></i>
-                <span>AI Tips</span>
-            </a>
+      <a routerLink="ai-tips" routerLinkActive="active" (click)="closeSidebar()">
+        <i class="fa-solid fa-lightbulb"></i>
+        <span>AI Tips</span>
+      </a>
 
-            <a routerLink="analytics" routerLinkActive="active">
-                <i class=""></i>
-                <span>Analytics</span>
-            </a>
+      <a routerLink="analytics" routerLinkActive="active" (click)="closeSidebar()">
+        <i class="fa-solid fa-chart-pie"></i>
+        <span>Analytics</span>
+      </a>
 
-            <a routerLink="leaderboard" routerLinkActive="active">
-                <i class=""></i>
-                <span>Leaderboard</span>
-            </a>
+      <a routerLink="leaderboard" routerLinkActive="active" (click)="closeSidebar()">
+        <i class="fa-solid fa-ranking-star"></i>
+        <span>Leaderboard</span>
+      </a>
 
-            <a routerLink="profile" routerLinkActive="active">
-                <i class=""></i>
-                <span>Profile</span>
-            </a>
+      <a routerLink="profile" routerLinkActive="active" (click)="closeSidebar()">
+        <i class="fa-solid fa-user"></i>
+        <span>Profile</span>
+      </a>
 
-            <a routerLink="settings" routerLinkActive="active">
-                <i class=""></i>
-                <span>Settings</span>
-            </a>
+      <a routerLink="settings" routerLinkActive="active" (click)="closeSidebar()">
+        <i class="fa-solid fa-gear"></i>
+        <span>Settings</span>
+      </a>
 
-            <a routerLink="logout" routerLinkActive="active">
-                <i class=""></i>
-                <span>Logout</span>
-            </a>
+      <a href="#" (click)="onLogout($event)">
+        <i class="fa-solid fa-arrow-right-from-bracket"></i>
+        <span>Logout</span>
+      </a>
 
-        </nav>
+    </nav>
 
-    </aside>
+  </aside>
 
-    <!-- Dynamic Content -->
-    <main class="content">
+  <div class="sidebar-overlay" *ngIf="isSidebarOpen" (click)="closeSidebar()"></div>
 
-        <router-outlet></router-outlet>
-
-    </main>
+  <main class="content">
+    <router-outlet></router-outlet>
+  </main>
 
 </div>

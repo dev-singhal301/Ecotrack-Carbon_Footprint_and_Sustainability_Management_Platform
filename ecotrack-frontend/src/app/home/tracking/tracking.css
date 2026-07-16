@@ -1,69 +1,320 @@
-/* ---------- Container styling ---------- */
-.tracking-container {
-    max-width: 500px;
-    margin: 40px auto;
-    padding: 30px;
-    background: #ffffff;
-    border: 1px solid #e0e0e0;
-    border-radius: 12px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+/* Core Split-Screen Container */
+.tracking-split-container {
+  display: flex;
+  flex-direction: row; /* Side-by-side on desktop */
+  gap: 20px;
+  width: 100%;
+  height: 100%;
+  padding: 20px;
+  box-sizing: border-box;
+  overflow: hidden; /* Desktop handles internal scrolling */
 }
 
-.tracking-container h2 {
-    margin-bottom: 24px;
-    color: #2d6a4f; /* Matches your navigation menu hover color */
-    font-size: 1.6rem;
-    border-bottom: 2px solid #c8ddc7;
-    padding-bottom: 8px;
+/* LEFT COLUMN: Log Activity Form */
+.form-section {
+  flex: 0 0 38%;
+  min-width: 320px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
-/* ---------- Organized Form Layout ---------- */
+/* RIGHT COLUMN: History & Filters */
+.history-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-width: 0;
+}
+
+/* Card Styling */
+.tracking-card {
+  background: #ffffff;
+  border: 1px solid #e2e9e5;
+  border-radius: 12px;
+  padding: 20px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.section-title {
+  margin-top: 0;
+  margin-bottom: 16px;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1e352f;
+}
+
+/* ----------------------------------
+   Form Elements 
+---------------------------------- */
 .form-group {
-    display: flex;
-    flex-direction: column; /* Stacks label on top of input */
-    gap: 6px;
-    margin-bottom: 18px; /* Adds clear separation between rows */
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
 }
 
-.form-group label {
-    font-size: 0.95rem;
-    font-weight: 600;
-    color: #333333;
+.form-row {
+  display: flex;
+  gap: 12px;
 }
 
-.form-group select,
-.form-group input {
+.half-width {
+  flex: 1;
+}
+
+label {
+  font-weight: 600;
+  font-size: 0.85rem;
+  margin-bottom: 6px;
+  color: #3b5c52;
+}
+
+input, select {
+  padding: 10px 12px;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  background-color: #f8fafc;
+  color: #334155;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+input:focus, select:focus {
+  outline: none;
+  border-color: #52b788;
+  box-shadow: 0 0 0 3px rgba(82, 183, 136, 0.15);
+}
+
+.readonly-input {
+  background-color: #e2e8f0;
+  border-color: #cbd5e1;
+  color: #64748b;
+  cursor: not-allowed;
+  height: 41px;
+  box-sizing: border-box;
+}
+
+.btn-log-activity {
+  width: 100%;
+  padding: 12px;
+  background-color: #2d6a4f;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  margin-top: auto;
+}
+
+.btn-log-activity:hover {
+  background-color: #1b4332;
+}
+
+/* ----------------------------------
+   History, Filters & Search 
+---------------------------------- */
+.history-header {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-shrink: 0;
+}
+
+.filter-controls {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 120px;
+}
+
+.filter-group label {
+  font-weight: 600;
+  font-size: 0.75rem;
+  margin-bottom: 4px;
+  color: #64748b;
+}
+
+.filter-group select, 
+.filter-group input {
+  padding: 8px 10px;
+  font-size: 0.8rem;
+  border-radius: 6px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.button-group {
+  flex: 0 0 auto;
+  min-width: unset;
+}
+
+.hidden-label {
+  visibility: hidden;
+}
+
+.btn-clear {
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  color: #475569;
+  border-radius: 6px;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 600;
+  height: 34px;
+  box-sizing: border-box;
+  transition: background-color 0.2s;
+}
+
+.btn-clear:hover {
+  background: #e2e8f0;
+}
+
+/* ----------------------------------
+   Independent Table Scrolling 
+---------------------------------- */
+.table-scroll-container {
+  flex-grow: 1;
+  overflow-y: auto;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.history-table th {
+  background-color: #f8fafc;
+  color: #475569;
+  font-weight: 600;
+  padding: 12px;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1.5px solid #e2e8f0;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.history-table td {
+  padding: 12px;
+  font-size: 0.85rem;
+  border-bottom: 1px solid #f1f5f9;
+  color: #334155;
+  vertical-align: middle;
+}
+
+.history-table tr:hover {
+  background-color: #f8fafc;
+}
+
+/* Category Badges */
+.category-badge {
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.category-badge[data-category="TRANSPORTATION"] { background: #e0f2fe; color: #0369a1; }
+.category-badge[data-category="ELECTRICITY"] { background: #fef9c3; color: #a16207; }
+.category-badge[data-category="FOOD"] { background: #dcfce7; color: #15803d; }
+.category-badge[data-category="WASTE"] { background: #fee2e2; color: #b91c1c; }
+.category-badge[data-category="WATER"] { background: #ecfeff; color: #0891b2; }
+.category-badge[data-category="FUEL"] { background: #faf5ff; color: #7e22ce; }
+
+.emission-value {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.btn-delete {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 6px;
+  border-radius: 6px;
+  transition: background-color 0.2s;
+}
+
+.btn-delete:hover {
+  background-color: #fee2e2;
+}
+
+.empty-state {
+  text-align: center;
+  color: #94a3b8;
+  padding: 48px !important;
+  font-style: italic;
+}
+
+/* ----------------------------------
+   Responsive Design (Tablet & Mobile Mode <= 1024px)
+---------------------------------- */
+@media (max-width: 1024px) {
+  /* Make the main workspace layout scrollable as a single page */
+  .tracking-split-container {
+    flex-direction: column;
+    overflow-y: auto;
+    height: 100%; /* Spans full height inside home-container */
+    padding: 16px;
+  }
+
+  .form-section,
+  .history-section {
+    flex: 0 0 auto;
     width: 100%;
-    padding: 10px;
-    font-size: 1rem;
-    border: 1px solid #cccccc;
-    border-radius: 6px;
-    background-color: #fafafa;
-    transition: border-color 0.2s, background-color 0.2s;
+    height: auto;
+  }
+
+  /* Allow cards to size to their dynamic content */
+  .tracking-card {
+    height: auto;
+    overflow: visible;
+  }
+
+  .btn-log-activity {
+    margin-top: 16px;
+  }
+
+  /* Ensures that the table container shows exactly 5 rows (and headers) 
+    before engaging internal scrolling.
+    - Header: ~45px
+    - 5 Rows * ~49px = ~245px
+    - Total Height target: ~290px
+  */
+  .table-scroll-container {
+    height: 290px;
+    max-height: 290px;
+    overflow-y: auto;
+  }
 }
 
-.form-group select:focus,
-.form-group input:focus {
-    outline: none;
-    border-color: #2d6a4f;
-    background-color: #ffffff;
-}
-
-/* ---------- Button Styling ---------- */
-.btn-submit {
-    width: 100%;
-    padding: 12px;
-    font-size: 1rem;
-    font-weight: bold;
-    color: #ffffff;
-    background-color: #2d6a4f;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: background-color 0.2s;
-    margin-top: 10px;
-}
-
-.btn-submit:hover {
-    background-color: #1b4332;
+/* Small Smartphone Breakpoint */
+@media (max-width: 480px) {
+  .form-row {
+    flex-direction: column;
+    gap: 0;
+  }
 }

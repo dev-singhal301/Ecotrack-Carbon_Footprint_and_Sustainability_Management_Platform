@@ -42,6 +42,10 @@ export class Auth {
     return this.http.post<AuthResponse>(`${this.baseUrl}/login`, data).pipe(
       tap((response) => {
         this.token = response.token; // store in memory
+        if (response.token) {
+          // Sync with localStorage so it survives hard browser refreshes
+          localStorage.setItem('ecotrack_auth_token', response.token);
+        }
       }),
       catchError((error) => {
         const message = error.error?.message || 'Invalid email or password.';
@@ -50,23 +54,15 @@ export class Auth {
     );
   }
 
-  /**
-   * Sends a password reset request to the backend.
-   * Handles both JSON error objects and plain text backend responses.
-   */
   forgotPassword(email: string): Observable<any> {
     return this.http.post(`${this.baseUrl}/forgot-password`, { email }).pipe(
       catchError((error) => {
-        // Spring Boot sometimes returns plain text or a JSON object depending on your controller setup
         const message = error.error?.message || (typeof error.error === 'string' ? error.error : 'Failed to process password reset request. Please try again.');
         return throwError(() => new Error(message));
       })
     );
   }
 
-  /**
-   * Sends the recovery token and new password to the backend to complete the reset.
-   */
   resetPassword(token: string, newPassword: string): Observable<any> {
     return this.http.post(`${this.baseUrl}/reset-password`, { token, newPassword }).pipe(
       catchError((error) => {
@@ -77,10 +73,15 @@ export class Auth {
   }
 
   getToken(): string | null {
+    // If the component memory is wiped by a refresh, look up the persistent key fallback
+    if (!this.token) {
+      this.token = localStorage.getItem('ecotrack_auth_token');
+    }
     return this.token;
   }
 
   logout(): void {
     this.token = null;
+    localStorage.removeItem('ecotrack_auth_token'); // Clean out completely on logout
   }
 }

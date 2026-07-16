@@ -1,17 +1,17 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
-import { Auth } from './auth'; // Adjust import path if necessary to point to your auth.ts
+import { Auth } from './auth'; // Points perfectly to your auth.ts service file
 
 export const authGuard: CanActivateFn = (route, state) => {
   const authService = inject(Auth);
   const router = inject(Router);
 
-  // Read the token from the in-memory service property
+  // Checks the in-memory property, which falls back to localStorage automatically if refreshed
   if (authService.getToken()) {
     return true; 
   }
 
-  // No active token in memory, kick user back to auth screen
+  // No token found in memory or persistent storage, kick user back to login screen
   router.navigate(['/auth']);
   return false;
 };
