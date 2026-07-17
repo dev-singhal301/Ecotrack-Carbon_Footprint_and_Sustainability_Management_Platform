@@ -1,18 +1,16 @@
 <div class="tracking-split-container">
-  
+
   <section class="form-section">
     <div class="tracking-card">
       <h2 class="section-title">Log New Activity</h2>
-      
-      <form (submit)="onLogSubmit(); $event.preventDefault()">
+
+      <form [formGroup]="trackingForm" (submit)="onLogSubmit(); $event.preventDefault()">
         <div class="form-group">
           <label for="category">Activity Category</label>
-          <select 
-            id="category" 
-            [(ngModel)]="entry.category" 
-            name="category" 
-            (change)="onCategoryChange()" 
-            required>
+          <select
+            id="category"
+            formControlName="category"
+            (change)="onCategoryChange()">
             <option value="" disabled selected>Select category...</option>
             <option value="TRANSPORTATION">Transportation (km)</option>
             <option value="ELECTRICITY">Electricity (kWh)</option>
@@ -21,45 +19,50 @@
             <option value="WATER">Water (litres)</option>
             <option value="FUEL">Fuel (litres)</option>
           </select>
+          <span class="field-error" *ngIf="trackingForm.get('category')?.invalid && trackingForm.get('category')?.touched">
+            Please select a category
+          </span>
         </div>
 
         <div class="form-row">
           <div class="form-group half-width">
             <label for="amount">Amount</label>
-            <input 
-              type="number" 
-              id="amount" 
-              [(ngModel)]="entry.amount" 
-              name="amount" 
-              placeholder="e.g., 50" 
-              min="0.01" 
-              step="any"
-              required>
+            <input
+              type="number"
+              id="amount"
+              formControlName="amount"
+              placeholder="e.g., 50"
+              step="any">
+            <span class="field-error" *ngIf="trackingForm.get('amount')?.touched && trackingForm.get('amount')?.hasError('required')">
+              Amount is required
+            </span>
+            <span class="field-error" *ngIf="trackingForm.get('amount')?.touched && trackingForm.get('amount')?.hasError('min')">
+              Amount must be greater than 0
+            </span>
           </div>
 
           <div class="form-group half-width">
             <label for="unit">Unit</label>
-            <input 
-              type="text" 
-              id="unit" 
-              [(ngModel)]="entry.unit" 
-              name="unit" 
-              readonly 
+            <input
+              type="text"
+              id="unit"
+              formControlName="unit"
               class="readonly-input">
           </div>
         </div>
 
         <div class="form-group">
           <label for="activityDate">Activity Date</label>
-          <input 
-            type="date" 
-            id="activityDate" 
-            [(ngModel)]="entry.activityDate" 
-            name="activityDate" 
-            required>
+          <input
+            type="date"
+            id="activityDate"
+            formControlName="activityDate">
+          <span class="field-error" *ngIf="trackingForm.get('activityDate')?.invalid && trackingForm.get('activityDate')?.touched">
+            Activity date is required
+          </span>
         </div>
 
-        <button type="submit" class="btn-log-activity">
+        <button type="submit" class="btn-log-activity" [disabled]="trackingForm.invalid">
           Record Activity
         </button>
       </form>
@@ -70,7 +73,7 @@
     <div class="tracking-card">
       <div class="history-header">
         <h2 class="section-title">Recent Logs</h2>
-        
+
         <div class="filter-controls">
           <div class="filter-group">
             <label for="filterCategory">Category</label>
@@ -84,17 +87,17 @@
               <option value="FUEL">Fuel</option>
             </select>
           </div>
-          
+
           <div class="filter-group">
             <label for="filterFrom">From Date</label>
             <input type="date" id="filterFrom" [(ngModel)]="filters.from" (change)="loadHistory()" name="filterFrom">
           </div>
-          
+
           <div class="filter-group">
             <label for="filterTo">To Date</label>
             <input type="date" id="filterTo" [(ngModel)]="filters.to" (change)="loadHistory()" name="filterTo">
           </div>
-          
+
           <div class="filter-group button-group">
             <label class="hidden-label">&nbsp;</label>
             <button class="btn-clear" type="button" (click)="clearFilters()">Reset</button>
@@ -114,28 +117,41 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let item of historyLogs">
-              <td>{{ item.activityDate }}</td>
-              <td>
-                <span class="category-badge" [attr.data-category]="item.category">
-                  {{ item.category }}
-                </span>
-              </td>
-              <td>{{ item.amount }} {{ item.unit }}</td>
-              <td class="emission-value">{{ item.carbonEmission | number:'1.2-2' }} kg CO₂</td>
-              <td>
-                <button class="btn-delete" (click)="onDeleteEntry(item.entryId)" title="Delete entry">
-                  <i class="fa-regular fa-trash-can"></i>
-                </button>
-              </td>
-            </tr>
-            <tr *ngIf="historyLogs.length === 0">
-              <td colspan="5" class="empty-state">No recorded logs match your search filters.</td>
-            </tr>
+            <!-- Skeleton loader: 5 placeholder rows while a request is in flight -->
+            <ng-container *ngIf="isLoading">
+              <tr class="skeleton-row" *ngFor="let skeletonRow of [1, 2, 3, 4, 5]">
+                <td><div class="skeleton-block"></div></td>
+                <td><div class="skeleton-block skeleton-block-badge"></div></td>
+                <td><div class="skeleton-block"></div></td>
+                <td><div class="skeleton-block"></div></td>
+                <td><div class="skeleton-block skeleton-block-sm"></div></td>
+              </tr>
+            </ng-container>
+
+            <ng-container *ngIf="!isLoading">
+              <tr *ngFor="let item of historyLogs" [class.row-removing]="removingIds.has(item.entryId)">
+                <td>{{ item.activityDate }}</td>
+                <td>
+                  <span class="category-badge" [attr.data-category]="item.category">
+                    {{ item.category }}
+                  </span>
+                </td>
+                <td>{{ item.amount }} {{ item.unit }}</td>
+                <td class="emission-value">{{ item.carbonEmission | number:'1.2-2' }} kg CO₂</td>
+                <td>
+                  <button class="btn-delete" (click)="onDeleteEntry(item.entryId)" title="Delete entry">
+                    <i class="fa-regular fa-trash-can"></i>
+                  </button>
+                </td>
+              </tr>
+              <tr *ngIf="historyLogs.length === 0">
+                <td colspan="5" class="empty-state">No recorded logs match your search filters.</td>
+              </tr>
+            </ng-container>
           </tbody>
         </table>
       </div>
     </div>
   </section>
-  
+
 </div>

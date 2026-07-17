@@ -99,6 +99,37 @@ input:focus, select:focus {
   box-sizing: border-box;
 }
 
+/* Reactive Forms validation states — Angular auto-applies ng-invalid /
+   ng-touched / ng-dirty classes, so these hook directly into that. */
+.form-group input.ng-invalid.ng-touched,
+.form-group select.ng-invalid.ng-touched {
+  border-color: #dc2626;
+  background-color: #fef2f2;
+}
+
+.form-group input.ng-invalid.ng-touched:focus,
+.form-group select.ng-invalid.ng-touched:focus {
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15);
+}
+
+.form-group input.ng-valid.ng-dirty,
+.form-group select.ng-valid.ng-dirty {
+  border-color: #52b788;
+}
+
+.field-error {
+  display: block;
+  margin-top: 6px;
+  font-size: 0.78rem;
+  color: #dc2626;
+  animation: fieldErrorIn 0.15s ease-out;
+}
+
+@keyframes fieldErrorIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 .btn-log-activity {
   width: 100%;
   padding: 12px;
@@ -109,12 +140,18 @@ input:focus, select:focus {
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition: background-color 0.2s ease, opacity 0.2s ease;
   margin-top: auto;
 }
 
-.btn-log-activity:hover {
+.btn-log-activity:hover:not(:disabled) {
   background-color: #1b4332;
+}
+
+.btn-log-activity:disabled {
+  background-color: #94a3b8;
+  cursor: not-allowed;
+  opacity: 0.7;
 }
 
 /* ----------------------------------
@@ -143,28 +180,25 @@ input:focus, select:focus {
 }
 
 .filter-group label {
-  font-weight: 600;
   font-size: 0.75rem;
   margin-bottom: 4px;
-  color: #64748b;
 }
 
-.filter-group select, 
-.filter-group input {
+.hidden-label {
+  visibility: hidden;
+}
+
+.filter-controls select,
+.filter-controls input {
   padding: 8px 10px;
   font-size: 0.8rem;
   border-radius: 6px;
-  width: 100%;
+  height: 34px;
   box-sizing: border-box;
 }
 
 .button-group {
   flex: 0 0 auto;
-  min-width: unset;
-}
-
-.hidden-label {
-  visibility: hidden;
 }
 
 .btn-clear {
@@ -172,10 +206,10 @@ input:focus, select:focus {
   border: 1px solid #cbd5e1;
   color: #475569;
   border-radius: 6px;
-  padding: 8px 16px;
+  padding: 8px 12px;
   cursor: pointer;
   font-size: 0.8rem;
-  font-weight: 600;
+  font-weight: 500;
   height: 34px;
   box-sizing: border-box;
   transition: background-color 0.2s;
@@ -228,6 +262,34 @@ input:focus, select:focus {
   background-color: #f8fafc;
 }
 
+/* New-row entrance animation — every freshly rendered row glides/fades in.
+   Skeleton rows opt out (they have their own pulse animation instead). */
+.history-table tbody tr:not(.skeleton-row) {
+  animation: slideIn 0.3s ease-out forwards;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Fade-out-before-removal on delete. TrackingComponent adds this class via
+   removingIds, waits for the transition, then actually removes the row
+   from historyLogs — see onDeleteEntry()'s setTimeout(..., 280). */
+.history-table tbody tr.row-removing {
+  animation: none; /* don't fight the entrance animation mid-exit */
+  opacity: 0;
+  transform: translateX(12px);
+  transition: opacity 0.28s ease, transform 0.28s ease;
+  pointer-events: none;
+}
+
 /* Category Badges */
 .category-badge {
   padding: 4px 8px;
@@ -255,11 +317,12 @@ input:focus, select:focus {
   font-size: 1rem;
   padding: 6px;
   border-radius: 6px;
-  transition: background-color 0.2s;
+  transition: background-color 0.2s ease, transform 0.15s ease;
 }
 
 .btn-delete:hover {
   background-color: #fee2e2;
+  transform: scale(1.1);
 }
 
 .empty-state {
@@ -267,6 +330,36 @@ input:focus, select:focus {
   color: #94a3b8;
   padding: 48px !important;
   font-style: italic;
+}
+
+/* ----------------------------------
+   Skeleton Loader (data fetch in progress)
+---------------------------------- */
+.skeleton-row td {
+  padding: 12px;
+}
+
+.skeleton-block {
+  height: 14px;
+  border-radius: 4px;
+  background-color: #e2e8f0;
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+.skeleton-block-badge {
+  width: 70%;
+  border-radius: 6px;
+}
+
+.skeleton-block-sm {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+}
+
+@keyframes pulse {
+  0%, 100% { background-color: #e2e8f0; }
+  50% { background-color: #cbd5e1; }
 }
 
 /* ----------------------------------
