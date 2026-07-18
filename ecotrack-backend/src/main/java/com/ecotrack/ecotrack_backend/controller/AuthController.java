@@ -4,12 +4,15 @@ import com.ecotrack.ecotrack_backend.dto.AuthResponse;
 import com.ecotrack.ecotrack_backend.dto.LoginRequest;
 import com.ecotrack.ecotrack_backend.dto.RegisterRequest;
 import com.ecotrack.ecotrack_backend.dto.ForgotPasswordRequest;
+import com.ecotrack.ecotrack_backend.dto.GoogleLoginRequest;
 import com.ecotrack.ecotrack_backend.dto.ResetPasswordRequest;
+import com.ecotrack.ecotrack_backend.dto.SetPasswordRequest;
 import com.ecotrack.ecotrack_backend.service.AuthService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -42,6 +45,12 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
+    @PostMapping("/google")
+    public ResponseEntity<AuthResponse> googleLogin(@Valid @RequestBody GoogleLoginRequest request) {
+        AuthResponse response = authService.googleLogin(request.getIdToken());
+        return ResponseEntity.ok(response);
+    }
+
     @PostMapping("/forgot-password")
     public ResponseEntity<Map<String, String>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
         String token = authService.generateResetPasswordToken(request.getEmail());
@@ -64,6 +73,20 @@ public class AuthController {
     public ResponseEntity<Map<String, String>> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
         authService.resetPassword(request.getToken(), request.getNewPassword());
         return ResponseEntity.ok(messageBody("Password has been reset successfully. You can now log in."));
+    }
+
+    /*
+     * Protected route (not permitAll) — the caller must already have a
+     * valid JWT. We pull the email from the authenticated principal rather
+     * than trusting a value in the request body, so a user can only ever
+     * set a password on their OWN account.
+     */
+    @PostMapping("/set-password")
+    public ResponseEntity<Map<String, String>> setPassword(@Valid @RequestBody SetPasswordRequest request,
+                                                             Authentication authentication) {
+        String email = authentication.getName();
+        authService.setPassword(email, request.getNewPassword());
+        return ResponseEntity.ok(messageBody("Password set successfully. You can now also log in with your email and password."));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
@@ -92,6 +115,6 @@ public class AuthController {
     // Renamed from errorBody -> messageBody: it now also wraps success
     // messages (forgot-password, reset-password), not just errors.
     private Map<String, String> messageBody(String message) {
-        return Map.of("message", message);
+        return Map.of("message", message != null ? message : "An unexpected error occurred.");
     }
 }

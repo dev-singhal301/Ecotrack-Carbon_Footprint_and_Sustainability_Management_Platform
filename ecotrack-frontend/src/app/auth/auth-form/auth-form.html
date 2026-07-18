@@ -1,111 +1,109 @@
 <div class="auth-page">
     <div class="center-box">
-        
+
         <div class="visual-panel">
             <img src="login-2.png" class="text-overlay-img" alt="EcoTrack Analytics Portal Layout" />
         </div>
 
         <div class="form-panel">
             <div class="auth-card">
-                
+
                 @if (!isForgotPasswordMode()) {
-                    <div class="mode-toggle" role="tablist" aria-label="Choose Sign Up or Log In">
-                        <button
-                            type="button"
-                            role="tab"
-                            [class.active]="!isLoginMode()"
-                            [attr.aria-selected]="!isLoginMode()"
-                            (click)="switchMode(false)"
-                        >
-                            Sign Up
-                        </button>
-                        <button
-                            type="button"
-                            role="tab"
-                            [class.active]="isLoginMode()"
-                            [attr.aria-selected]="isLoginMode()"
-                            (click)="switchMode(true)"
-                        >
-                            Log In
-                        </button>
-                    </div>
+                <div class="mode-toggle" role="tablist" aria-label="Choose Sign Up or Log In">
+                    <button type="button" role="tab" [class.active]="!isLoginMode()"
+                        [attr.aria-selected]="!isLoginMode()" (click)="switchMode(false)">
+                        Sign Up
+                    </button>
+                    <button type="button" role="tab" [class.active]="isLoginMode()" [attr.aria-selected]="isLoginMode()"
+                        (click)="switchMode(true)">
+                        Log In
+                    </button>
+                </div>
                 }
 
                 <h2 class="form-header">{{ headerText() }}</h2>
 
                 <form [formGroup]="authForm" (ngSubmit)="onSubmit()">
-                    
+
                     @if (!isLoginMode() && !isForgotPasswordMode()) {
-                        <div class="form-group">
-                            <label for="name">Name</label>
-                            <input id="name" type="text" formControlName="name" autocomplete="name" />
-                            @if (authForm.get('name')?.invalid && authForm.get('name')?.touched) {
-                                <span class="field-error">Name must be at least 2 characters</span>
-                            }
-                        </div>
+                    <div class="form-group">
+                        <label for="name">Name</label>
+                        <input id="name" type="text" formControlName="name" autocomplete="name" />
+                        @if (authForm.get('name')?.invalid && authForm.get('name')?.touched) {
+                        <span class="field-error">Name must be at least 2 characters</span>
+                        }
+                    </div>
                     }
 
                     <div class="form-group">
                         <label for="email">Email Address</label>
-                        <input 
-                            id="email" 
-                            type="email" 
-                            formControlName="email" 
-                            autocomplete="email"
-                            [class.invalid-input]="authForm.get('email')?.invalid && authForm.get('email')?.touched"
-                        />
+                        <input id="email" type="email" formControlName="email" autocomplete="email"
+                            [class.invalid-input]="authForm.get('email')?.invalid && authForm.get('email')?.touched" />
                         @if (authForm.get('email')?.invalid && authForm.get('email')?.touched) {
-                            <span class="field-error">
-                                @if (authForm.get('email')?.hasError('required')) { Email is required. }
-                                @if (authForm.get('email')?.hasError('email') || authForm.get('email')?.hasError('pattern')) { 
-                                    Please enter a complete email address (e.g., user@domain.com). 
-                                }
-                            </span>
+                        <span class="field-error">
+                            @if (authForm.get('email')?.hasError('required')) { Email is required. }
+                            @if (authForm.get('email')?.hasError('email') || authForm.get('email')?.hasError('pattern'))
+                            {
+                            Please enter a complete email address (e.g., user@domain.com).
+                            }
+                        </span>
                         }
                     </div>
 
                     @if (!isForgotPasswordMode()) {
-                        <div class="form-group">
-                            <label for="password">Password</label>
-                            <input id="password" type="password" formControlName="password" autocomplete="current-password" />
-                            
-                            @if (isLoginMode()) {
-                                <div style="text-align: right; margin-top: 6px;">
-                                    <a (click)="toggleForgotPassword(true)" style="color: var(--eco-green, #60ba75); font-size: 0.85rem; cursor: pointer; font-weight: 500;">
-                                        Forgot password?
-                                    </a>
-                                </div>
-                            }
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input id="password" type="password" formControlName="password"
+                            autocomplete="current-password" />
 
-                            @if (authForm.get('password')?.hasError('required') && authForm.get('password')?.touched) {
-                                <span class="field-error">Password is required</span>
-                            }
-                            @if (authForm.get('password')?.hasError('whitespace') && authForm.get('password')?.touched) {
-                                <span class="field-error">Password cannot be just spaces</span>
-                            }
-                            @if (authForm.get('password')?.hasError('minlength') && authForm.get('password')?.touched) {
-                                <span class="field-error">Password must be at least 6 characters</span>
-                            }
+                        @if (isLoginMode()) {
+                        <div style="text-align: right; margin-top: 6px;">
+                            <a (click)="toggleForgotPassword(true)"
+                                style="color: var(--eco-green, #60ba75); font-size: 0.85rem; cursor: pointer; font-weight: 500;">
+                                Forgot password?
+                            </a>
                         </div>
+                        }
+
+                        @if (authForm.get('password')?.hasError('required') && authForm.get('password')?.touched) {
+                        <span class="field-error">Password is required</span>
+                        }
+                        @if (authForm.get('password')?.hasError('whitespace') && authForm.get('password')?.touched) {
+                        <span class="field-error">Password cannot be just spaces</span>
+                        }
+                        @if (authForm.get('password')?.hasError('minlength') && authForm.get('password')?.touched) {
+                        <span class="field-error">Password must be at least 6 characters</span>
+                        }
+                    </div>
                     }
 
                     @if (successMessage()) {
-                        <p class="success-banner">{{ successMessage() }}</p>
+                    <p class="success-banner">{{ successMessage() }}</p>
                     }
                     @if (errorMessage()) {
-                        <p class="error-banner">{{ errorMessage() }}</p>
+                    <p class="error-banner">{{ errorMessage() }}</p>
                     }
 
-                    <button type="submit" class="submit-btn" [disabled]="isSubmitting() || (isForgotPasswordMode() && authForm.get('email')?.invalid)">
+                    <button type="submit" class="submit-btn"
+                        [disabled]="isSubmitting() || (isForgotPasswordMode() && authForm.get('email')?.invalid)">
                         {{ submitLabel() }}
                     </button>
 
-                    @if (isForgotPasswordMode()) {
-                        <div style="text-align: center; margin-top: 15px;">
-                            <a (click)="toggleForgotPassword(false)" style="color: var(--eco-text-muted, #64748b); font-size: 0.85rem; cursor: pointer; text-decoration: underline;">
-                                Back to Log In
-                            </a>
+                    <div class="google-signin-container" [style.display]="isForgotPasswordMode() ? 'none' : 'block'">
+                        <div
+                            style="text-align: center; margin: 15px 0; color: var(--eco-text-muted, #64748b); font-size: 0.85rem;">
+                            — OR —
                         </div>
+                        <div #googleBtn style="display: flex; justify-content: center;"></div>
+                    </div>
+
+                    @if (isForgotPasswordMode()) {
+                    <div style="text-align: center; margin-top: 15px;">
+                        <a (click)="toggleForgotPassword(false)"
+                            style="color: var(--eco-text-muted, #64748b); font-size: 0.85rem; cursor: pointer; text-decoration: underline;">
+                            Back to Log In
+                        </a>
+                    </div>
                     }
                 </form>
             </div>

@@ -7,7 +7,9 @@ import com.ecotrack.ecotrack_backend.entity.Role;
 import com.ecotrack.ecotrack_backend.entity.User;
 import com.ecotrack.ecotrack_backend.repository.RoleRepository;
 import com.ecotrack.ecotrack_backend.repository.UserRepository;
+import com.ecotrack.ecotrack_backend.security.GoogleTokenVerifier;
 import com.ecotrack.ecotrack_backend.security.JwtUtil;
+import com.ecotrack.ecotrack_backend.security.GoogleTokenVerifier;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -29,17 +31,20 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtUtil jwtUtil;
+    private final GoogleTokenVerifier googleTokenVerifier;
 
     public AuthService(UserRepository userRepository,
-                        RoleRepository roleRepository,
-                        PasswordEncoder passwordEncoder,
-                        AuthenticationManager authenticationManager,
-                        JwtUtil jwtUtil) {
+            RoleRepository roleRepository,
+            PasswordEncoder passwordEncoder,
+            AuthenticationManager authenticationManager,
+            JwtUtil jwtUtil,
+            GoogleTokenVerifier googleTokenVerifier) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.passwordEncoder = passwordEncoder;
         this.authenticationManager = authenticationManager;
         this.jwtUtil = jwtUtil;
+        this.googleTokenVerifier = googleTokenVerifier;
     }
 
     public AuthResponse register(RegisterRequest request) {
@@ -64,7 +69,7 @@ public class AuthService {
         return new AuthResponse(null, user.getName(), user.getEmail());
     }
 
-    public AuthResponse login(LoginRequest request) {
+   public AuthResponse login(LoginRequest request) {
 
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
@@ -80,8 +85,49 @@ public class AuthService {
     }
 
     /*
+     * Google OAuth2 login. Verifies the id_token against Google directly,
+     * then either logs in an existing user or creates one on the fly
+     * (first-time Google sign-in doubles as registration).
+     *
+     * Linking rule: if a user already registered normally with this email
+     * (traditional password signup) and later uses "Sign in with Google"
+     * with the same email, we link the accounts rather than creating a
+     * duplicate — Google has already verified they own that email address.
+     */
+    public AuthResponse googleLogin(String idTokenString) {
+        var payload = googleTokenVerifier.verify(idTokenString);
+
+        String googleId = payload.getSubject();
+        String email = payload.getEmail();
+        String name = (String) payload.get("name");
+
+        User user = userRepository.findByOauthId(googleId)
+                .or(() -> userRepository.findByEmail(email))
+                .orElseGet(() -> {
+                    Role userRole = roleRepository.findByName("ROLE_USER")
+                            .orElseThrow(() -> new IllegalStateException(
+                                    "Default role ROLE_USER not found. Check that schema.sql seeded the roles table."));
+                    User newUser = new User();
+                    newUser.setEmail(email);
+                    newUser.setRole(userRole);
+                    newUser.setEnabled(true);
+                    return newUser;
+                });
+
+        user.setName(name != null ? name : user.getName());
+        user.setOauthProvider("GOOGLE");
+        user.setOauthId(googleId);
+
+        userRepository.save(user);
+
+        String token = jwtUtil.generateToken(user.getEmail());
+        return new AuthResponse(token, user.getName(), user.getEmail());
+    }
+
+    /*
      * Generates a temporary, secure token for password recovery.
-     * Finds the user by email, assigns a UUID string, sets a strict 15-minute expiration,
+     * Finds the user by email, assigns a UUID string, sets a strict 15-minute
+     * expiration,
      * and persists the update back to the database.
      */
     public String generateResetPasswordToken(String email) {
@@ -117,6 +163,26 @@ public class AuthService {
         user.setResetPasswordToken(null);
         user.setTokenExpiryDate(null);
 
+        userRepository.save(user);
+    }
+
+    /*
+     * Lets a Google-only user (password == null) set a local password for
+     * the first time, so they gain a second way to log in going forward.
+     * Deliberately separate from resetPassword — no token involved, since
+     * the caller is already authenticated via JWT (see AuthController).
+     * Refuses to overwrite an existing password; that's changePassword's
+     * job, a different, not-yet-built feature.
+     */
+    public void setPassword(String email, String newPassword) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalStateException("User not found: " + email));
+
+        if (user.getPassword() != null) {
+            throw new IllegalStateException("Password already set for this account. Use change-password instead.");
+        }
+
+        user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
     }
 }

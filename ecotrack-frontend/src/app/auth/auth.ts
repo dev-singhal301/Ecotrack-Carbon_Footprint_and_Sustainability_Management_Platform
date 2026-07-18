@@ -54,6 +54,21 @@ export class Auth {
     );
   }
 
+    googleLogin(idToken: string): Observable<AuthResponse> {
+    return this.http.post<AuthResponse>(`${this.baseUrl}/google`, { idToken }).pipe(
+      tap((response) => {
+        this.token = response.token;
+        if (response.token) {
+          localStorage.setItem('ecotrack_auth_token', response.token);
+        }
+      }),
+      catchError((error) => {
+        const message = error.error?.message || 'Google sign-in failed. Please try again.';
+        return throwError(() => new Error(message));
+      })
+    );
+  }
+
   forgotPassword(email: string): Observable<any> {
     return this.http.post(`${this.baseUrl}/forgot-password`, { email }).pipe(
       catchError((error) => {

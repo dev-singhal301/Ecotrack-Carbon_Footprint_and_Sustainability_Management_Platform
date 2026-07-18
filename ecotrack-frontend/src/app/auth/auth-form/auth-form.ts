@@ -1,8 +1,16 @@
-import { Component, computed, signal } from '@angular/core';
+import { Component, computed, signal, AfterViewInit, ElementRef, ViewChild } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { notOnlyWhitespace } from '../validators';
 import { Auth } from '../auth';
+
+// Google Identity Services loads a global `google` object from the script
+// tag in index.html — this tells TypeScript it exists, without needing an npm package.
+declare const google: any;
+
+// Replace with your actual Client ID from Google Cloud Console.
+// This is safe to expose publicly — it's not a secret, unlike a client *secret*.
+const GOOGLE_CLIENT_ID = '1060715159333-01t5hgjdc1ke4ltra4e4edn3562vnjot.apps.googleusercontent.com';
 
 /**
  * Single unified authentication component. Replaces the separate Login and
@@ -17,7 +25,8 @@ import { Auth } from '../auth';
   templateUrl: './auth-form.html',
   styleUrl: './auth-form.css',
 })
-export class AuthForm {
+export class AuthForm implements AfterViewInit {
+  @ViewChild('googleBtn') googleBtnRef!: ElementRef;
   isLoginMode = signal(true);
   isForgotPasswordMode = signal(false); // Third dynamic state state link
   isSubmitting = signal(false);
@@ -56,6 +65,40 @@ export class AuthForm {
       password: ['', [Validators.required, Validators.minLength(6), notOnlyWhitespace]],
     });
     this.updateValidators();
+  }
+
+  ngAfterViewInit(): void {
+    if (typeof google !== 'undefined' && google.accounts) {
+      google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: (response: any) => this.handleGoogleCredentialResponse(response),
+      });
+      google.accounts.id.renderButton(this.googleBtnRef.nativeElement, {
+        theme: 'outline',
+        size: 'large',
+        width: 300,
+      });
+    } else {
+      console.error('Google Identity Services script did not load. Check index.html and your network connection.');
+    }
+  }
+
+  handleGoogleCredentialResponse(response: any): void {
+    this.errorMessage.set('');
+    this.successMessage.set('');
+    this.isSubmitting.set(true);
+
+    this.auth.googleLogin(response.credential).subscribe({
+      next: () => {
+        this.isSubmitting.set(false);
+        this.router.navigate(['/home']);
+      },
+      error: (err) => {
+        this.isSubmitting.set(false);
+        const msg = err.error?.message || err.message || 'Google sign-in failed. Please try again.';
+        this.errorMessage.set(msg);
+      },
+    });
   }
 
   /**

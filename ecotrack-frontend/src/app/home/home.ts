@@ -26,7 +26,7 @@ export class Home {
   onLogout(event: Event): void {
     event.preventDefault();
     this.closeSidebar();
-    localStorage.removeItem('token'); 
-    this.router.navigate(['/auth']); 
+    localStorage.removeItem('token');
+    this.router.navigate(['/auth']);
   }
 }
