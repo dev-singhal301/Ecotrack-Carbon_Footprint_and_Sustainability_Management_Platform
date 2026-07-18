@@ -7,7 +7,7 @@ import { authGuard } from './auth/auth.guard'; // 👈 1. Import your brand new 
 // Import your newly generated dashboard sub-components
 import { Dashboard } from './home/dashboard/dashboard';
 import { TrackingComponent } from './home/tracking/tracking';
-import { Goals } from './home/goals/goals';
+import { GoalsComponent } from './home/goals/goals';
 import { Challenges } from './home/challenges/challenges';
 import { AiTips } from './home/ai-tips/ai-tips';
 import { Analytics } from './home/analytics/analytics';
@@ -32,7 +32,7 @@ export const routes: Routes = [
             // Nested Child views that render inside home.html's <router-outlet>
             { path: 'dashboard', component: Dashboard },
             { path: 'tracking', component: TrackingComponent },
-            { path: 'goals', component: Goals },
+            { path: 'goals', component: GoalsComponent },
             { path: 'challenges', component: Challenges },
             { path: 'ai-tips', component: AiTips },
             { path: 'analytics', component: Analytics },
