@@ -15,6 +15,7 @@ import com.ecotrack.ecotrack_backend.repository.CarbonEntryRepository;
 import com.ecotrack.ecotrack_backend.repository.UserRepository;
 import com.ecotrack.ecotrack_backend.exception.GoalAccessDeniedException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -37,9 +38,9 @@ public class GoalService {
     private static final int DEFAULT_BASELINE_DAYS = 30;
 
     public GoalService(GoalRepository goalRepository,
-            GoalProgressRepository goalProgressRepository,
-            UserRepository userRepository,
-            CarbonEntryRepository carbonEntryRepository) {
+                       GoalProgressRepository goalProgressRepository,
+                       UserRepository userRepository,
+                       CarbonEntryRepository carbonEntryRepository) {
         this.goalRepository = goalRepository;
         this.goalProgressRepository = goalProgressRepository;
         this.userRepository = userRepository;
@@ -47,9 +48,13 @@ public class GoalService {
     }
 
     // ── Create ──
+    @Transactional
     public GoalResponse createGoal(Long userId, GoalRequest request) {
         validateDateOrder(request);
+        validateNotPastStart(request.getStartDate());
         GoalType parsedType = parseGoalType(request.getGoalType());
+        
+        validateNoOverlap(userId, parsedType.name(), request.getStartDate(), request.getEndDate(), null);
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
@@ -76,8 +81,6 @@ public class GoalService {
 
         Goal saved = goalRepository.save(goal);
 
-        // create an initial zeroed progress row so /progress never 404s right after
-        // creation
         GoalProgress progress = new GoalProgress();
         progress.setGoal(saved);
         progress.setCurrentValue(BigDecimal.ZERO);
@@ -89,6 +92,7 @@ public class GoalService {
     }
 
     // ── Update ──
+    @Transactional
     public GoalResponse updateGoal(Long userId, Long goalId, GoalRequest request) {
         Goal goal = goalRepository.findById(goalId)
                 .orElseThrow(() -> new IllegalArgumentException("Goal not found: " + goalId));
@@ -99,6 +103,8 @@ public class GoalService {
 
         validateDateOrder(request);
         GoalType parsedType = parseGoalType(request.getGoalType());
+        
+        validateNoOverlap(userId, parsedType.name(), request.getStartDate(), request.getEndDate(), goalId);
 
         goal.setGoalName(request.getGoalName());
         goal.setGoalType(parsedType.name());
@@ -113,14 +119,37 @@ public class GoalService {
         return mapToResponse(saved);
     }
 
+    // ── Delete ──
+    @Transactional
+    public void deleteGoal(Long userId, Long goalId) {
+        Goal goal = goalRepository.findById(goalId)
+                .orElseThrow(() -> new IllegalArgumentException("Goal not found: " + goalId));
+
+        if (!goal.getUser().getId().equals(userId)) {
+            throw new GoalAccessDeniedException("You do not have permission to delete this goal");
+        }
+
+        goalProgressRepository.findByGoalGoalId(goalId).ifPresent(goalProgressRepository::delete);
+        goalRepository.delete(goal);
+    }
+
     // ── Read ──
     public List<GoalResponse> getGoalsForUser(Long userId) {
-        return goalRepository.findByUserId(userId).stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+        List<Goal> goals = goalRepository.findByUserId(userId);
+        goals.forEach(this::checkAndHandleExpiration);
+        return goals.stream().map(this::mapToResponse).collect(Collectors.toList());
     }
 
     public List<GoalResponse> getGoalsForUserByStatus(Long userId, String status) {
+        if ("ACTIVE".equalsIgnoreCase(status) || "EXPIRED".equalsIgnoreCase(status)) {
+            List<Goal> allUserGoals = goalRepository.findByUserId(userId);
+            allUserGoals.forEach(this::checkAndHandleExpiration);
+            return allUserGoals.stream()
+                    .filter(g -> g.getStatus().equalsIgnoreCase(status))
+                    .map(this::mapToResponse)
+                    .collect(Collectors.toList());
+        }
+        
         return goalRepository.findByUserIdAndStatus(userId, status).stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
@@ -134,10 +163,12 @@ public class GoalService {
             throw new GoalAccessDeniedException("You do not have permission to view this goal");
         }
 
+        checkAndHandleExpiration(goal);
         return mapToResponse(goal);
     }
 
-    // ── Progress (lazy — only computed when this is called, i.e. on GET) ──
+    // ── Progress Evaluation ──
+    @Transactional
     public GoalProgressResponse calculateProgress(Long userId, Long goalId) {
         Goal goal = goalRepository.findById(goalId)
                 .orElseThrow(() -> new IllegalArgumentException("Goal not found: " + goalId));
@@ -145,6 +176,8 @@ public class GoalService {
         if (!goal.getUser().getId().equals(userId)) {
             throw new GoalAccessDeniedException("You do not have permission to view this goal");
         }
+
+        checkAndHandleExpiration(goal);
 
         GoalProgress progress = goalProgressRepository.findByGoalGoalId(goalId)
                 .orElseThrow(() -> new IllegalArgumentException("No progress record for goal: " + goalId));
@@ -200,6 +233,28 @@ public class GoalService {
         return buildProgressResponse(goal, progress);
     }
 
+    // ── Expiration Engine Helper ──
+    private void checkAndHandleExpiration(Goal goal) {
+        if ("ACTIVE".equals(goal.getStatus()) && LocalDate.now().isAfter(goal.getEndDate())) {
+            goal.setStatus("EXPIRED");
+            goalRepository.save(goal);
+        }
+    }
+
+    // ── Overlap Checker Helper ──
+    private void validateNoOverlap(Long userId, String goalType, LocalDate start, LocalDate end, Long excludeGoalId) {
+        List<Goal> conflictingGoals = goalRepository.findByUserIdAndStatus(userId, "ACTIVE").stream()
+                .filter(g -> !g.getGoalId().equals(excludeGoalId))
+                .filter(g -> g.getGoalType().equalsIgnoreCase(goalType))
+                .filter(g -> !(end.isBefore(g.getStartDate()) || start.isAfter(g.getEndDate())))
+                .toList();
+
+        if (!conflictingGoals.isEmpty()) {
+            throw new IllegalArgumentException("You already have an active " + goalType + 
+                    " goal set up within this timeframe (" + conflictingGoals.get(0).getStartDate() + " to " + conflictingGoals.get(0).getEndDate() + ").");
+        }
+    }
+
     // ── Emission helpers ──
     private BigDecimal sumEmissions(Long userId, CarbonCategory category, LocalDate from, LocalDate to) {
         List<CarbonEntry> entries = (category != null)
@@ -228,6 +283,12 @@ public class GoalService {
     private void validateDateOrder(GoalRequest request) {
         if (!request.getEndDate().isAfter(request.getStartDate())) {
             throw new IllegalArgumentException("endDate must be after startDate");
+        }
+    }
+
+    private void validateNotPastStart(LocalDate startDate) {
+        if (startDate.isBefore(LocalDate.now())) {
+            throw new IllegalArgumentException("startDate cannot be configured in the past");
         }
     }
 

@@ -67,6 +67,15 @@ public class GoalController {
         return ResponseEntity.ok(goalService.updateGoal(userId, goalId, request));
     }
 
+    @DeleteMapping("/{goalId}")
+    public ResponseEntity<Map<String, String>> deleteGoal(
+            @PathVariable Long goalId,
+            @AuthenticationPrincipal UserDetails principal) {
+        Long userId = extractUserId(principal);
+        goalService.deleteGoal(userId, goalId);
+        return ResponseEntity.ok(Map.of("message", "Goal deleted successfully"));
+    }
+
     @GetMapping("/{goalId}/progress")
     public ResponseEntity<GoalProgressResponse> getProgress(
             @PathVariable Long goalId,
@@ -96,13 +105,9 @@ public class GoalController {
         return ResponseEntity.badRequest().body(Map.of("message", ex.getMessage()));
     }
 
-    // ── Helper: JwtAuthFilter's principal only carries email (see
-    // CustomUserDetailsService),
-    // so we look the user back up by email to get their actual database ID.
     private Long extractUserId(UserDetails principal) {
         User user = userRepository.findByEmail(principal.getUsername())
-                .orElseThrow(
-                        () -> new IllegalArgumentException("Authenticated user not found: " + principal.getUsername()));
+                .orElseThrow(() -> new IllegalArgumentException("Authenticated user not found: " + principal.getUsername()));
         return user.getId();
     }
 }
