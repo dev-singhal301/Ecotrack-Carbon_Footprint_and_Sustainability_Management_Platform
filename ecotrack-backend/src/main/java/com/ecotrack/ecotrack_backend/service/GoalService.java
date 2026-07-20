@@ -50,30 +50,45 @@ public class GoalService {
     // ── Create ──
     @Transactional
     public GoalResponse createGoal(Long userId, GoalRequest request) {
-        validateDateOrder(request);
-        validateNotPastStart(request.getStartDate());
+        // Automatically calculate start and end dates based on duration input
+        LocalDate startDate = LocalDate.now();
+        LocalDate endDate = startDate.plusDays(request.getDurationDays());
+
         GoalType parsedType = parseGoalType(request.getGoalType());
         
-        validateNoOverlap(userId, parsedType.name(), request.getStartDate(), request.getEndDate(), null);
+        validateNoOverlap(userId, parsedType.name(), startDate, endDate, null);
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
+
+        // Find the absolute last entry recorded by this user right now to establish a baseline token anchor
+        List<CarbonEntry> allEntries = carbonEntryRepository.findByUserId(userId);
+        Long maxEntryId = allEntries.stream()
+                .map(CarbonEntry::getEntryId)
+                .max(Long::compare)
+                .orElse(0L);
 
         Goal goal = new Goal();
         goal.setUser(user);
         goal.setGoalName(request.getGoalName());
         goal.setGoalType(parsedType.name());
         goal.setTargetValue(request.getTargetValue());
-        goal.setStartDate(request.getStartDate());
-        goal.setEndDate(request.getEndDate());
+        
+        // Save computed dates to database entities
+        goal.setStartDate(startDate);
+        goal.setEndDate(endDate);
+        
         goal.setRewardPoints(request.getRewardPoints() != null ? request.getRewardPoints() : 0);
         goal.setStatus("ACTIVE");
+        
+        // Setup isolation boundary: tracking ignores anything logged up to this entry ID
+        goal.setStartEntryId(maxEntryId);
 
         int baselineDays = request.getBaselinePeriodDays() != null
                 ? request.getBaselinePeriodDays()
                 : DEFAULT_BASELINE_DAYS;
-        LocalDate baselineStart = request.getStartDate().minusDays(baselineDays);
-        LocalDate baselineEnd = request.getStartDate().minusDays(1);
+        LocalDate baselineStart = startDate.minusDays(baselineDays);
+        LocalDate baselineEnd = startDate.minusDays(1);
         BigDecimal baselineValue = sumEmissions(userId,
                 AGGREGATE_ALL_CATEGORIES.contains(parsedType) ? null : mapGoalTypeToCategory(parsedType),
                 baselineStart, baselineEnd);
@@ -101,16 +116,27 @@ public class GoalService {
             throw new GoalAccessDeniedException("You do not have permission to update this goal");
         }
 
-        validateDateOrder(request);
+        // recalculate based on updated duration input relative to initial or current execution
+        LocalDate startDate = LocalDate.now();
+        LocalDate endDate = startDate.plusDays(request.getDurationDays());
+        
         GoalType parsedType = parseGoalType(request.getGoalType());
         
-        validateNoOverlap(userId, parsedType.name(), request.getStartDate(), request.getEndDate(), goalId);
+        validateNoOverlap(userId, parsedType.name(), startDate, endDate, goalId);
+
+        // Re-anchor the baseline marker if the goal configuration updates
+        List<CarbonEntry> allEntries = carbonEntryRepository.findByUserId(userId);
+        Long maxEntryId = allEntries.stream()
+                .map(CarbonEntry::getEntryId)
+                .max(Long::compare)
+                .orElse(0L);
 
         goal.setGoalName(request.getGoalName());
         goal.setGoalType(parsedType.name());
         goal.setTargetValue(request.getTargetValue());
-        goal.setStartDate(request.getStartDate());
-        goal.setEndDate(request.getEndDate());
+        goal.setStartDate(startDate);
+        goal.setEndDate(endDate);
+        goal.setStartEntryId(maxEntryId);
         if (request.getRewardPoints() != null) {
             goal.setRewardPoints(request.getRewardPoints());
         }
@@ -187,48 +213,55 @@ public class GoalService {
 
         LocalDate periodEnd = LocalDate.now().isBefore(goal.getEndDate()) ? LocalDate.now() : goal.getEndDate();
 
-        List<CarbonEntry> currentEntries = (category != null)
+        // 1. Fetch raw timeframe entries (Keeps global tracking dashboard metrics safe)
+        List<CarbonEntry> timeFrameEntries = (category != null)
                 ? carbonEntryRepository.findByUserIdAndCategoryAndActivityDateBetween(userId, category,
                         goal.getStartDate(), periodEnd)
                 : carbonEntryRepository.findByUserIdAndActivityDateBetween(userId, goal.getStartDate(), periodEnd);
 
-        BigDecimal currentValue = currentEntries.stream()
+        Long startingAnchorId = goal.getStartEntryId() != null ? goal.getStartEntryId() : 0L;
+
+        // 2. Isolate values: Only sum up metrics that were created AFTER the goal initialization token
+        BigDecimal currentValue = timeFrameEntries.stream()
+                .filter(entry -> entry.getEntryId() > startingAnchorId)
                 .map(CarbonEntry::getCarbonEmission)
                 .filter(Objects::nonNull)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        BigDecimal completionPercentage;
-        boolean completed;
+        BigDecimal completionPercentage = BigDecimal.ZERO;
+        boolean completed = false;
 
-        if (currentEntries.isEmpty()) {
-            completionPercentage = BigDecimal.ZERO;
-            completed = false;
-        } else {
-            BigDecimal reduction = goal.getBaselineValue().subtract(currentValue);
-            if (reduction.compareTo(BigDecimal.ZERO) < 0) {
-                reduction = BigDecimal.ZERO;
+        // Percentage tracking reflects how much of the target allowance has been consumed
+        if (goal.getTargetValue().compareTo(BigDecimal.ZERO) > 0) {
+            completionPercentage = currentValue.divide(goal.getTargetValue(), 4, RoundingMode.HALF_UP)
+                    .multiply(BigDecimal.valueOf(100));
+            if (completionPercentage.compareTo(BigDecimal.valueOf(100)) > 0) {
+                completionPercentage = BigDecimal.valueOf(100);
             }
-            if (goal.getTargetValue().compareTo(BigDecimal.ZERO) == 0) {
-                completionPercentage = BigDecimal.ZERO;
-            } else {
-                completionPercentage = reduction.divide(goal.getTargetValue(), 4, RoundingMode.HALF_UP)
-                        .multiply(BigDecimal.valueOf(100));
-                if (completionPercentage.compareTo(BigDecimal.valueOf(100)) > 0) {
-                    completionPercentage = BigDecimal.valueOf(100);
-                }
-            }
-            completed = completionPercentage.compareTo(BigDecimal.valueOf(100)) >= 0;
         }
 
         progress.setCurrentValue(currentValue);
         progress.setCompletionPercentage(completionPercentage);
+        
+        // ── AUTOMATED TRIGGER EXECUTION: Handle Ceiling Limit Evaluation ──
+        if ("ACTIVE".equals(goal.getStatus())) {
+            // Breached if the tracking consumption goes above the absolute budget allowance cap
+            if (currentValue.compareTo(goal.getTargetValue()) > 0) {
+                goal.setStatus("EXPIRED");
+                completed = false;
+            } 
+            // Successfully completed if deadline passes cleanly while staying inside limits
+            else if (LocalDate.now().isAfter(goal.getEndDate())) {
+                goal.setStatus("COMPLETED");
+                completed = true;
+            }
+        } else if ("COMPLETED".equals(goal.getStatus())) {
+            completed = true;
+        }
+
         progress.setCompleted(completed);
         goalProgressRepository.save(progress);
-
-        if (completed && !"COMPLETED".equals(goal.getStatus())) {
-            goal.setStatus("COMPLETED");
-            goalRepository.save(goal);
-        }
+        goalRepository.save(goal);
 
         return buildProgressResponse(goal, progress);
     }
@@ -246,6 +279,13 @@ public class GoalService {
         List<Goal> conflictingGoals = goalRepository.findByUserIdAndStatus(userId, "ACTIVE").stream()
                 .filter(g -> !g.getGoalId().equals(excludeGoalId))
                 .filter(g -> g.getGoalType().equalsIgnoreCase(goalType))
+                .peek(g -> {
+                    // Force a progress check calculation to catch any stealth breaches before running structural constraint checks
+                    try {
+                        this.calculateProgress(userId, g.getGoalId());
+                    } catch (Exception ignored) {}
+                })
+                .filter(g -> g.getStatus().equalsIgnoreCase("ACTIVE")) // Verify it is still active post-evaluation
                 .filter(g -> !(end.isBefore(g.getStartDate()) || start.isAfter(g.getEndDate())))
                 .toList();
 
@@ -277,19 +317,6 @@ public class GoalService {
             case REDUCE_WASTE_GENERATION -> CarbonCategory.WASTE;
             case REDUCE_CARBON_EMISSIONS -> null;
         };
-    }
-
-    // ── Validation helpers ──
-    private void validateDateOrder(GoalRequest request) {
-        if (!request.getEndDate().isAfter(request.getStartDate())) {
-            throw new IllegalArgumentException("endDate must be after startDate");
-        }
-    }
-
-    private void validateNotPastStart(LocalDate startDate) {
-        if (startDate.isBefore(LocalDate.now())) {
-            throw new IllegalArgumentException("startDate cannot be configured in the past");
-        }
     }
 
     private GoalType parseGoalType(String rawType) {

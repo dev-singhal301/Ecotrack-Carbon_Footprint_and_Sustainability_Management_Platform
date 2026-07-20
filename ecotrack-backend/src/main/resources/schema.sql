@@ -77,6 +77,7 @@ CREATE TABLE IF NOT EXISTS goals (
     start_date DATE NOT NULL,
     end_date DATE NOT NULL,
     status VARCHAR(30) DEFAULT 'ACTIVE',
+    start_entry_id BIGINT DEFAULT 0, -- NEW: Anchor baseline token tracking field
     CONSTRAINT fk_goal_user FOREIGN KEY (user_id) REFERENCES users(id)
 );
 CREATE INDEX IF NOT EXISTS idx_goals_user_id ON goals(user_id);

@@ -41,6 +41,10 @@ public class Goal {
     @Column(name = "status", length = 30)
     private String status = "ACTIVE";
 
+    // Sequence boundary anchor to allow goal calculations to start fresh from 0
+    @Column(name = "start_entry_id")
+    private Long startEntryId = 0L;
+
     public Goal() {}
 
     public Long getGoalId() { return goalId; }
@@ -72,4 +76,7 @@ public class Goal {
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+
+    public Long getStartEntryId() { return startEntryId; }
+    public void setStartEntryId(Long startEntryId) { this.startEntryId = startEntryId; }
 }

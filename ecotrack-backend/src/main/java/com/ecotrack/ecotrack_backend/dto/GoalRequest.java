@@ -6,7 +6,6 @@ import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 
 public class GoalRequest {
 
@@ -20,11 +19,10 @@ public class GoalRequest {
     @Positive
     private BigDecimal targetValue;
 
+    // ── Swapped fields ──
     @NotNull
-    private LocalDate startDate;
-
-    @NotNull
-    private LocalDate endDate;
+    @Positive
+    private Integer durationDays; // Replacing explicit start/end dates
 
     @PositiveOrZero
     private Integer rewardPoints; 
@@ -42,11 +40,9 @@ public class GoalRequest {
     public BigDecimal getTargetValue() { return targetValue; }
     public void setTargetValue(BigDecimal targetValue) { this.targetValue = targetValue; }
 
-    public LocalDate getStartDate() { return startDate; }
-    public void setStartDate(LocalDate startDate) { this.startDate = startDate; }
-
-    public LocalDate getEndDate() { return endDate; }
-    public void setEndDate(LocalDate endDate) { this.endDate = endDate; }
+    // ── Getter & Setter for durationDays ──
+    public Integer getDurationDays() { return durationDays; }
+    public void setDurationDays(Integer durationDays) { this.durationDays = durationDays; }
 
     public Integer getRewardPoints() { return rewardPoints; }
     public void setRewardPoints(Integer rewardPoints) { this.rewardPoints = rewardPoints;}

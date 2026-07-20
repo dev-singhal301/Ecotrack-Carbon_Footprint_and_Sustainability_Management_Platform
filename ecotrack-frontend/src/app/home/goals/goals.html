@@ -146,7 +146,10 @@
 
               <div class="history-row-stats">
                 <span class="stat-chip stat-success">Goal Achieved</span>
-                <span class="stat-chip" *ngIf="hasProgressData(goal)">Footprint Saved: {{ getFootprintSaved(goal) | number:'1.1-1' }}</span>
+                <!-- Added safe check to verify dynamic savings value visibility -->
+                <span class="stat-chip" *ngIf="hasProgressData(goal) && (getFootprintSaved(goal) ?? 0) > 0">
+                  Footprint Saved: {{ getFootprintSaved(goal) | number:'1.1-1' }}
+                </span>
                 <span class="stat-chip" *ngIf="hasProgressData(goal)">XP Claimed: {{ getProjectedXp(goal) }} XP</span>
               </div>
 
@@ -170,7 +173,7 @@
 
               <div class="history-row-stats">
                 <span class="stat-chip stat-failure">Ceiling Breached — Task Failed</span>
-                <span class="stat-chip" *ngIf="hasProgressData(goal)">Current: {{ goal.progress?.currentValue | number:'1.1-1' }} / {{ goal.targetValue | number:'1.1-1' }}</span>
+                <span class="stat-chip" *ngIf="hasProgressData(goal)">Target Ceiling: {{ goal.targetValue | number:'1.1-1' }}</span>
                 <span class="stat-chip">XP Earned: 0 XP</span>
               </div>
 

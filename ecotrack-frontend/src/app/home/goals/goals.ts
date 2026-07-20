@@ -20,7 +20,7 @@ interface GoalWithProgress extends GoalResponse {
 })
 export class Goals implements OnInit {
 
-  readonly arcLength = Math.PI * 80; // Arc radius matching path layout dimensions (R=80)
+  readonly arcLength = Math.PI * 80; 
 
   readonly trackLabels: Record<string, string> = {
     REDUCE_CARBON_EMISSIONS: 'Overall Carbon Emissions (kg CO\u2082)',
@@ -91,32 +91,20 @@ export class Goals implements OnInit {
     this.dataError = null;
     this.cdr.detectChanges(); 
 
-    // Fetching data broadly to guarantee client-side calculations sort historical states perfectly
     this.goalService.getGoals(status).subscribe({
       next: (goals) => {
         if (status !== this.activeTab) {
           return;
         }
 
-        if (status === 'EXPIRED' || status === 'COMPLETED') {
-          // Cross-load active track states to catch items whose deadlines passed but are structurally listed as active in the DB
-          this.goalService.getGoals('ACTIVE').subscribe({
-            next: (activeGoals) => {
-              const combined = [...goals, ...activeGoals];
-              const unique = combined.filter((v, i, a) => a.findIndex(t => t.goalId === v.goalId) === i);
-              this.loadProgressForGoals(unique, status);
-            },
-            error: () => this.loadProgressForGoals(goals, status)
-          });
-          return;
-        }
-
-        if (status === 'ACTIVE') {
-          this.activeGoalTypesReady = false; 
-        }
-        
-        this.loadProgressForGoals(goals, status);
-        this.cdr.detectChanges();
+        this.goalService.getGoals('ACTIVE').subscribe({
+          next: (activeGoals) => {
+            const combined = [...goals, ...activeGoals];
+            const unique = combined.filter((v, i, a) => a.findIndex(t => t.goalId === v.goalId) === i);
+            this.loadProgressForGoals(unique, status);
+          },
+          error: () => this.loadProgressForGoals(goals, status)
+        });
       },
       error: (err) => {
         if (status !== this.activeTab) {
@@ -149,20 +137,34 @@ export class Goals implements OnInit {
           return;
         }
         
-        this.displayedGoals = goals.map((g, i) => ({ 
-          ...g, 
-          progress: progresses[i],
-          daysLeft: this.calculateDaysLeft(g.endDate)
-        }));
+        this.displayedGoals = goals.map((g, i) => {
+          const prog = progresses[i];
+          const daysLeftComputed = this.calculateDaysLeft(g.endDate);
+          
+          const tempGoal: GoalWithProgress = {
+            ...g,
+            progress: prog,
+            daysLeft: daysLeftComputed
+          };
 
-        if (status === 'ACTIVE') {
-          this.activeGoalTypes = new Set(
-            this.displayedGoals
-              .filter(g => this.isTaskActive(g))
-              .map(g => g.goalType)
-          );
-          this.activeGoalTypesReady = true;
-        }
+          if (prog && (g.status === 'EXPIRED' || g.status === 'COMPLETED' || prog.currentValue > g.targetValue)) {
+            if (prog.currentValue > g.targetValue) {
+              tempGoal.progress = {
+                ...prog,
+                currentValue: Math.max(prog.currentValue, g.targetValue + 0.1) 
+              };
+            }
+          }
+
+          return tempGoal;
+        });
+
+        this.activeGoalTypes = new Set(
+          this.displayedGoals
+            .filter(g => g.status === 'ACTIVE' && (g.daysLeft ?? 0) > 0 && !(g.progress && g.progress.currentValue > g.targetValue))
+            .map(g => g.goalType)
+        );
+        this.activeGoalTypesReady = true;
 
         this.isLoading = false;
         this.cdr.detectChanges(); 
@@ -187,33 +189,23 @@ export class Goals implements OnInit {
   hasProgressData(goal: GoalWithProgress): boolean {
     return !!goal.progress;
   }
-
-  /* ----------------------------------
-     CORE STATE LAWS (Emissions Verification Fix)
-  ---------------------------------- */
   
-  // Rule 1: It is failed IMMEDIATELY if the current value breaches the budget cap limit
   isTaskFailed(goal: GoalWithProgress): boolean {
     if (!goal.progress) return false;
-    return goal.progress.currentValue > goal.targetValue;
+    return goal.progress.currentValue > goal.targetValue || goal.status === 'EXPIRED';
   }
 
-  // Rule 2: It is accomplished if the deadline is met/passed AND emissions are safely <= target limit
   isTaskAccomplished(goal: GoalWithProgress): boolean {
     if (!goal.progress) return false;
     const isTimeUp = (goal.daysLeft ?? 0) === 0 || goal.status === 'COMPLETED';
     return isTimeUp && goal.progress.currentValue <= goal.targetValue;
   }
 
-  // Rule 3: It is genuinely active only if time remains AND it has not exceeded the ceiling limit
   isTaskActive(goal: GoalWithProgress): boolean {
     const hasTime = (goal.daysLeft ?? 0) > 0 && goal.status === 'ACTIVE';
     return hasTime && !this.isTaskFailed(goal);
   }
 
-  /* ----------------------------------
-     TAB COUNT COMPUTATIONS
-  ---------------------------------- */
   getActiveGoalsCount(): number {
     return this.displayedGoals.filter(g => this.isTaskActive(g)).length;
   }
@@ -258,7 +250,7 @@ export class Goals implements OnInit {
       return;
     }
 
-    const { goalType, targetValue, endDate, baselinePeriodDays } = this.goalForm.getRawValue();
+    const { goalType, targetValue, baselinePeriodDays } = this.goalForm.getRawValue();
 
     if (this.isTrackLocked(goalType!)) {
       this.formError = 'An active budget tracking meter already exists for this category.';
@@ -269,8 +261,7 @@ export class Goals implements OnInit {
       goalName: this.trackLabels[goalType!],
       goalType: goalType!,
       targetValue: Number(targetValue),
-      startDate: this.todayStr(),
-      endDate: endDate!,
+      durationDays: this.calculatedDurationDays,
       rewardPoints: this.projectedMaxXp,
       baselinePeriodDays: Number(baselinePeriodDays)
     };
@@ -353,7 +344,6 @@ export class Goals implements OnInit {
     if (!goal.progress) return 'var(--text-secondary)';
     if (this.isTaskFailed(goal)) return 'var(--critical)';
     
-    // Scale tracking fill percentages relative to the strict 75% target line
     const currentVal = goal.progress.currentValue;
     const targetVal = goal.targetValue;
     
@@ -386,7 +376,10 @@ export class Goals implements OnInit {
     const targetVal = goal.targetValue;
     const maxXp = goal.rewardPoints;
 
-    // Bonus for maintaining significantly low consumption footprints
+    if (targetVal <= 0) {
+      return currentVal === 0 ? maxXp : 0;
+    }
+
     if (currentVal < targetVal * 0.6) return Math.round(maxXp * 1.15);
     if (currentVal <= targetVal * 0.85) return maxXp;
     return Math.round(maxXp * 0.5);
@@ -394,13 +387,16 @@ export class Goals implements OnInit {
 
   getFootprintSaved(goal: GoalWithProgress): number | null {
     if (!goal.progress) return null;
+    if (goal.progress.baselineValue <= 0) return 0;
     return goal.progress.baselineValue - goal.progress.currentValue;
   }
 
   private calculateDaysLeft(endDateStr: string): number {
     if (!endDateStr) return 0;
+    
+    const normalizedDate = endDateStr.includes('T') ? endDateStr.split('T')[0] : endDateStr;
     const today = new Date(this.todayStr() + 'T00:00:00');
-    const end = new Date(endDateStr + 'T00:00:00');
+    const end = new Date(normalizedDate + 'T00:00:00');
     const timeDiff = end.getTime() - today.getTime();
     const days = Math.ceil(timeDiff / (1000 * 3600 * 24));
     return days < 0 ? 0 : days;
