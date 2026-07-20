@@ -1,5 +1,5 @@
 /* ----------------------------------
-   Corporate Theme Color Tokens (non-negotiable per spec)
+   Corporate Theme Color Tokens
 ---------------------------------- */
 .goals-split-container {
   --bg: #f8f9fa;
@@ -34,7 +34,7 @@
 }
 
 /* ----------------------------------
-   LEFT: Wide config builder (balanced space)
+   LEFT: Wide config builder
 ---------------------------------- */
 .form-panel {
   flex: 0 0 380px;
@@ -165,7 +165,7 @@ option:disabled {
 }
 
 /* ----------------------------------
-   RIGHT: tabbed display panel
+   RIGHT: Tabbed Display Panel
 ---------------------------------- */
 .display-panel {
   flex: 1;
@@ -231,35 +231,33 @@ option:disabled {
 }
 
 /* ----------------------------------
-   ACTIVE tab: Fitted 3x2 Laptop Grid (No Scrolling)
+   ACTIVE Grid Space
 ---------------------------------- */
 .goals-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  grid-template-rows: repeat(3, 1fr);
+  grid-template-rows: auto; 
   gap: 16px;
-  height: calc(100vh - 120px);
+  height: auto;
+  min-height: min-content;
 }
 
 .meter-card {
   position: relative;
-  padding: 16px 20px;
+  padding: 20px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
+  gap: 12px;
   text-align: center;
-  min-height: 0;
+  height: fit-content;
+  box-sizing: border-box;
 }
 
 .meter-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05);
-}
-
-.meter-card.failed-card {
-  border-color: var(--critical);
-  background: #fdecea;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
 }
 
 .meter-card.no-data-card {
@@ -272,6 +270,8 @@ option:disabled {
   margin: 0 0 2px;
   font-size: 1rem;
   font-weight: 700;
+  line-height: 1.4;
+  padding-top: 4px;
   color: var(--text-primary);
   width: 100%;
   padding-right: 24px;
@@ -284,17 +284,17 @@ option:disabled {
 .meter-status {
   font-size: 0.74rem;
   font-weight: 700;
-  margin-bottom: 6px;
+  margin-bottom: 2px;
   text-transform: uppercase;
   letter-spacing: 0.4px;
 }
 
-/* Minimalist Center Overlay Layout Container */
+/* Center Overlay Layout Container */
 .gauge-svg-container {
   position: relative;
   width: 100%;
   max-width: 170px;
-  margin: 0 auto;
+  margin: 8px auto;
 }
 
 .gauge-svg {
@@ -309,13 +309,19 @@ option:disabled {
   stroke: #eef2f4;
   stroke-width: 14;
   stroke-linecap: round;
+  transition: stroke-width 0.3s ease;
 }
 
 .gauge-fill {
   fill: none;
   stroke-width: 14;
   stroke-linecap: round;
-  transition: stroke-dashoffset 0.4s cubic-bezier(0.4, 0, 0.2, 1), stroke 0.3s ease;
+  transition: stroke-dashoffset 0.4s cubic-bezier(0.4, 0, 0.2, 1), stroke 0.3s ease, stroke-width 0.3s ease;
+}
+
+.meter-card:hover .gauge-fill,
+.meter-card:hover .gauge-track {
+  stroke-width: 16;
 }
 
 .gauge-target-tick {
@@ -324,12 +330,18 @@ option:disabled {
   stroke-linecap: round;
 }
 
-/* Absolute Positioning for Center Readouts */
+.gauge-label-text {
+  font-size: 11px;
+  font-weight: 600;
+  fill: var(--text-secondary);
+  user-select: none;
+}
+
 .gauge-center-readout {
   position: absolute;
   left: 0;
   right: 0;
-  bottom: 12px;
+  bottom: 22px; 
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -341,14 +353,18 @@ option:disabled {
   font-weight: 700;
   color: var(--text-primary);
   font-feature-settings: "tnum";
+  transition: transform 0.2s ease, color 0.2s ease;
 }
 
-/* Footer Metadata Section Stylings */
+.meter-card:hover .gauge-center-value {
+  transform: scale(1.05);
+}
+
 .meter-xp {
   font-size: 0.78rem;
   color: var(--text-secondary);
   font-weight: 600;
-  margin-top: 10px;
+  margin-top: 4px;
   background: #f8fafc;
   padding: 4px 12px;
   border-radius: 20px;
@@ -369,7 +385,7 @@ option:disabled {
 }
 
 /* ----------------------------------
-   COMPLETED / EXPIRED tabs: stacked horizontal row cards
+   COMPLETED / EXPIRED Tabs: Horizontal History Layout
 ---------------------------------- */
 .goals-list {
   display: flex;
@@ -437,9 +453,7 @@ option:disabled {
   color: var(--critical);
 }
 
-/* ----------------------------------
-   Delete button — optimized alignment for card structure
----------------------------------- */
+/* Delete Button styling configuration */
 .btn-delete {
   background: none;
   border: none;
@@ -469,9 +483,6 @@ option:disabled {
   transform: scale(1.08);
 }
 
-/* ----------------------------------
-   Responsive breakpoints
----------------------------------- */
 @media (max-width: 1024px) {
   .goals-split-container {
     flex-direction: column;
@@ -490,30 +501,9 @@ option:disabled {
     height: auto;
   }
 
-  .display-panel {
-    height: auto;
-    margin-top: 16px;
-  }
-
   .goals-grid {
     height: auto;
-    grid-template-rows: unset;
-  }
-}
-
-@media (max-width: 768px) {
-  .goals-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 600px) {
-  .history-row {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .history-row-stats {
-    justify-content: flex-start;
+    grid-template-rows: auto;
+    grid-template-columns: 1fr; /* Drop down to single column grid layouts on mobile viewports */
   }
 }

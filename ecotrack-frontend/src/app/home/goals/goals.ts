@@ -1,52 +1,14 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormGroup, FormControl, Validators } from '@angular/forms';
-import { HttpClient, HttpParams } from '@angular/common/http';
 import { forkJoin } from 'rxjs';
+import { GoalService, GoalResponse, GoalProgressResponse, GoalRequest } from './goals.service';
 
 type GoalStatus = 'ACTIVE' | 'COMPLETED' | 'EXPIRED';
-
-interface GoalRequest {
-  goalName: string;
-  goalType: string;
-  targetValue: number;
-  startDate: string;
-  endDate: string;
-  rewardPoints: number;
-  baselinePeriodDays: number;
-}
-
-interface GoalResponse {
-  goalId: number;
-  goalName: string;
-  goalType: string;
-  targetValue: number;
-  baselineValue: number;
-  rewardPoints: number;
-  status: GoalStatus;
-  startDate: string;
-  endDate: string;
-}
-
-interface GoalProgressResponse {
-  goalId: number;
-  currentValue: number;
-  targetValue: number;
-  baselineValue: number;
-  completionPercentage: number;
-  completed: boolean;
-}
 
 interface GoalWithProgress extends GoalResponse {
   progress?: GoalProgressResponse;
   daysLeft?: number;
-}
-
-interface DurationTier {
-  days: number;
-  label: string;
-  baseXp: number;
-  multiplier: number;
 }
 
 @Component({
@@ -58,8 +20,7 @@ interface DurationTier {
 })
 export class Goals implements OnInit {
 
-  private readonly baseUrl = 'http://localhost:8080/api/goals';
-  readonly arcLength = Math.PI * 80; // Adjusted radius matching the new path arc (R=80)
+  readonly arcLength = Math.PI * 80; // Arc radius matching path layout dimensions (R=80)
 
   readonly trackLabels: Record<string, string> = {
     REDUCE_CARBON_EMISSIONS: 'Overall Carbon Emissions (kg CO\u2082)',
@@ -72,19 +33,16 @@ export class Goals implements OnInit {
   };
 
   readonly trackTypes = Object.keys(this.trackLabels);
-
-  readonly durationTiers: DurationTier[] = [
-    { days: 7, label: '7-Day Sprint', baseXp: 35, multiplier: 1.0 },
-    { days: 14, label: '14-Day Baseline', baseXp: 70, multiplier: 1.2 },
-    { days: 30, label: '30-Day Endurance Limit', baseXp: 150, multiplier: 1.5 }
-  ];
-
   readonly baselineWindowOptions = [7, 14, 30];
+
+  minSelectableDate: string = '';
+  maxSelectableDate: string = '';
+  private readonly baseDailyXp = 10; 
 
   goalForm = new FormGroup({
     goalType: new FormControl('', Validators.required),
     targetValue: new FormControl<number | null>(null, [Validators.required, Validators.min(0.01)]),
-    durationDays: new FormControl<number>(7, Validators.required),
+    endDate: new FormControl('', Validators.required),
     baselinePeriodDays: new FormControl<number>(30, Validators.required)
   });
 
@@ -99,12 +57,24 @@ export class Goals implements OnInit {
   private activeGoalTypes = new Set<string>();
 
   constructor(
-    private http: HttpClient,
+    private goalService: GoalService,
     private cdr: ChangeDetectorRef
-  ) {}
+  ) {
+    this.calculateFormDateBounds();
+  }
 
   ngOnInit(): void {
     this.loadGoals(this.activeTab);
+  }
+
+  private calculateFormDateBounds(): void {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    this.minSelectableDate = this.formatDate(tomorrow);
+
+    const maxLimit = new Date();
+    maxLimit.setDate(maxLimit.getDate() + 90);
+    this.maxSelectableDate = this.formatDate(maxLimit);
   }
 
   setActiveTab(tab: GoalStatus): void {
@@ -120,18 +90,17 @@ export class Goals implements OnInit {
     this.isLoading = true;
     this.dataError = null;
     this.cdr.detectChanges(); 
-    
-    const params = new HttpParams().set('status', status);
 
-    this.http.get<GoalResponse[]>(this.baseUrl, { params }).subscribe({
+    // Fetching data broadly to guarantee client-side calculations sort historical states perfectly
+    this.goalService.getGoals(status).subscribe({
       next: (goals) => {
         if (status !== this.activeTab) {
           return;
         }
 
-        if (status === 'EXPIRED') {
-          const activeParams = new HttpParams().set('status', 'ACTIVE');
-          this.http.get<GoalResponse[]>(this.baseUrl, { params: activeParams }).subscribe({
+        if (status === 'EXPIRED' || status === 'COMPLETED') {
+          // Cross-load active track states to catch items whose deadlines passed but are structurally listed as active in the DB
+          this.goalService.getGoals('ACTIVE').subscribe({
             next: (activeGoals) => {
               const combined = [...goals, ...activeGoals];
               const unique = combined.filter((v, i, a) => a.findIndex(t => t.goalId === v.goalId) === i);
@@ -143,8 +112,7 @@ export class Goals implements OnInit {
         }
 
         if (status === 'ACTIVE') {
-          this.activeGoalTypes = new Set(goals.filter(g => !this.isTaskFailed(g)).map(g => g.goalType));
-          this.activeGoalTypesReady = true;
+          this.activeGoalTypesReady = false; 
         }
         
         this.loadProgressForGoals(goals, status);
@@ -173,20 +141,29 @@ export class Goals implements OnInit {
       return;
     }
 
-    const requests = goals.map(g =>
-      this.http.get<GoalProgressResponse>(`${this.baseUrl}/${g.goalId}/progress`)
-    );
+    const requests = goals.map(g => this.goalService.getGoalProgress(g.goalId));
 
     forkJoin(requests).subscribe({
       next: (progresses) => {
         if (status !== this.activeTab) {
           return;
         }
+        
         this.displayedGoals = goals.map((g, i) => ({ 
           ...g, 
           progress: progresses[i],
           daysLeft: this.calculateDaysLeft(g.endDate)
         }));
+
+        if (status === 'ACTIVE') {
+          this.activeGoalTypes = new Set(
+            this.displayedGoals
+              .filter(g => this.isTaskActive(g))
+              .map(g => g.goalType)
+          );
+          this.activeGoalTypesReady = true;
+        }
+
         this.isLoading = false;
         this.cdr.detectChanges(); 
       },
@@ -211,31 +188,66 @@ export class Goals implements OnInit {
     return !!goal.progress;
   }
 
+  /* ----------------------------------
+     CORE STATE LAWS (Emissions Verification Fix)
+  ---------------------------------- */
+  
+  // Rule 1: It is failed IMMEDIATELY if the current value breaches the budget cap limit
+  isTaskFailed(goal: GoalWithProgress): boolean {
+    if (!goal.progress) return false;
+    return goal.progress.currentValue > goal.targetValue;
+  }
+
+  // Rule 2: It is accomplished if the deadline is met/passed AND emissions are safely <= target limit
+  isTaskAccomplished(goal: GoalWithProgress): boolean {
+    if (!goal.progress) return false;
+    const isTimeUp = (goal.daysLeft ?? 0) === 0 || goal.status === 'COMPLETED';
+    return isTimeUp && goal.progress.currentValue <= goal.targetValue;
+  }
+
+  // Rule 3: It is genuinely active only if time remains AND it has not exceeded the ceiling limit
+  isTaskActive(goal: GoalWithProgress): boolean {
+    const hasTime = (goal.daysLeft ?? 0) > 0 && goal.status === 'ACTIVE';
+    return hasTime && !this.isTaskFailed(goal);
+  }
+
+  /* ----------------------------------
+     TAB COUNT COMPUTATIONS
+  ---------------------------------- */
   getActiveGoalsCount(): number {
-    return this.displayedGoals.filter(g => !this.isTaskFailed(g)).length;
+    return this.displayedGoals.filter(g => this.isTaskActive(g)).length;
   }
 
   getAccomplishedGoalsCount(): number {
-    return this.displayedGoals.filter(g => !this.isTaskFailed(g) && g.rewardPoints > 0).length;
+    return this.displayedGoals.filter(g => this.isTaskAccomplished(g)).length;
   }
 
   getFailedGoalsCount(): number {
-    return this.displayedGoals.filter(g => this.isTaskFailed(g) || g.rewardPoints === 0).length;
+    return this.displayedGoals.filter(g => this.isTaskFailed(g)).length;
   }
 
-  get selectedTier(): DurationTier {
-    const rawValue = this.goalForm.get('durationDays')?.value;
-    const days = rawValue !== null && rawValue !== undefined ? Number(rawValue) : 7;
-    return this.durationTiers.find(t => t.days === days) ?? this.durationTiers[0];
+  get calculatedDurationDays(): number {
+    const chosenDateStr = this.goalForm.get('endDate')?.value;
+    if (!chosenDateStr) return 7; 
+    
+    const today = new Date(this.todayStr() + 'T00:00:00');
+    const end = new Date(chosenDateStr + 'T00:00:00');
+    const diffTime = end.getTime() - today.getTime();
+    const days = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return days <= 0 ? 1 : days;
   }
 
   get projectedMaxXp(): number {
-    const tier = this.selectedTier;
-    return Math.round(tier.baseXp * tier.multiplier);
+    const days = this.calculatedDurationDays;
+    let multiplier = 1.0;
+    if (days >= 30) multiplier = 1.5;
+    else if (days >= 14) multiplier = 1.2;
+
+    return Math.round(this.baseDailyXp * days * multiplier);
   }
 
   get projectedEndDate(): string {
-    return this.addDays(this.todayStr(), this.selectedTier.days);
+    return this.goalForm.get('endDate')?.value || this.addDays(this.todayStr(), 7);
   }
 
   onSubmit(): void {
@@ -246,37 +258,34 @@ export class Goals implements OnInit {
       return;
     }
 
-    const { goalType, targetValue, durationDays, baselinePeriodDays } = this.goalForm.getRawValue();
+    const { goalType, targetValue, endDate, baselinePeriodDays } = this.goalForm.getRawValue();
 
     if (this.isTrackLocked(goalType!)) {
       this.formError = 'An active budget tracking meter already exists for this category.';
       return;
     }
 
-    const tier = this.durationTiers.find(t => t.days === Number(durationDays)) ?? this.durationTiers[0];
-    const startDate = this.todayStr();
-    const endDate = this.addDays(startDate, tier.days);
-
     const payload: GoalRequest = {
       goalName: this.trackLabels[goalType!],
       goalType: goalType!,
       targetValue: Number(targetValue),
-      startDate,
-      endDate,
-      rewardPoints: Math.round(tier.baseXp * tier.multiplier),
+      startDate: this.todayStr(),
+      endDate: endDate!,
+      rewardPoints: this.projectedMaxXp,
       baselinePeriodDays: Number(baselinePeriodDays)
     };
 
     this.isSubmitting = true;
     this.cdr.detectChanges();
 
-    this.http.post<GoalResponse>(this.baseUrl, payload).subscribe({
+    this.goalService.createGoal(payload).subscribe({
       next: (savedGoal) => {
         this.isSubmitting = false;
+        
         this.goalForm.reset({
           goalType: '',
           targetValue: null,
-          durationDays: 7,
+          endDate: '',
           baselinePeriodDays: 30
         });
 
@@ -290,7 +299,7 @@ export class Goals implements OnInit {
           daysLeft: this.calculateDaysLeft(savedGoal.endDate)
         };
 
-        this.displayedGoals = [augmentedGoal, ...this.displayedGoals.filter(g => g.status === 'ACTIVE')];
+        this.displayedGoals = [augmentedGoal, ...this.displayedGoals.filter(g => this.isTaskActive(g))];
 
         this.cdr.detectChanges(); 
         this.loadGoals('ACTIVE');  
@@ -310,10 +319,10 @@ export class Goals implements OnInit {
 
     const target = this.displayedGoals.find(g => g.goalId === goalId);
 
-    this.http.delete(`${this.baseUrl}/${goalId}`).subscribe({
+    this.goalService.deleteGoal(goalId).subscribe({
       next: () => {
         this.displayedGoals = this.displayedGoals.filter(g => g.goalId !== goalId);
-        if (target?.status === 'ACTIVE') {
+        if (target && this.isTaskActive(target)) {
           this.activeGoalTypes.delete(target.goalType);
         }
         this.cdr.detectChanges(); 
@@ -330,13 +339,9 @@ export class Goals implements OnInit {
   }
 
   private getRawFillPercent(goal: GoalWithProgress): number {
-    if (!goal.progress) {
-      return 0;
-    }
+    if (!goal.progress) return 0;
     const maxGauge = this.getMaxGaugeValue(goal);
-    if (maxGauge <= 0) {
-      return 0;
-    }
+    if (maxGauge <= 0) return 0;
     return Math.max(0, (goal.progress.currentValue / maxGauge) * 100);
   }
 
@@ -344,44 +349,27 @@ export class Goals implements OnInit {
     return Math.min(this.getRawFillPercent(goal), 100);
   }
 
-  isTaskFailed(goal: GoalWithProgress): boolean {
-    if (!goal.progress) {
-      return false;
-    }
-    return this.getRawFillPercent(goal) >= 100;
-  }
-
   getZoneColor(goal: GoalWithProgress): string {
-    if (!goal.progress) {
-      return 'var(--text-secondary)';
-    }
-    if (this.isTaskFailed(goal)) {
-      return 'var(--critical)';
-    }
-    const p = this.getFillPercent(goal);
-    if (p >= 90) {
-      return 'var(--critical)';
-    }
-    if (p >= 75) {
-      return 'var(--warning)';
-    }
+    if (!goal.progress) return 'var(--text-secondary)';
+    if (this.isTaskFailed(goal)) return 'var(--critical)';
+    
+    // Scale tracking fill percentages relative to the strict 75% target line
+    const currentVal = goal.progress.currentValue;
+    const targetVal = goal.targetValue;
+    
+    if (currentVal >= targetVal) return 'var(--critical)';
+    if (currentVal >= targetVal * 0.85) return 'var(--warning)';
     return 'var(--eco-safe)';
   }
 
   getStatusLabel(goal: GoalWithProgress): string {
-    if (!goal.progress) {
-      return 'No Data';
-    }
-    if (this.isTaskFailed(goal)) {
-      return 'TASK FAILED';
-    }
-    const p = this.getFillPercent(goal);
-    if (p >= 90) {
-      return 'Critical Breach Warning';
-    }
-    if (p >= 75) {
-      return 'Over Budget \u2014 Warning';
-    }
+    if (!goal.progress) return 'No Data';
+    if (this.isTaskFailed(goal)) return 'LIMIT BREACHED';
+    
+    const currentVal = goal.progress.currentValue;
+    const targetVal = goal.targetValue;
+
+    if (currentVal >= targetVal * 0.85) return 'Approaching Ceiling Warning';
     return 'On Track \u2014 Eco-Safe';
   }
 
@@ -391,31 +379,21 @@ export class Goals implements OnInit {
   }
 
   getProjectedXp(goal: GoalWithProgress): number | null {
-    if (!goal.progress) {
-      return null;
-    }
-    if (this.isTaskFailed(goal)) {
-      return 0;
-    }
-    const p = this.getFillPercent(goal);
+    if (!goal.progress) return null;
+    if (this.isTaskFailed(goal)) return 0;
+    
+    const currentVal = goal.progress.currentValue;
+    const targetVal = goal.targetValue;
     const maxXp = goal.rewardPoints;
 
-    if (p < 60) {
-      return Math.round(maxXp * 1.15);
-    }
-    if (p <= 75) {
-      return maxXp;
-    }
-    if (p < 90) {
-      return Math.round(maxXp * 0.70);
-    }
-    return Math.round(maxXp * 0.30);
+    // Bonus for maintaining significantly low consumption footprints
+    if (currentVal < targetVal * 0.6) return Math.round(maxXp * 1.15);
+    if (currentVal <= targetVal * 0.85) return maxXp;
+    return Math.round(maxXp * 0.5);
   }
 
   getFootprintSaved(goal: GoalWithProgress): number | null {
-    if (!goal.progress) {
-      return null;
-    }
+    if (!goal.progress) return null;
     return goal.progress.baselineValue - goal.progress.currentValue;
   }
 

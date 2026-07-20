@@ -1,11 +1,12 @@
 <div class="goals-split-container">
 
-  <!-- LEFT: static 320px configuration builder -->
+  <!-- LEFT: 380px Configuration Builder -->
   <aside class="form-panel">
     <div class="goal-card form-card">
       <h2 class="panel-title">Set a Budget Tracker</h2>
 
       <form [formGroup]="goalForm" (submit)="onSubmit(); $event.preventDefault()">
+        
         <div class="form-group">
           <label for="goalType">Tracking Track</label>
           <select id="goalType" formControlName="goalType">
@@ -36,11 +37,19 @@
         </div>
 
         <div class="form-group">
-          <label for="durationDays">Commitment Timeline</label>
-          <select id="durationDays" formControlName="durationDays">
-            <option *ngFor="let tier of durationTiers" [value]="tier.days">{{ tier.label }}</option>
-          </select>
-          <span class="field-hint">Ends {{ projectedEndDate }}</span>
+          <label for="endDate">Commitment Deadline Target</label>
+          <input 
+            type="date" 
+            id="endDate" 
+            formControlName="endDate"
+            [min]="minSelectableDate"
+            [max]="maxSelectableDate">
+          <span class="field-error" *ngIf="goalForm.get('endDate')?.invalid && goalForm.get('endDate')?.touched">
+            Please pick a valid target date
+          </span>
+          <span class="field-hint" *ngIf="goalForm.get('endDate')?.value">
+            Duration: {{ calculatedDurationDays }} tracking days
+          </span>
         </div>
 
         <div class="form-group">
@@ -52,20 +61,21 @@
         </div>
 
         <div class="xp-preview">
-          <span class="xp-preview-label">Potential XP</span>
+          <span class="xp-preview-label">Potential Milestone XP</span>
           <span class="xp-preview-value">{{ projectedMaxXp }} XP</span>
         </div>
 
-        <span class="field-hint" *ngIf="!activeGoalTypesReady">Loading your current trackers...</span>
+        <span class="field-hint" *ngIf="!activeGoalTypesReady">Updating active locks...</span>
         <span class="field-error form-level-error" *ngIf="formError">{{ formError }}</span>
 
         <button type="submit" class="btn-create-goal" [disabled]="goalForm.invalid || isSubmitting || !activeGoalTypesReady">
-          {{ isSubmitting ? 'Creating...' : 'Activate Tracker' }}
+          {{ isSubmitting ? 'Activating Module...' : 'Activate Tracker' }}
         </button>
       </form>
     </div>
   </aside>
 
+  <!-- RIGHT: Interactive Dashboard Viewports -->
   <section class="display-panel">
     <div class="tab-bar">
       <button type="button" class="tab-btn" [class.active]="activeTab === 'ACTIVE'" (click)="setActiveTab('ACTIVE')">Active Meters</button>
@@ -76,39 +86,33 @@
     <div class="data-error-banner" *ngIf="dataError">{{ dataError }}</div>
 
     <div class="tab-content">
-      <div class="loading-state" *ngIf="isLoading">Loading trackers...</div>
+      <div class="loading-state" *ngIf="isLoading">Syncing operational data...</div>
 
       <ng-container *ngIf="!isLoading">
 
-        <!-- ACTIVE tab: Fitted clean dashboard meters -->
+        <!-- ACTIVE VIEW: Renders items that have time remaining and haven't breached limits -->
         <div class="goals-grid" *ngIf="activeTab === 'ACTIVE'">
           <ng-container *ngFor="let goal of displayedGoals">
-            <div class="goal-card meter-card" *ngIf="!isTaskFailed(goal)" [class.no-data-card]="!hasProgressData(goal)">
+            <div class="goal-card meter-card" *ngIf="isTaskActive(goal)" [class.no-data-card]="!hasProgressData(goal)">
               <button class="btn-delete" (click)="deleteGoal(goal.goalId)" title="Remove tracker">&#10005;</button>
 
               <h3 class="meter-title">{{ goal.goalName }}</h3>
-              
               <span class="meter-status" [style.color]="getZoneColor(goal)">{{ getStatusLabel(goal) }}</span>
 
-              <!-- Embedded Minimalist Core Layout -->
               <div class="gauge-svg-container">
-                <svg class="gauge-svg" viewBox="0 0 200 120">
-                  <!-- Structural Underlay Track -->
+                <svg class="gauge-svg" viewBox="0 0 200 135">
                   <path class="gauge-track" d="M 20 100 A 80 80 0 0 1 180 100" />
-                  
-                  <!-- Responsive Color Changing Arc Progress Line -->
                   <path
                     class="gauge-fill"
                     d="M 20 100 A 80 80 0 0 1 180 100"
                     [attr.stroke]="getZoneColor(goal)"
-                    [attr.stroke-dasharray]="arcLength || 251.2"
+                    [attr.stroke-dasharray]="arcLength"
                     [attr.stroke-dashoffset]="getArcDashoffset(goal)" />
-                  
-                  <!-- Target/Ceiling Indicator Bar -->
                   <line class="gauge-target-tick" x1="150" y1="38" x2="158" y2="30" />
+                  <text class="gauge-label-text" x="15" y="122" text-anchor="start">0%</text>
+                  <text class="gauge-label-text" x="185" y="122" text-anchor="end">Cap</text>
                 </svg>
 
-                <!-- Center Readout Alignment Overriding Bulky Pivot Needles -->
                 <div class="gauge-center-readout">
                   <div class="gauge-center-value">
                     <span *ngIf="hasProgressData(goal)">{{ goal.progress?.currentValue | number:'1.1-1' }} / {{ goal.targetValue | number:'1.1-1' }}</span>
@@ -117,12 +121,11 @@
                 </div>
               </div>
 
-              <!-- Footer Meta Section Update -->
               <div class="meter-xp">
-                <span *ngIf="hasProgressData(goal)">Reward Score: {{ getProjectedXp(goal) }} XP</span>
-                <span *ngIf="!hasProgressData(goal)">Reward Score: &mdash;</span>
+                <span *ngIf="hasProgressData(goal)">Live Value Score: {{ getProjectedXp(goal) }} XP</span>
+                <span *ngIf="!hasProgressData(goal)">Live Value Score: &mdash;</span>
                 <span class="days-left-separator"> • </span>
-                <span class="days-left-count">{{ goal.daysLeft ?? 0 }} days left</span>
+                <span class="days-left-count">{{ goal.daysLeft }} days left</span>
               </div>
             </div>
           </ng-container>
@@ -132,10 +135,10 @@
           </div>
         </div>
 
-        <!-- ACCOMPLISHED tab: Strictly successful rows only -->
+        <!-- ACCOMPLISHED VIEW: Displays successfully terminated timelines under cap -->
         <div class="goals-list" *ngIf="activeTab === 'COMPLETED'">
           <ng-container *ngFor="let goal of displayedGoals">
-            <div class="goal-card history-row" *ngIf="!isTaskFailed(goal) && goal.rewardPoints > 0">
+            <div class="goal-card history-row" *ngIf="isTaskAccomplished(goal)">
               <div class="history-row-main">
                 <h3 class="history-row-title">{{ goal.goalName }}</h3>
                 <span class="history-row-dates">{{ goal.startDate }} &rarr; {{ goal.endDate }}</span>
@@ -156,10 +159,10 @@
           </div>
         </div>
 
-        <!-- FAILED / BREACHED tab: Catches anything that failed dynamically or via backend state -->
+        <!-- FAILED / BREACHED VIEW: Renders instant or past target cap breaches -->
         <div class="goals-list" *ngIf="activeTab === 'EXPIRED'">
           <ng-container *ngFor="let goal of displayedGoals">
-            <div class="goal-card history-row failed-row" *ngIf="isTaskFailed(goal) || goal.rewardPoints === 0">
+            <div class="goal-card history-row failed-row" *ngIf="isTaskFailed(goal)">
               <div class="history-row-main">
                 <h3 class="history-row-title">{{ goal.goalName }}</h3>
                 <span class="history-row-dates">{{ goal.startDate }} &rarr; {{ goal.endDate }}</span>
