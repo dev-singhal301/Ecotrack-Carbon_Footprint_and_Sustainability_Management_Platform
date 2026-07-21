@@ -34,7 +34,6 @@ export class Goals implements OnInit {
   };
 
   readonly trackTypes = Object.keys(this.trackLabels);
-  readonly baselineWindowOptions = [7, 14, 30];
 
   minSelectableDate: string = '';
   maxSelectableDate: string = '';
@@ -43,8 +42,7 @@ export class Goals implements OnInit {
   goalForm = new FormGroup({
     goalType: new FormControl('', Validators.required),
     targetValue: new FormControl<number | null>(null, [Validators.required, Validators.min(0.01)]),
-    endDate: new FormControl('', Validators.required),
-    baselinePeriodDays: new FormControl<number>(30, Validators.required)
+    endDate: new FormControl('', Validators.required)
   });
 
   activeTab: GoalStatus = 'ACTIVE';
@@ -222,21 +220,12 @@ export class Goals implements OnInit {
 
   isTaskAccomplished(goal: GoalWithProgress): boolean {
     if (!goal.progress) return false;
-    // Backend-confirmed states take priority — status flip, or the live
-    // `completed` flag from calculateProgress(), which is Route B's
-    // actual signal that the reduction target has been hit, independent
-    // of whether the deadline has arrived yet.
     if (goal.status === 'COMPLETED' || goal.progress.completed) return true;
     const isTimeUp = (goal.daysLeft ?? 0) === 0;
     return isTimeUp && goal.progress.currentValue <= goal.targetValue;
   }
 
   isTaskActive(goal: GoalWithProgress): boolean {
-    // Must defer to accomplished/failed first — otherwise a goal that's
-    // already been achieved early (completed:true, days still remaining)
-    // satisfies hasTime+status+not-failed and gets classified as BOTH
-    // Active and Accomplished at once, which is exactly what kept its
-    // category locked after completion.
     if (this.isTaskAccomplished(goal) || this.isTaskFailed(goal)) return false;
     return (goal.daysLeft ?? 0) > 0 && goal.status === 'ACTIVE';
   }
@@ -255,7 +244,7 @@ export class Goals implements OnInit {
 
   get calculatedDurationDays(): number {
     const chosenDateStr = this.goalForm.get('endDate')?.value;
-    if (!chosenDateStr) return 7;
+    if (!chosenDateStr) return 0; // Return 0 when no date is picked yet
 
     const today = new Date(this.todayStr() + 'T00:00:00');
     const end = new Date(chosenDateStr + 'T00:00:00');
@@ -266,10 +255,10 @@ export class Goals implements OnInit {
 
   get projectedMaxXp(): number {
     const days = this.calculatedDurationDays;
+    if (days <= 0) return 0; // Return 0 XP if no valid duration is set
     let multiplier = 1.0;
     if (days >= 30) multiplier = 1.5;
     else if (days >= 14) multiplier = 1.2;
-
     return Math.round(this.baseDailyXp * days * multiplier);
   }
 
@@ -285,7 +274,7 @@ export class Goals implements OnInit {
       return;
     }
 
-    const { goalType, targetValue, baselinePeriodDays } = this.goalForm.getRawValue();
+    const { goalType, targetValue } = this.goalForm.getRawValue();
 
     if (this.isTrackLocked(goalType!)) {
       this.formError = 'An active budget tracking meter already exists for this category.';
@@ -297,8 +286,7 @@ export class Goals implements OnInit {
       goalType: goalType!,
       targetValue: Number(targetValue),
       durationDays: this.calculatedDurationDays,
-      rewardPoints: this.projectedMaxXp,
-      baselinePeriodDays: Number(baselinePeriodDays)
+      rewardPoints: this.projectedMaxXp
     };
 
     this.isSubmitting = true;
@@ -311,8 +299,7 @@ export class Goals implements OnInit {
         this.goalForm.reset({
           goalType: '',
           targetValue: null,
-          endDate: '',
-          baselinePeriodDays: 30
+          endDate: ''
         });
 
         this.activeGoalTypes.add(savedGoal.goalType);
@@ -325,8 +312,6 @@ export class Goals implements OnInit {
           daysLeft: this.calculateDaysLeft(savedGoal.endDate)
         };
 
-        // Optimistic insert into both the cache and the display — keeps
-        // them consistent with each other rather than just patching one.
         this.activeGoalsCache = [augmentedGoal, ...this.activeGoalsCache];
         this.displayedGoals = [augmentedGoal, ...this.displayedGoals.filter(g => this.isTaskActive(g))];
 
