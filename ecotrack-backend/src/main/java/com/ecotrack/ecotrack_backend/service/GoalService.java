@@ -84,9 +84,8 @@ public class GoalService {
         // Setup isolation boundary: tracking ignores anything logged up to this entry ID
         goal.setStartEntryId(maxEntryId);
 
-        int baselineDays = request.getBaselinePeriodDays() != null
-                ? request.getBaselinePeriodDays()
-                : DEFAULT_BASELINE_DAYS;
+        // Safe fallback since baselinePeriodDays was removed from GoalRequest DTO
+        int baselineDays = DEFAULT_BASELINE_DAYS;
         LocalDate baselineStart = startDate.minusDays(baselineDays);
         LocalDate baselineEnd = startDate.minusDays(1);
         BigDecimal baselineValue = sumEmissions(userId,
