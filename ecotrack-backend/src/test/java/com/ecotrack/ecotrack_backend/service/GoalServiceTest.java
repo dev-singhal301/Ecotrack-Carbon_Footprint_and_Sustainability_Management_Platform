@@ -510,10 +510,10 @@ class GoalServiceTest {
         request.setGoalName("Test goal");
         request.setGoalType(goalType);
         request.setTargetValue(targetValue);
-        request.setStartDate(startDate);
-        request.setEndDate(endDate);
+        //request.setStartDate(startDate);
+        //request.setEndDate(endDate);
         request.setRewardPoints(rewardPoints);
-        request.setBaselinePeriodDays(baselinePeriodDays);
+        //request.setBaselinePeriodDays(baselinePeriodDays);
         return request;
     }
 

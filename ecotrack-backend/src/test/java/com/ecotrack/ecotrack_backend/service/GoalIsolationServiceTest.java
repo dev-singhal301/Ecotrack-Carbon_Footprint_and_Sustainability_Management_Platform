@@ -69,7 +69,7 @@ public class GoalIsolationServiceTest {
         request.setGoalType("REDUCE_ELECTRICITY_CONSUMPTION");
         request.setTargetValue(new BigDecimal("100.00"));
         request.setDurationDays(30);
-        request.setBaselinePeriodDays(30);
+        //request.setBaselinePeriodDays(30);
         request.setRewardPoints(50);
 
         CarbonEntry existingEntry1 = new CarbonEntry();

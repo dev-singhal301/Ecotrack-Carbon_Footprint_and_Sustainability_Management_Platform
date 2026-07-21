@@ -17,4 +17,6 @@ public interface CarbonEntryRepository extends JpaRepository<CarbonEntry, Long> 
 
     List<CarbonEntry> findByUserIdAndCategoryAndActivityDateBetween(
             Long userId, CarbonCategory category, LocalDate from, LocalDate to);
+
+    List<CarbonEntry> findByUserIdOrderByActivityDateDescEntryIdDesc(Long userId, org.springframework.data.domain.Pageable pageable);
 }
