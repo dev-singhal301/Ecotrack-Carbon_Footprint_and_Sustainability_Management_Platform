@@ -1,7 +1,8 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormGroup, FormControl, Validators } from '@angular/forms';
-import { forkJoin } from 'rxjs';
+import { forkJoin, Observable, of } from 'rxjs';
+import { switchMap, map } from 'rxjs/operators';
 import { GoalService, GoalResponse, GoalProgressResponse, GoalRequest } from './goals.service';
 
 type GoalStatus = 'ACTIVE' | 'COMPLETED' | 'EXPIRED';
@@ -20,7 +21,7 @@ interface GoalWithProgress extends GoalResponse {
 })
 export class Goals implements OnInit {
 
-  readonly arcLength = Math.PI * 80; 
+  readonly arcLength = Math.PI * 80;
 
   readonly trackLabels: Record<string, string> = {
     REDUCE_CARBON_EMISSIONS: 'Overall Carbon Emissions (kg CO\u2082)',
@@ -37,7 +38,7 @@ export class Goals implements OnInit {
 
   minSelectableDate: string = '';
   maxSelectableDate: string = '';
-  private readonly baseDailyXp = 10; 
+  private readonly baseDailyXp = 10;
 
   goalForm = new FormGroup({
     goalType: new FormControl('', Validators.required),
@@ -54,6 +55,13 @@ export class Goals implements OnInit {
   dataError: string | null = null;
   activeGoalTypesReady = false;
 
+  // Single source of truth for "what is genuinely, currently locked" —
+  // written in exactly ONE place (refreshActiveGoalsCache$), so there is
+  // no longer a second competing writer that can race it and wipe it out
+  // depending on which tab happens to be open. Also reused directly as
+  // the Active tab's display data, so viewing that tab no longer fires
+  // the ACTIVE-status + per-goal-progress fetch twice.
+  private activeGoalsCache: GoalWithProgress[] = [];
   private activeGoalTypes = new Set<string>();
 
   constructor(
@@ -83,40 +91,80 @@ export class Goals implements OnInit {
     }
     this.activeTab = tab;
     this.loadGoals(tab);
-    this.cdr.detectChanges(); 
   }
 
   loadGoals(status: GoalStatus): void {
     this.isLoading = true;
     this.dataError = null;
-    this.cdr.detectChanges(); 
+    this.cdr.detectChanges();
 
-    this.goalService.getGoals(status).subscribe({
-      next: (goals) => {
-        if (status !== this.activeTab) {
-          return;
-        }
-
-        this.goalService.getGoals('ACTIVE').subscribe({
-          next: (activeGoals) => {
-            const combined = [...goals, ...activeGoals];
-            const unique = combined.filter((v, i, a) => a.findIndex(t => t.goalId === v.goalId) === i);
-            this.loadProgressForGoals(unique, status);
-          },
-          error: () => this.loadProgressForGoals(goals, status)
-        });
-      },
-      error: (err) => {
-        if (status !== this.activeTab) {
-          return;
-        }
-        console.error('Failed to load goals:', err);
-        this.displayedGoals = [];
-        this.isLoading = false;
-        this.dataError = err.error?.message || 'Could not load your goals. Please try again.';
-        this.cdr.detectChanges();
+    // Locks are refreshed on every tab load, regardless of which tab is
+    // being viewed — this is the ONLY place activeGoalsCache/
+    // activeGoalTypes gets written, so there's nothing left to race.
+    this.refreshActiveGoalsCache$().subscribe(() => {
+      if (status !== this.activeTab) {
+        return;
       }
+
+      if (status === 'ACTIVE') {
+        // The Active tab's display IS the cache we just refreshed — no
+        // second fetch needed. The template's own *ngIf="isTaskActive(goal)"
+        // still does the final per-card filtering, same as before.
+        this.displayedGoals = this.activeGoalsCache;
+        this.isLoading = false;
+        this.cdr.detectChanges();
+        return;
+      }
+
+      this.goalService.getGoals(status).subscribe({
+        next: (goals) => {
+          if (status !== this.activeTab) {
+            return;
+          }
+          this.loadProgressForGoals(goals, status);
+        },
+        error: (err) => {
+          if (status !== this.activeTab) {
+            return;
+          }
+          console.error('Failed to load goals:', err);
+          this.displayedGoals = [];
+          this.isLoading = false;
+          this.dataError = err.error?.message || 'Could not load your goals. Please try again.';
+          this.cdr.detectChanges();
+        }
+      });
     });
+  }
+
+  // Fetches ACTIVE-status goals + their progress, computes activeGoalTypes
+  // from them, and populates activeGoalsCache — all in one place, once.
+  private refreshActiveGoalsCache$(): Observable<void> {
+    return this.goalService.getGoals('ACTIVE').pipe(
+      switchMap(activeGoals => {
+        if (activeGoals.length === 0) {
+          this.activeGoalsCache = [];
+          this.activeGoalTypes = new Set();
+          this.activeGoalTypesReady = true;
+          return of(void 0);
+        }
+
+        const requests = activeGoals.map(g => this.goalService.getGoalProgress(g.goalId));
+        return forkJoin(requests).pipe(
+          map(progresses => {
+            this.activeGoalsCache = activeGoals.map((g, i) => ({
+              ...g,
+              progress: progresses[i],
+              daysLeft: this.calculateDaysLeft(g.endDate)
+            }));
+            this.activeGoalTypes = new Set(
+              this.activeGoalsCache.filter(g => this.isTaskActive(g)).map(g => g.goalType)
+            );
+            this.activeGoalTypesReady = true;
+          })
+        );
+      })
+    );
   }
 
   private loadProgressForGoals(goals: GoalResponse[], status: GoalStatus): void {
@@ -136,38 +184,15 @@ export class Goals implements OnInit {
         if (status !== this.activeTab) {
           return;
         }
-        
-        this.displayedGoals = goals.map((g, i) => {
-          const prog = progresses[i];
-          const daysLeftComputed = this.calculateDaysLeft(g.endDate);
-          
-          const tempGoal: GoalWithProgress = {
-            ...g,
-            progress: prog,
-            daysLeft: daysLeftComputed
-          };
 
-          if (prog && (g.status === 'EXPIRED' || g.status === 'COMPLETED' || prog.currentValue > g.targetValue)) {
-            if (prog.currentValue > g.targetValue) {
-              tempGoal.progress = {
-                ...prog,
-                currentValue: Math.max(prog.currentValue, g.targetValue + 0.1) 
-              };
-            }
-          }
-
-          return tempGoal;
-        });
-
-        this.activeGoalTypes = new Set(
-          this.displayedGoals
-            .filter(g => g.status === 'ACTIVE' && (g.daysLeft ?? 0) > 0 && !(g.progress && g.progress.currentValue > g.targetValue))
-            .map(g => g.goalType)
-        );
-        this.activeGoalTypesReady = true;
+        this.displayedGoals = goals.map((g, i) => ({
+          ...g,
+          progress: progresses[i],
+          daysLeft: this.calculateDaysLeft(g.endDate)
+        }));
 
         this.isLoading = false;
-        this.cdr.detectChanges(); 
+        this.cdr.detectChanges();
       },
       error: (err) => {
         if (status !== this.activeTab) {
@@ -189,7 +214,7 @@ export class Goals implements OnInit {
   hasProgressData(goal: GoalWithProgress): boolean {
     return !!goal.progress;
   }
-  
+
   isTaskFailed(goal: GoalWithProgress): boolean {
     if (!goal.progress) return false;
     return goal.progress.currentValue > goal.targetValue || goal.status === 'EXPIRED';
@@ -197,13 +222,23 @@ export class Goals implements OnInit {
 
   isTaskAccomplished(goal: GoalWithProgress): boolean {
     if (!goal.progress) return false;
-    const isTimeUp = (goal.daysLeft ?? 0) === 0 || goal.status === 'COMPLETED';
+    // Backend-confirmed states take priority — status flip, or the live
+    // `completed` flag from calculateProgress(), which is Route B's
+    // actual signal that the reduction target has been hit, independent
+    // of whether the deadline has arrived yet.
+    if (goal.status === 'COMPLETED' || goal.progress.completed) return true;
+    const isTimeUp = (goal.daysLeft ?? 0) === 0;
     return isTimeUp && goal.progress.currentValue <= goal.targetValue;
   }
 
   isTaskActive(goal: GoalWithProgress): boolean {
-    const hasTime = (goal.daysLeft ?? 0) > 0 && goal.status === 'ACTIVE';
-    return hasTime && !this.isTaskFailed(goal);
+    // Must defer to accomplished/failed first — otherwise a goal that's
+    // already been achieved early (completed:true, days still remaining)
+    // satisfies hasTime+status+not-failed and gets classified as BOTH
+    // Active and Accomplished at once, which is exactly what kept its
+    // category locked after completion.
+    if (this.isTaskAccomplished(goal) || this.isTaskFailed(goal)) return false;
+    return (goal.daysLeft ?? 0) > 0 && goal.status === 'ACTIVE';
   }
 
   getActiveGoalsCount(): number {
@@ -220,8 +255,8 @@ export class Goals implements OnInit {
 
   get calculatedDurationDays(): number {
     const chosenDateStr = this.goalForm.get('endDate')?.value;
-    if (!chosenDateStr) return 7; 
-    
+    if (!chosenDateStr) return 7;
+
     const today = new Date(this.todayStr() + 'T00:00:00');
     const end = new Date(chosenDateStr + 'T00:00:00');
     const diffTime = end.getTime() - today.getTime();
@@ -272,7 +307,7 @@ export class Goals implements OnInit {
     this.goalService.createGoal(payload).subscribe({
       next: (savedGoal) => {
         this.isSubmitting = false;
-        
+
         this.goalForm.reset({
           goalType: '',
           targetValue: null,
@@ -290,10 +325,13 @@ export class Goals implements OnInit {
           daysLeft: this.calculateDaysLeft(savedGoal.endDate)
         };
 
+        // Optimistic insert into both the cache and the display — keeps
+        // them consistent with each other rather than just patching one.
+        this.activeGoalsCache = [augmentedGoal, ...this.activeGoalsCache];
         this.displayedGoals = [augmentedGoal, ...this.displayedGoals.filter(g => this.isTaskActive(g))];
 
-        this.cdr.detectChanges(); 
-        this.loadGoals('ACTIVE');  
+        this.cdr.detectChanges();
+        this.loadGoals('ACTIVE');
       },
       error: (err) => {
         this.isSubmitting = false;
@@ -313,10 +351,11 @@ export class Goals implements OnInit {
     this.goalService.deleteGoal(goalId).subscribe({
       next: () => {
         this.displayedGoals = this.displayedGoals.filter(g => g.goalId !== goalId);
+        this.activeGoalsCache = this.activeGoalsCache.filter(g => g.goalId !== goalId);
         if (target && this.isTaskActive(target)) {
           this.activeGoalTypes.delete(target.goalType);
         }
-        this.cdr.detectChanges(); 
+        this.cdr.detectChanges();
       },
       error: (err) => {
         alert(err.error?.message || 'Failed to remove this tracking meter.');
@@ -343,10 +382,10 @@ export class Goals implements OnInit {
   getZoneColor(goal: GoalWithProgress): string {
     if (!goal.progress) return 'var(--text-secondary)';
     if (this.isTaskFailed(goal)) return 'var(--critical)';
-    
+
     const currentVal = goal.progress.currentValue;
     const targetVal = goal.targetValue;
-    
+
     if (currentVal >= targetVal) return 'var(--critical)';
     if (currentVal >= targetVal * 0.85) return 'var(--warning)';
     return 'var(--eco-safe)';
@@ -355,7 +394,7 @@ export class Goals implements OnInit {
   getStatusLabel(goal: GoalWithProgress): string {
     if (!goal.progress) return 'No Data';
     if (this.isTaskFailed(goal)) return 'LIMIT BREACHED';
-    
+
     const currentVal = goal.progress.currentValue;
     const targetVal = goal.targetValue;
 
@@ -371,7 +410,7 @@ export class Goals implements OnInit {
   getProjectedXp(goal: GoalWithProgress): number | null {
     if (!goal.progress) return null;
     if (this.isTaskFailed(goal)) return 0;
-    
+
     const currentVal = goal.progress.currentValue;
     const targetVal = goal.targetValue;
     const maxXp = goal.rewardPoints;
@@ -393,7 +432,7 @@ export class Goals implements OnInit {
 
   private calculateDaysLeft(endDateStr: string): number {
     if (!endDateStr) return 0;
-    
+
     const normalizedDate = endDateStr.includes('T') ? endDateStr.split('T')[0] : endDateStr;
     const today = new Date(this.todayStr() + 'T00:00:00');
     const end = new Date(normalizedDate + 'T00:00:00');
