@@ -39,6 +39,13 @@ public class User {
     @Column(nullable = false)
     private boolean enabled = true;
 
+    // Gamification fields
+    @Column(name = "current_xp", nullable = false)
+    private Integer currentXp = 0;
+
+    @Column(name = "reward_points", nullable = false)
+    private Integer rewardPoints = 0;
+
     @Column(name = "reset_password_token", length = 255)
     private String resetPasswordToken;
 
@@ -51,13 +58,13 @@ public class User {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
-    // Lifecycle hooks so Java, not just MySQL, always has a correct value
-    // to work with immediately after save/update (avoids extra DB round-trips
-    // to re-fetch the row just to read timestamps).
+    // Lifecycle hooks
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
+        if (this.currentXp == null) this.currentXp = 0;
+        if (this.rewardPoints == null) this.rewardPoints = 0;
     }
 
     @PreUpdate
@@ -110,22 +117,6 @@ public class User {
         this.password = password;
     }
 
-    public String getResetPasswordToken() {
-        return resetPasswordToken;
-    }
-
-    public void setResetPasswordToken(String resetPasswordToken) {
-        this.resetPasswordToken = resetPasswordToken;
-    }
-
-    public LocalDateTime getTokenExpiryDate() {
-        return tokenExpiryDate;
-    }
-
-    public void setTokenExpiryDate(LocalDateTime tokenExpiryDate) {
-        this.tokenExpiryDate = tokenExpiryDate;
-    }
-
     public String getOauthProvider() {
         return oauthProvider;
     }
@@ -148,6 +139,38 @@ public class User {
 
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
+    }
+
+    public Integer getCurrentXp() {
+        return currentXp != null ? currentXp : 0;
+    }
+
+    public void setCurrentXp(Integer currentXp) {
+        this.currentXp = currentXp;
+    }
+
+    public Integer getRewardPoints() {
+        return rewardPoints != null ? rewardPoints : 0;
+    }
+
+    public void setRewardPoints(Integer rewardPoints) {
+        this.rewardPoints = rewardPoints;
+    }
+
+    public String getResetPasswordToken() {
+        return resetPasswordToken;
+    }
+
+    public void setResetPasswordToken(String resetPasswordToken) {
+        this.resetPasswordToken = resetPasswordToken;
+    }
+
+    public LocalDateTime getTokenExpiryDate() {
+        return tokenExpiryDate;
+    }
+
+    public void setTokenExpiryDate(LocalDateTime tokenExpiryDate) {
+        this.tokenExpiryDate = tokenExpiryDate;
     }
 
     public LocalDateTime getCreatedAt() {

@@ -1,7 +1,7 @@
 package com.ecotrack.ecotrack_backend.service;
 
+import com.ecotrack.ecotrack_backend.dto.CategoryImpactResponse;
 import com.ecotrack.ecotrack_backend.dto.FootprintOverviewResponse;
-import com.ecotrack.ecotrack_backend.dto.FootprintTrendResponse;
 import com.ecotrack.ecotrack_backend.entity.CarbonCategory;
 import com.ecotrack.ecotrack_backend.entity.CarbonEntry;
 import com.ecotrack.ecotrack_backend.entity.CarbonFootprint;
@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -30,11 +31,96 @@ public class CarbonFootprintService {
     private final UserRepository userRepository;
 
     public CarbonFootprintService(CarbonEntryRepository carbonEntryRepository,
-                                   CarbonFootprintRepository carbonFootprintRepository,
-                                   UserRepository userRepository) {
+                                  CarbonFootprintRepository carbonFootprintRepository,
+                                  UserRepository userRepository) {
         this.carbonEntryRepository = carbonEntryRepository;
         this.carbonFootprintRepository = carbonFootprintRepository;
         this.userRepository = userRepository;
+    }
+
+    // ── Dashboard Blueprint Methods ──
+
+    /**
+     * Section 2: Total Carbon Footprint across all logged activities.
+     */
+    public BigDecimal getTotalCarbonFootprint(Long userId) {
+        BigDecimal total = carbonEntryRepository.sumTotalCarbonEmissionByUserId(userId);
+        return total != null ? total : BigDecimal.ZERO;
+    }
+
+    /**
+     * Section 2: Carbon Saved vs Baseline (comparing current 30-day rolling window to previous 30-day window).
+     * Returns savings as a positive number if emissions went down.
+     */
+    public BigDecimal getCarbonSavedVsBaseline(Long userId) {
+        LocalDate today = LocalDate.now();
+        LocalDate currentStart = today.minusDays(ROLLING_WINDOW_DAYS - 1);
+        LocalDate previousEnd = currentStart.minusDays(1);
+        LocalDate previousStart = previousEnd.minusDays(ROLLING_WINDOW_DAYS - 1);
+
+        BigDecimal currentTotal = sumTotal(userId, currentStart, today);
+        BigDecimal previousTotal = sumTotal(userId, previousStart, previousEnd);
+
+        if (previousTotal.compareTo(BigDecimal.ZERO) == 0) {
+            return BigDecimal.ZERO;
+        }
+
+        BigDecimal savings = previousTotal.subtract(currentTotal);
+        return savings.compareTo(BigDecimal.ZERO) > 0 ? savings : BigDecimal.ZERO;
+    }
+
+    /**
+     * Section 2: Percentage reduction badge (e.g., 12.5% drop).
+     */
+    public Double getSavingsPercentage(Long userId) {
+        LocalDate today = LocalDate.now();
+        LocalDate currentStart = today.minusDays(ROLLING_WINDOW_DAYS - 1);
+        LocalDate previousEnd = currentStart.minusDays(1);
+        LocalDate previousStart = previousEnd.minusDays(ROLLING_WINDOW_DAYS - 1);
+
+        BigDecimal currentTotal = sumTotal(userId, currentStart, today);
+        BigDecimal previousTotal = sumTotal(userId, previousStart, previousEnd);
+
+        if (previousTotal.compareTo(BigDecimal.ZERO) <= 0) {
+            return 0.0;
+        }
+
+        BigDecimal diff = previousTotal.subtract(currentTotal);
+        BigDecimal percentage = diff.divide(previousTotal, 4, RoundingMode.HALF_UP)
+                                     .multiply(BigDecimal.valueOf(100));
+
+        return percentage.doubleValue();
+    }
+
+    /**
+     * Section 3: Ranked Category Impact List.
+     * Uses repository aggregate query to fetch emissions per category, ordered descending.
+     */
+    public List<CategoryImpactResponse> getCategoryImpactList(Long userId) {
+        List<Object[]> rawData = carbonEntryRepository.findCategoryImpactByUserId(userId);
+        BigDecimal grandTotal = getTotalCarbonFootprint(userId);
+
+        List<CategoryImpactResponse> responseList = new ArrayList<>();
+
+        for (Object[] row : rawData) {
+            CarbonCategory category = (CarbonCategory) row[0];
+            BigDecimal emissions = (BigDecimal) row[1];
+
+            double percentageShare = 0.0;
+            if (grandTotal.compareTo(BigDecimal.ZERO) > 0) {
+                percentageShare = emissions.divide(grandTotal, 4, RoundingMode.HALF_UP)
+                                          .multiply(BigDecimal.valueOf(100))
+                                          .doubleValue();
+            }
+
+            responseList.add(new CategoryImpactResponse(
+                category.name(),
+                emissions,
+                percentageShare
+            ));
+        }
+
+        return responseList;
     }
 
     // ── Live reads for the dashboard ──
@@ -47,29 +133,7 @@ public class CarbonFootprintService {
         return new FootprintOverviewResponse(total, breakdown);
     }
 
-    public FootprintTrendResponse getTrend(Long userId) {
-        LocalDate today = LocalDate.now();
-        LocalDate currentStart = today.minusDays(ROLLING_WINDOW_DAYS - 1);
-        LocalDate previousEnd = currentStart.minusDays(1);
-        LocalDate previousStart = previousEnd.minusDays(ROLLING_WINDOW_DAYS - 1);
-
-        BigDecimal currentTotal = sumTotal(userId, currentStart, today);
-        BigDecimal previousTotal = sumTotal(userId, previousStart, previousEnd);
-
-        boolean hasPreviousData = previousTotal.compareTo(BigDecimal.ZERO) > 0;
-        BigDecimal percentChange = null;
-        if (hasPreviousData) {
-            // Positive = emissions up (red), negative = down (green) — frontend convention
-            percentChange = currentTotal.subtract(previousTotal)
-                    .divide(previousTotal, 4, RoundingMode.HALF_UP)
-                    .multiply(BigDecimal.valueOf(100));
-        }
-        return new FootprintTrendResponse(currentTotal, previousTotal, percentChange, hasPreviousData);
-    }
-
     // ── Historical log — one row per user per calendar day, upserted ──
-    // Logs the rolling 30-day total as of "today", so a future trend chart can
-    // plot how the rolling total itself moved over time.
     @Transactional
     public void logDailySnapshot(Long userId) {
         LocalDate today = LocalDate.now();

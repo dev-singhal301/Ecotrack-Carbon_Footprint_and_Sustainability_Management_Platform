@@ -12,11 +12,11 @@ import com.ecotrack.ecotrack_backend.repository.CarbonEntryRepository;
 import com.ecotrack.ecotrack_backend.repository.GoalProgressRepository;
 import com.ecotrack.ecotrack_backend.repository.GoalRepository;
 import com.ecotrack.ecotrack_backend.repository.UserRepository;
-import com.ecotrack.ecotrack_backend.service.GoalService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -50,7 +50,7 @@ public class GoalIsolationServiceTest {
     private GoalService goalService;
 
     private User mockUser;
-    private Long userId = 1L;
+    private final Long userId = 1L;
 
     @BeforeEach
     void setUp() {
@@ -58,18 +58,18 @@ public class GoalIsolationServiceTest {
         mockUser.setId(userId);
         mockUser.setName("Test User");
         mockUser.setEmail("test@ecotrack.com");
+        mockUser.setCurrentXp(500);
+        mockUser.setRewardPoints(100);
     }
 
     @Test
     @DisplayName("Create Goal: Should accurately capture the max existing entry ID anchor token")
     void testCreateGoalCapturesMaxEntryIdAnchor() {
-        // Arrange
         GoalRequest request = new GoalRequest();
         request.setGoalName("Reduce Electricity");
         request.setGoalType("REDUCE_ELECTRICITY_CONSUMPTION");
         request.setTargetValue(new BigDecimal("100.00"));
         request.setDurationDays(30);
-        //request.setBaselinePeriodDays(30);
         request.setRewardPoints(50);
 
         CarbonEntry existingEntry1 = new CarbonEntry();
@@ -80,17 +80,15 @@ public class GoalIsolationServiceTest {
         when(userRepository.findById(userId)).thenReturn(Optional.of(mockUser));
         when(carbonEntryRepository.findByUserId(userId)).thenReturn(List.of(existingEntry1, existingEntry2));
         when(goalRepository.findByUserIdAndStatus(userId, "ACTIVE")).thenReturn(new ArrayList<>());
-        
+
         when(goalRepository.save(any(Goal.class))).thenAnswer(invocation -> {
             Goal savedGoal = invocation.getArgument(0);
             savedGoal.setGoalId(1L);
             return savedGoal;
         });
 
-        // Act
         GoalResponse response = goalService.createGoal(userId, request);
 
-        // Assert
         assertNotNull(response);
         verify(goalRepository).save(argThat(goal -> {
             assertEquals(25L, goal.getStartEntryId());
@@ -101,7 +99,6 @@ public class GoalIsolationServiceTest {
     @Test
     @DisplayName("Calculate Progress: Should filter out historical logs before the anchor and include new logs")
     void testCalculateProgressIsolatesHistoricalData() {
-        // Arrange
         Long goalId = 1L;
         Goal mockGoal = new Goal();
         mockGoal.setGoalId(goalId);
@@ -129,15 +126,13 @@ public class GoalIsolationServiceTest {
 
         when(goalRepository.findById(goalId)).thenReturn(Optional.of(mockGoal));
         when(goalProgressRepository.findByGoalGoalId(goalId)).thenReturn(Optional.of(mockProgress));
-        
+
         when(carbonEntryRepository.findByUserIdAndCategoryAndActivityDateBetween(
                 eq(userId), eq(CarbonCategory.ELECTRICITY), any(LocalDate.class), any(LocalDate.class)))
                 .thenReturn(List.of(oldHistoricalEntry, newValidEntry));
 
-        // Act
         GoalProgressResponse response = goalService.calculateProgress(userId, goalId);
 
-        // Assert
         assertNotNull(response);
         assertEquals(0, new BigDecimal("30.00").compareTo(response.getCurrentValue()));
         assertEquals(0, new BigDecimal("30.00").compareTo(mockProgress.getCurrentValue()));
@@ -147,7 +142,6 @@ public class GoalIsolationServiceTest {
     @Test
     @DisplayName("Calculate Progress: Should trigger automatic expiration transition when target budget is breached")
     void testCalculateProgressTriggersAutoBreach() {
-        // Arrange
         Long goalId = 2L;
         Goal mockGoal = new Goal();
         mockGoal.setGoalId(goalId);
@@ -172,13 +166,65 @@ public class GoalIsolationServiceTest {
                 eq(userId), eq(CarbonCategory.ELECTRICITY), any(LocalDate.class), any(LocalDate.class)))
                 .thenReturn(List.of(breachEntry));
 
-        // Act
         GoalProgressResponse response = goalService.calculateProgress(userId, goalId);
 
-        // Assert
         assertNotNull(response);
         assertEquals("EXPIRED", mockGoal.getStatus());
         assertFalse(response.isCompleted());
         verify(goalRepository).save(mockGoal);
+    }
+
+    // ---------------------------------------------------------------
+    // XP & Reward Crediting Tests
+    // ---------------------------------------------------------------
+
+    @Test
+    @DisplayName("Complete Goal: Should credit XP and Reward Points to User on goal completion")
+    void testCompleteGoalCreditsXpAndRewardPointsToUser() {
+        Long goalId = 3L;
+        Goal mockGoal = new Goal();
+        mockGoal.setGoalId(goalId);
+        mockGoal.setUser(mockUser);
+        mockGoal.setStatus("ACTIVE");
+        mockGoal.setXpReward(200);
+        mockGoal.setRewardPoints(50);
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(mockUser));
+        when(goalRepository.findById(goalId)).thenReturn(Optional.of(mockGoal));
+        when(goalProgressRepository.findByGoalGoalId(goalId)).thenReturn(Optional.of(new GoalProgress()));
+
+        // Act
+        goalService.completeGoal(userId, goalId);
+
+        // Verify User saved with updated XP (500 + 200 = 700) and Points (100 + 50 = 150)
+        ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
+        verify(userRepository).save(userCaptor.capture());
+
+        User updatedUser = userCaptor.getValue();
+        assertEquals(700, updatedUser.getCurrentXp());
+        assertEquals(150, updatedUser.getRewardPoints());
+
+        // Verify Goal updated to COMPLETED
+        assertEquals("COMPLETED", mockGoal.getStatus());
+        verify(goalRepository).save(mockGoal);
+    }
+
+    @Test
+    @DisplayName("Complete Goal: Should throw exception and prevent duplicate XP credits if goal is already completed")
+    void testCompleteGoalPreventsDuplicateXpAllocation() {
+        Long goalId = 4L;
+        Goal completedGoal = new Goal();
+        completedGoal.setGoalId(goalId);
+        completedGoal.setUser(mockUser);
+        completedGoal.setStatus("COMPLETED");
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(mockUser));
+        when(goalRepository.findById(goalId)).thenReturn(Optional.of(completedGoal));
+
+        // Act & Assert
+        assertThrows(IllegalStateException.class, () -> goalService.completeGoal(userId, goalId));
+
+        // Verify user was never re-saved with duplicate XP
+        verify(userRepository, never()).save(any(User.class));
     }
 }

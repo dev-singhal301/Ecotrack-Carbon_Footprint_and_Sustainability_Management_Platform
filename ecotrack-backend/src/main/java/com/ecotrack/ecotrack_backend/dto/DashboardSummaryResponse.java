@@ -1,33 +1,80 @@
 package com.ecotrack.ecotrack_backend.dto;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 public class DashboardSummaryResponse {
-    private FootprintOverviewResponse footprintOverview;
-    private FootprintTrendResponse trend;
-    private GoalSnapshotResponse goalSnapshot;
-    private List<GoalHighlightResponse> nearingCompletionOrDeadline;
-    private List<RecentActivityResponse> recentActivity;
 
+    // --- Section 1: Header & Welcome Banner ---
+    private String username;
+    private Integer userLevel;               // e.g., Level 1
+    private String userRank;                // e.g., "Eco Starter"
+    private Integer currentXp;
+    private Integer nextLevelXpTarget;
+
+    // --- Section 2: Core KPI Metric Cards ---
+    private BigDecimal totalCarbonFootprint; // kg CO2e
+    private BigDecimal carbonSaved;          // kg CO2e saved vs baseline
+    private Double savingsPercentage;        // Percentage drop badge (e.g., 12.5%)
+    private Integer totalRewardPoints;
+
+    // --- Section 3: Category Emission Impact ---
+    private List<CategoryImpactResponse> categoryImpacts;
+
+    // --- Section 4: Active Goal Meters ---
+    private List<GoalSnapshotResponse> activeGoals;
+
+    // Constructors
     public DashboardSummaryResponse() {}
-    public DashboardSummaryResponse(FootprintOverviewResponse footprintOverview, FootprintTrendResponse trend,
-                                     GoalSnapshotResponse goalSnapshot,
-                                     List<GoalHighlightResponse> nearingCompletionOrDeadline,
-                                     List<RecentActivityResponse> recentActivity) {
-        this.footprintOverview = footprintOverview;
-        this.trend = trend;
-        this.goalSnapshot = goalSnapshot;
-        this.nearingCompletionOrDeadline = nearingCompletionOrDeadline;
-        this.recentActivity = recentActivity;
+
+    public DashboardSummaryResponse(String username, Integer userLevel, String userRank, Integer currentXp, Integer nextLevelXpTarget,
+                                    BigDecimal totalCarbonFootprint, BigDecimal carbonSaved, Double savingsPercentage,
+                                    Integer totalRewardPoints, List<CategoryImpactResponse> categoryImpacts,
+                                    List<GoalSnapshotResponse> activeGoals) {
+        this.username = username;
+        this.userLevel = userLevel;
+        this.userRank = userRank;
+        this.currentXp = currentXp;
+        this.nextLevelXpTarget = nextLevelXpTarget;
+        this.totalCarbonFootprint = totalCarbonFootprint;
+        this.carbonSaved = carbonSaved;
+        this.savingsPercentage = savingsPercentage;
+        this.totalRewardPoints = totalRewardPoints;
+        this.categoryImpacts = categoryImpacts;
+        this.activeGoals = activeGoals;
     }
-    public FootprintOverviewResponse getFootprintOverview() { return footprintOverview; }
-    public void setFootprintOverview(FootprintOverviewResponse footprintOverview) { this.footprintOverview = footprintOverview; }
-    public FootprintTrendResponse getTrend() { return trend; }
-    public void setTrend(FootprintTrendResponse trend) { this.trend = trend; }
-    public GoalSnapshotResponse getGoalSnapshot() { return goalSnapshot; }
-    public void setGoalSnapshot(GoalSnapshotResponse goalSnapshot) { this.goalSnapshot = goalSnapshot; }
-    public List<GoalHighlightResponse> getNearingCompletionOrDeadline() { return nearingCompletionOrDeadline; }
-    public void setNearingCompletionOrDeadline(List<GoalHighlightResponse> nearingCompletionOrDeadline) { this.nearingCompletionOrDeadline = nearingCompletionOrDeadline; }
-    public List<RecentActivityResponse> getRecentActivity() { return recentActivity; }
-    public void setRecentActivity(List<RecentActivityResponse> recentActivity) { this.recentActivity = recentActivity; }
+
+    // Getters and Setters
+    public String getUsername() { return username; }
+    public void setUsername(String username) { this.username = username; }
+
+    public Integer getUserLevel() { return userLevel; }
+    public void setUserLevel(Integer userLevel) { this.userLevel = userLevel; }
+
+    public String getUserRank() { return userRank; }
+    public void setUserRank(String userRank) { this.userRank = userRank; }
+
+    public Integer getCurrentXp() { return currentXp; }
+    public void setCurrentXp(Integer currentXp) { this.currentXp = currentXp; }
+
+    public Integer getNextLevelXpTarget() { return nextLevelXpTarget; }
+    public void setNextLevelXpTarget(Integer nextLevelXpTarget) { this.nextLevelXpTarget = nextLevelXpTarget; }
+
+    public BigDecimal getTotalCarbonFootprint() { return totalCarbonFootprint; }
+    public void setTotalCarbonFootprint(BigDecimal totalCarbonFootprint) { this.totalCarbonFootprint = totalCarbonFootprint; }
+
+    public BigDecimal getCarbonSaved() { return carbonSaved; }
+    public void setCarbonSaved(BigDecimal carbonSaved) { this.carbonSaved = carbonSaved; }
+
+    public Double getSavingsPercentage() { return savingsPercentage; }
+    public void setSavingsPercentage(Double savingsPercentage) { this.savingsPercentage = savingsPercentage; }
+
+    public Integer getTotalRewardPoints() { return totalRewardPoints; }
+    public void setTotalRewardPoints(Integer totalRewardPoints) { this.totalRewardPoints = totalRewardPoints; }
+
+    public List<CategoryImpactResponse> getCategoryImpacts() { return categoryImpacts; }
+    public void setCategoryImpacts(List<CategoryImpactResponse> categoryImpacts) { this.categoryImpacts = categoryImpacts; }
+
+    public List<GoalSnapshotResponse> getActiveGoals() { return activeGoals; }
+    public void setActiveGoals(List<GoalSnapshotResponse> activeGoals) { this.activeGoals = activeGoals; }
 }

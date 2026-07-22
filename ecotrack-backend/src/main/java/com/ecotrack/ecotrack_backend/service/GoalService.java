@@ -79,6 +79,7 @@ public class GoalService {
         goal.setEndDate(endDate);
         
         goal.setRewardPoints(request.getRewardPoints() != null ? request.getRewardPoints() : 0);
+        goal.setXpReward(request.getRewardPoints() != null ? request.getRewardPoints() : 100);
         goal.setStatus("ACTIVE");
         
         // Setup isolation boundary: tracking ignores anything logged up to this entry ID
@@ -138,10 +139,53 @@ public class GoalService {
         goal.setStartEntryId(maxEntryId);
         if (request.getRewardPoints() != null) {
             goal.setRewardPoints(request.getRewardPoints());
+            goal.setXpReward(request.getRewardPoints());
         }
 
         Goal saved = goalRepository.save(goal);
         return mapToResponse(saved);
+    }
+
+    // ── Complete Goal & Award XP ──
+    @Transactional
+    public void completeGoal(Long userId, Long goalId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
+
+        Goal goal = goalRepository.findById(goalId)
+                .orElseThrow(() -> new IllegalArgumentException("Goal not found: " + goalId));
+
+        if (!goal.getUser().getId().equals(userId)) {
+            throw new GoalAccessDeniedException("You do not have permission to complete this goal");
+        }
+
+        if ("COMPLETED".equalsIgnoreCase(goal.getStatus())) {
+            throw new IllegalStateException("Goal is already completed");
+        }
+
+        // 1. Calculate and award XP and Reward Points
+        int xpToAward = (goal.getXpReward() != null) ? goal.getXpReward() : 
+                        (goal.getRewardPoints() != null ? goal.getRewardPoints() : 0);
+        int pointsToAward = (goal.getRewardPoints() != null) ? goal.getRewardPoints() : 0;
+
+        int currentXp = (user.getCurrentXp() != null) ? user.getCurrentXp() : 0;
+        int currentPoints = (user.getRewardPoints() != null) ? user.getRewardPoints() : 0;
+
+        user.setCurrentXp(currentXp + xpToAward);
+        user.setRewardPoints(currentPoints + pointsToAward);
+        userRepository.save(user);
+
+        // 2. Mark goal status as COMPLETED
+        goal.setStatus("COMPLETED");
+        goalRepository.save(goal);
+
+        // 3. Update associated progress record if present
+        goalProgressRepository.findByGoalGoalId(goalId).ifPresent(progress -> {
+            progress.setCompleted(true);
+            progress.setCompletedDate(LocalDate.now());
+            progress.setCompletionPercentage(BigDecimal.valueOf(100));
+            goalProgressRepository.save(progress);
+        });
     }
 
     // ── Delete ──
@@ -251,8 +295,9 @@ public class GoalService {
             } 
             // Successfully completed if deadline passes cleanly while staying inside limits
             else if (LocalDate.now().isAfter(goal.getEndDate())) {
-                goal.setStatus("COMPLETED");
-                completed = true;
+                // Trigger goal completion reward flow automatically
+                completeGoal(userId, goalId);
+                return buildProgressResponse(goal, progress);
             }
         } else if ("COMPLETED".equals(goal.getStatus())) {
             completed = true;
@@ -268,8 +313,13 @@ public class GoalService {
     // ── Expiration Engine Helper ──
     private void checkAndHandleExpiration(Goal goal) {
         if ("ACTIVE".equals(goal.getStatus()) && LocalDate.now().isAfter(goal.getEndDate())) {
-            goal.setStatus("EXPIRED");
-            goalRepository.save(goal);
+            // Trigger automatic completion & XP awarding if end date passed without breaching target budget
+            try {
+                completeGoal(goal.getUser().getId(), goal.getGoalId());
+            } catch (Exception e) {
+                goal.setStatus("EXPIRED");
+                goalRepository.save(goal);
+            }
         }
     }
 

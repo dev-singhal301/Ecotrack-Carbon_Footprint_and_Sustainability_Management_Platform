@@ -32,6 +32,9 @@ public class Goal {
     @Column(name = "reward_points")
     private Integer rewardPoints = 0;
 
+    @Column(name = "xp_reward")
+    private Integer xpReward = 100;
+
     @Column(name = "start_date", nullable = false)
     private LocalDate startDate;
 
@@ -67,6 +70,9 @@ public class Goal {
 
     public Integer getRewardPoints() { return rewardPoints; }
     public void setRewardPoints(Integer rewardPoints) { this.rewardPoints = rewardPoints; }
+
+    public Integer getXpReward() { return xpReward; }
+    public void setXpReward(Integer xpReward) { this.xpReward = xpReward; }
 
     public LocalDate getStartDate() { return startDate; }
     public void setStartDate(LocalDate startDate) { this.startDate = startDate; }

@@ -1,7 +1,7 @@
 package com.ecotrack.ecotrack_backend.service;
 
+import com.ecotrack.ecotrack_backend.dto.CategoryImpactResponse;
 import com.ecotrack.ecotrack_backend.dto.FootprintOverviewResponse;
-import com.ecotrack.ecotrack_backend.dto.FootprintTrendResponse;
 import com.ecotrack.ecotrack_backend.entity.CarbonCategory;
 import com.ecotrack.ecotrack_backend.entity.CarbonEntry;
 import com.ecotrack.ecotrack_backend.entity.CarbonFootprint;
@@ -52,6 +52,81 @@ class CarbonFootprintServiceTest {
     }
 
     // ---------------------------------------------------------------
+    // getTotalCarbonFootprint()
+    // ---------------------------------------------------------------
+
+    @Test
+    void getTotalCarbonFootprint_returnsSumFromRepository() {
+        when(carbonEntryRepository.sumTotalCarbonEmissionByUserId(USER_ID))
+                .thenReturn(new BigDecimal("150.50"));
+
+        BigDecimal total = service.getTotalCarbonFootprint(USER_ID);
+
+        assertThat(total).isEqualByComparingTo("150.50");
+    }
+
+    @Test
+    void getTotalCarbonFootprint_returnsZeroWhenNull() {
+        when(carbonEntryRepository.sumTotalCarbonEmissionByUserId(USER_ID))
+                .thenReturn(null);
+
+        BigDecimal total = service.getTotalCarbonFootprint(USER_ID);
+
+        assertThat(total).isEqualByComparingTo("0");
+    }
+
+    // ---------------------------------------------------------------
+    // getCarbonSavedVsBaseline() & getSavingsPercentage()
+    // ---------------------------------------------------------------
+
+    @Test
+    void getCarbonSavedVsBaseline_returnsPositiveSavingsWhenEmissionsDecreased() {
+        when(carbonEntryRepository.findByUserIdAndActivityDateBetween(eq(USER_ID), any(), any()))
+                .thenReturn(List.of(entry(CarbonCategory.ELECTRICITY, new BigDecimal("80.00"), LocalDate.now())))
+                .thenReturn(List.of(entry(CarbonCategory.ELECTRICITY, new BigDecimal("100.00"), LocalDate.now().minusDays(35))));
+
+        BigDecimal saved = service.getCarbonSavedVsBaseline(USER_ID);
+
+        assertThat(saved).isEqualByComparingTo("20.00");
+    }
+
+    @Test
+    void getSavingsPercentage_calculatesCorrectPercentageDrop() {
+        when(carbonEntryRepository.findByUserIdAndActivityDateBetween(eq(USER_ID), any(), any()))
+                .thenReturn(List.of(entry(CarbonCategory.ELECTRICITY, new BigDecimal("80.00"), LocalDate.now())))
+                .thenReturn(List.of(entry(CarbonCategory.ELECTRICITY, new BigDecimal("100.00"), LocalDate.now().minusDays(35))));
+
+        Double percentage = service.getSavingsPercentage(USER_ID);
+
+        assertThat(percentage).isEqualTo(20.0);
+    }
+
+    // ---------------------------------------------------------------
+    // getCategoryImpactList()
+    // ---------------------------------------------------------------
+
+    @Test
+    void getCategoryImpactList_calculatesPercentageSharesCorrectly() {
+        Object[] row1 = new Object[]{CarbonCategory.ELECTRICITY, new BigDecimal("60.00")};
+        Object[] row2 = new Object[]{CarbonCategory.TRANSPORTATION, new BigDecimal("40.00")};
+
+        when(carbonEntryRepository.findCategoryImpactByUserId(USER_ID))
+                .thenReturn(List.of(row1, row2));
+        when(carbonEntryRepository.sumTotalCarbonEmissionByUserId(USER_ID))
+                .thenReturn(new BigDecimal("100.00"));
+
+        List<CategoryImpactResponse> impacts = service.getCategoryImpactList(USER_ID);
+
+        assertThat(impacts).hasSize(2);
+
+        CategoryImpactResponse expectedFirst = new CategoryImpactResponse("ELECTRICITY", new BigDecimal("60.00"), 60.0);
+        CategoryImpactResponse expectedSecond = new CategoryImpactResponse("TRANSPORTATION", new BigDecimal("40.00"), 40.0);
+
+        assertThat(impacts.get(0)).usingRecursiveComparison().isEqualTo(expectedFirst);
+        assertThat(impacts.get(1)).usingRecursiveComparison().isEqualTo(expectedSecond);
+    }
+
+    // ---------------------------------------------------------------
     // getOverview()
     // ---------------------------------------------------------------
 
@@ -72,7 +147,7 @@ class CarbonFootprintServiceTest {
         assertThat(result.getTotalEmission()).isEqualByComparingTo("18.50");
         assertThat(result.getCategoryBreakdown().get(CarbonCategory.ELECTRICITY)).isEqualByComparingTo("15.00");
         assertThat(result.getCategoryBreakdown().get(CarbonCategory.TRANSPORTATION)).isEqualByComparingTo("3.50");
-        // Categories with no entries should still be present, at zero — not missing from the map.
+        
         assertThat(result.getCategoryBreakdown().get(CarbonCategory.FOOD)).isEqualByComparingTo("0");
         assertThat(result.getCategoryBreakdown().get(CarbonCategory.WASTE)).isEqualByComparingTo("0");
         assertThat(result.getCategoryBreakdown().get(CarbonCategory.WATER)).isEqualByComparingTo("0");
@@ -87,49 +162,6 @@ class CarbonFootprintServiceTest {
         FootprintOverviewResponse result = service.getOverview(USER_ID);
 
         assertThat(result.getTotalEmission()).isEqualByComparingTo("0");
-    }
-
-    // ---------------------------------------------------------------
-    // getTrend()
-    // ---------------------------------------------------------------
-
-    @Test
-    void getTrend_noPreviousData_returnsNullPercentChange() {
-        // First call inside getTrend() is for the current window, second is for the previous window.
-        when(carbonEntryRepository.findByUserIdAndActivityDateBetween(eq(USER_ID), any(), any()))
-                .thenReturn(List.of(entry(CarbonCategory.ELECTRICITY, new BigDecimal("10.00"), LocalDate.now())))
-                .thenReturn(List.of()); // previous period empty
-
-        FootprintTrendResponse trend = service.getTrend(USER_ID);
-
-        assertThat(trend.isHasPreviousData()).isFalse();
-        assertThat(trend.getPercentChange()).isNull();
-        assertThat(trend.getCurrentTotal()).isEqualByComparingTo("10.00");
-    }
-
-    @Test
-    void getTrend_emissionsIncreased_returnsPositivePercentChange() {
-        when(carbonEntryRepository.findByUserIdAndActivityDateBetween(eq(USER_ID), any(), any()))
-                .thenReturn(List.of(entry(CarbonCategory.ELECTRICITY, new BigDecimal("20.00"), LocalDate.now())))
-                .thenReturn(List.of(entry(CarbonCategory.ELECTRICITY, new BigDecimal("10.00"), LocalDate.now().minusDays(40))));
-
-        FootprintTrendResponse trend = service.getTrend(USER_ID);
-
-        assertThat(trend.isHasPreviousData()).isTrue();
-        // (20 - 10) / 10 * 100 = 100% increase
-        assertThat(trend.getPercentChange()).isEqualByComparingTo("100.0000");
-    }
-
-    @Test
-    void getTrend_emissionsDecreased_returnsNegativePercentChange() {
-        when(carbonEntryRepository.findByUserIdAndActivityDateBetween(eq(USER_ID), any(), any()))
-                .thenReturn(List.of(entry(CarbonCategory.ELECTRICITY, new BigDecimal("5.00"), LocalDate.now())))
-                .thenReturn(List.of(entry(CarbonCategory.ELECTRICITY, new BigDecimal("10.00"), LocalDate.now().minusDays(40))));
-
-        FootprintTrendResponse trend = service.getTrend(USER_ID);
-
-        // (5 - 10) / 10 * 100 = -50% — a decrease should read as negative (green, per the frontend convention)
-        assertThat(trend.getPercentChange()).isEqualByComparingTo("-50.0000");
     }
 
     // ---------------------------------------------------------------
@@ -171,13 +203,11 @@ class CarbonFootprintServiceTest {
 
         service.logDailySnapshot(USER_ID);
 
-        // userRepository should NOT be consulted when updating an existing row —
-        // only needed to build a brand-new one.
         verifyNoInteractions(userRepository);
 
         ArgumentCaptor<CarbonFootprint> captor = ArgumentCaptor.forClass(CarbonFootprint.class);
         verify(carbonFootprintRepository, times(1)).save(captor.capture());
-        assertThat(captor.getValue().getFootprintId()).isEqualTo(99L); // same row, not a new one
+        assertThat(captor.getValue().getFootprintId()).isEqualTo(99L);
         assertThat(captor.getValue().getFoodEmission()).isEqualByComparingTo("7.00");
     }
 }

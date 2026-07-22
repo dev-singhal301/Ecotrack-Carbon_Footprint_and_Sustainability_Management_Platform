@@ -1,16 +1,11 @@
 package com.ecotrack.ecotrack_backend.controller;
 
-import com.ecotrack.ecotrack_backend.dto.*;
-import com.ecotrack.ecotrack_backend.entity.Goal;
+import com.ecotrack.ecotrack_backend.dto.DashboardSummaryResponse;
 import com.ecotrack.ecotrack_backend.entity.User;
 import com.ecotrack.ecotrack_backend.exception.GoalAccessDeniedException;
-import com.ecotrack.ecotrack_backend.repository.CarbonEntryRepository;
-import com.ecotrack.ecotrack_backend.repository.GoalRepository;
 import com.ecotrack.ecotrack_backend.repository.UserRepository;
 import com.ecotrack.ecotrack_backend.service.CarbonFootprintService;
-import com.ecotrack.ecotrack_backend.service.GoalService;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
+import com.ecotrack.ecotrack_backend.service.DashboardService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -20,98 +15,56 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/dashboard")
 public class DashboardController {
 
-    private static final int RECENT_ACTIVITY_LIMIT = 5;
-    private static final BigDecimal NEARING_COMPLETION_THRESHOLD = BigDecimal.valueOf(80);
-    private static final long NEARING_DEADLINE_DAYS = 3;
-
+    private final DashboardService dashboardService;
     private final CarbonFootprintService carbonFootprintService;
-    private final GoalService goalService;
-    private final GoalRepository goalRepository;
-    private final CarbonEntryRepository carbonEntryRepository;
     private final UserRepository userRepository;
 
-    public DashboardController(CarbonFootprintService carbonFootprintService,
-                                GoalService goalService,
-                                GoalRepository goalRepository,
-                                CarbonEntryRepository carbonEntryRepository,
-                                UserRepository userRepository) {
+    public DashboardController(DashboardService dashboardService,
+                               CarbonFootprintService carbonFootprintService,
+                               UserRepository userRepository) {
+        this.dashboardService = dashboardService;
         this.carbonFootprintService = carbonFootprintService;
-        this.goalService = goalService;
-        this.goalRepository = goalRepository;
-        this.carbonEntryRepository = carbonEntryRepository;
         this.userRepository = userRepository;
     }
 
+    /**
+     * GET /api/dashboard/summary
+     * Fetches the unified dashboard summary response for the authenticated user.
+     * Automatically logs a daily historical snapshot upon request.
+     */
     @GetMapping("/summary")
     public ResponseEntity<DashboardSummaryResponse> getSummary(@AuthenticationPrincipal UserDetails principal) {
-        Long userId = extractUserId(principal);
-        LocalDate today = LocalDate.now();
-
-        FootprintOverviewResponse overview = carbonFootprintService.getOverview(userId);
-        FootprintTrendResponse trend = carbonFootprintService.getTrend(userId);
-
-        // Recalculate every active goal's progress on every dashboard load, so
-        // the numbers shown are always current — not just whatever was last
-        // computed by a separate call to GET /api/goals/{id}/progress.
-        // Trade-off (kept deliberately, per product decision): this makes the
-        // dashboard endpoint do writes — it can flip a goal to COMPLETED or
-        // EXPIRED as a side effect of a GET request.
-        List<Goal> activeGoals = goalRepository.findByUserIdAndStatus(userId, "ACTIVE");
-        List<GoalHighlightResponse> nearing = new ArrayList<>();
-        for (Goal goal : activeGoals) {
-            GoalProgressResponse progress = goalService.calculateProgress(userId, goal.getGoalId());
-            long daysRemaining = ChronoUnit.DAYS.between(today, goal.getEndDate());
-
-            if (progress.isCompleted() || daysRemaining < 0) {
-                continue; // already finished, or expired and no longer actionable
-            }
-            boolean nearingCompletion = progress.getCompletionPercentage().compareTo(NEARING_COMPLETION_THRESHOLD) >= 0;
-            boolean nearingDeadline = daysRemaining <= NEARING_DEADLINE_DAYS;
-            if (nearingCompletion || nearingDeadline) {
-                nearing.add(new GoalHighlightResponse(goal.getGoalId(), goal.getGoalName(),
-                        goal.getGoalType(), progress.getCompletionPercentage(), daysRemaining));
-            }
+        if (principal == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        // Re-query counts fresh after the recalculation above, since calculateProgress()
-        // may have just flipped some goals to COMPLETED or EXPIRED.
-        GoalSnapshotResponse goalSnapshot = new GoalSnapshotResponse(
-                goalRepository.findByUserIdAndStatus(userId, "ACTIVE").size(),
-                goalRepository.findByUserIdAndStatus(userId, "COMPLETED").size());
+        User user = extractUser(principal);
+        Long userId = user.getId();
 
-        Pageable limit = PageRequest.of(0, RECENT_ACTIVITY_LIMIT);
-        List<RecentActivityResponse> recentActivity = carbonEntryRepository
-                .findByUserIdOrderByActivityDateDescEntryIdDesc(userId, limit).stream()
-                .map(e -> new RecentActivityResponse(e.getEntryId(), e.getCategory(), e.getAmount(),
-                        e.getUnit(), e.getCarbonEmission(), e.getActivityDate()))
-                .collect(Collectors.toList());
+        // 1. Log daily snapshot for historical tracking
+        carbonFootprintService.logDailySnapshot(userId);
 
-        carbonFootprintService.logDailySnapshot(userId); // historical log only
+        // 2. Build and return unified dashboard summary
+        DashboardSummaryResponse response = dashboardService.getDashboardSummary(userId);
 
-        DashboardSummaryResponse response = new DashboardSummaryResponse(
-                overview, trend, goalSnapshot, nearing, recentActivity);
         return ResponseEntity.ok(response);
     }
 
-    private Long extractUserId(UserDetails principal) {
-        User user = userRepository.findByEmail(principal.getUsername())
-                .orElseThrow(() -> new IllegalArgumentException("Authenticated user not found: " + principal.getUsername()));
-        return user.getId();
+    /**
+     * Helper method to resolve authenticated User entity from UserDetails security principal.
+     */
+    private User extractUser(UserDetails principal) {
+        return userRepository.findByEmail(principal.getUsername())
+                .orElseThrow(() -> new IllegalArgumentException("Authenticated user not found with email: " + principal.getUsername()));
     }
 
-    // ── Exception handlers — same shape as GoalController's ──
+    // ── Exception Handlers ──
 
     @ExceptionHandler(GoalAccessDeniedException.class)
     public ResponseEntity<Map<String, String>> handleAccessDenied(GoalAccessDeniedException ex) {
