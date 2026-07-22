@@ -1,1 +1,92 @@
-<p>dashboard works!</p>
+<div class="dashboard-container">
+
+  <div class="data-error-banner" *ngIf="dataError">{{ dataError }}</div>
+  <div class="loading-state" *ngIf="isLoading">Loading your dashboard...</div>
+
+  <ng-container *ngIf="!isLoading && summary">
+
+    <!-- 1. Header & Welcome Banner -->
+    <section class="dashboard-card welcome-banner">
+      <div class="welcome-text">
+        <h2 class="welcome-greeting">{{ greetingText }}</h2>
+        <div class="rank-row">
+          <span class="rank-badge">{{ summary.userRank }}</span>
+          <span class="level-label">Level {{ summary.userLevel }}</span>
+        </div>
+        <div class="xp-bar-track">
+          <div class="xp-bar-fill" [style.width.%]="xpProgressPercent"></div>
+        </div>
+        <span class="xp-bar-caption">{{ summary.currentXp }} / {{ summary.nextLevelXpTarget }} XP total &middot; next level at {{ summary.nextLevelXpTarget }} XP</span>
+      </div>
+      <button type="button" class="btn-log-entry" (click)="goToTracking()">+ Log New Entry</button>
+    </section>
+
+    <!-- 2. Core KPI Metric Cards -->
+    <div class="kpi-row">
+      <div class="dashboard-card kpi-card">
+        <span class="kpi-label">Total Carbon Footprint</span>
+        <span class="kpi-value">{{ summary.totalCarbonFootprint | number:'1.1-1' }} <span class="kpi-unit">kg CO&#8322;</span></span>
+      </div>
+
+      <div class="dashboard-card kpi-card">
+        <span class="kpi-label">Carbon Saved vs Baseline</span>
+        <span class="kpi-value kpi-positive">
+          {{ summary.carbonSaved | number:'1.1-1' }} <span class="kpi-unit">kg CO&#8322;</span>
+        </span>
+        <span class="kpi-badge" *ngIf="summary.savingsPercentage > 0">-{{ summary.savingsPercentage | number:'1.0-1' }}%</span>
+      </div>
+
+      <div class="dashboard-card kpi-card">
+        <span class="kpi-label">Total Reward Points</span>
+        <span class="kpi-value">{{ summary.totalRewardPoints }} <span class="kpi-unit">XP</span></span>
+      </div>
+    </div>
+
+    <!-- 3 & 4: Middle row -->
+    <div class="middle-row">
+      <!-- 3. Category Emission Impact -->
+      <div class="dashboard-card category-panel">
+        <h3 class="panel-heading">Category Emission Impact</h3>
+
+        <div class="category-bar-row" *ngFor="let item of rankedCategoryImpacts">
+          <div class="category-bar-label">
+            <span>{{ getCategoryLabel(item.categoryName) }}</span>
+            <span class="category-bar-value">{{ item.totalEmissions | number:'1.1-1' }} kg</span>
+          </div>
+          <!-- Category Emission Impact Bar Fill -->
+            <div class="category-bar-track">
+              <div class="category-bar-fill" [style.width.%]="getCategoryBarWidth(item.totalEmissions)"></div>
+            </div>
+        </div>
+
+        <div class="empty-state" *ngIf="rankedCategoryImpacts.length === 0">
+          No carbon entries logged yet.
+        </div>
+      </div>
+
+      <!-- 4. Active Goal Meters -->
+      <div class="dashboard-card goals-panel">
+        <h3 class="panel-heading">Active Goal Meters</h3>
+
+        <div class="mini-goal-list">
+          <div class="mini-goal-card" *ngFor="let goal of summary.activeGoals ?? []">
+            <div class="mini-goal-header">
+              <span class="mini-goal-name">{{ goal.goalName }}</span>
+              <span class="status-pill" [style.background]="getGoalStatusColor(goal)">{{ getGoalStatusLabel(goal) }}</span>
+            </div>
+            <div class="mini-goal-track">
+              <div class="mini-goal-fill" [style.width.%]="getGoalFillPercent(goal)" [style.background]="getGoalStatusColor(goal)"></div>
+            </div>
+            <span class="mini-goal-readout">{{ goal.currentValue | number:'1.1-1' }} / {{ goal.targetValue | number:'1.1-1' }}</span>
+          </div>
+
+          <div class="empty-state" *ngIf="!summary.activeGoals || summary.activeGoals.length === 0">
+            No active goals right now. Head to the Goals tab to set one up.
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </ng-container>
+
+</div>

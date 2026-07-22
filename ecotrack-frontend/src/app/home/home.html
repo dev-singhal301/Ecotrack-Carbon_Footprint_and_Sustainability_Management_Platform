@@ -76,7 +76,7 @@
   <div class="sidebar-overlay" *ngIf="isSidebarOpen" (click)="closeSidebar()"></div>
 
   <main class="content">
-    <router-outlet></router-outlet>
+    <router-outlet (activate)="onSubViewActivated($event)"></router-outlet>
   </main>
 
 </div>

@@ -1,0 +1,319 @@
+.dashboard-container {
+  --bg: #f8f9fa;
+  --card: #ffffff;
+  --text-primary: #263238;
+  --text-secondary: #78909c;
+  --boundary: #37474f;
+  --eco-safe: #2e7d32;
+  --warning: #ed6c02;
+  --critical: #c62828;
+
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+  height: 100%;
+  padding: 24px;
+  box-sizing: border-box;
+  background: var(--bg);
+  overflow-y: auto;
+}
+
+.dashboard-card {
+  background: var(--card);
+  border: 1px solid #e5e9ea;
+  border-radius: 16px;
+  box-sizing: border-box;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+}
+
+.data-error-banner {
+  background: #fdecea;
+  border: 1px solid #f3b8b3;
+  color: var(--critical);
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 10px 14px;
+  border-radius: 8px;
+}
+
+.loading-state,
+.empty-state {
+  text-align: center;
+  color: var(--text-secondary);
+  font-style: italic;
+  padding: 40px 20px;
+}
+
+/* ---------------- 1. Welcome banner ---------------- */
+.welcome-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 28px 32px;
+}
+
+.welcome-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.welcome-greeting {
+  margin: 0 0 10px;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.rank-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.rank-badge {
+  background: var(--eco-safe);
+  color: #ffffff;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.level-label {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.xp-bar-track {
+  width: 100%;
+  max-width: 420px;
+  height: 10px;
+  background: #eef2f3;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.xp-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--eco-safe), #66bb6a);
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+.xp-bar-caption {
+  display: block;
+  margin-top: 6px;
+  font-size: 0.76rem;
+  color: var(--text-secondary);
+}
+
+.btn-log-entry {
+  flex-shrink: 0;
+  background: var(--eco-safe);
+  color: #ffffff;
+  border: none;
+  border-radius: 999px;
+  padding: 14px 26px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.2s ease, transform 0.15s ease;
+}
+
+.btn-log-entry:hover {
+  background: #1b5e20;
+  transform: translateY(-1px);
+}
+
+/* ---------------- 2. KPI cards ---------------- */
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.kpi-card {
+  position: relative;
+  padding: 20px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.kpi-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.kpi-value {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.kpi-positive {
+  color: var(--eco-safe);
+}
+
+.kpi-unit {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.kpi-badge {
+  position: absolute;
+  top: 20px;
+  right: 22px;
+  background: #e6f2e6;
+  color: var(--eco-safe);
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+/* ---------------- 3 & 4. Middle row ---------------- */
+.middle-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  flex: 1;
+  min-height: 0;
+}
+
+.category-panel,
+.goals-panel {
+  padding: 22px 24px;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.panel-heading {
+  margin: 0 0 16px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* ---- Category impact bars ---- */
+.category-bar-row {
+  margin-bottom: 14px;
+}
+
+.category-bar-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.82rem;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+
+.category-bar-value {
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.category-bar-track {
+  width: 100%;
+  height: 10px;
+  background: #eef2f3;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.category-bar-fill {
+  height: 100%;
+  background: var(--boundary);
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+/* ---- Active goal mini cards ---- */
+.mini-goal-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.mini-goal-card {
+  border: 1px solid #eef2f3;
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+
+.mini-goal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.mini-goal-name {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.status-pill {
+  flex-shrink: 0;
+  color: #ffffff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.mini-goal-track {
+  width: 100%;
+  height: 8px;
+  background: #eef2f3;
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+
+.mini-goal-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.4s ease, background-color 0.3s ease;
+}
+
+.mini-goal-readout {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+/* ---------------- Responsive ---------------- */
+@media (max-width: 1024px) {
+  .kpi-row {
+    grid-template-columns: 1fr;
+  }
+  .middle-row {
+    grid-template-columns: 1fr;
+  }
+  .welcome-banner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .btn-log-entry {
+    width: 100%;
+    text-align: center;
+  }
+}

@@ -2,10 +2,10 @@ import { Routes } from '@angular/router';
 import { AuthForm } from './auth/auth-form/auth-form';
 import { Home } from './home/home';
 import { ResetPassword } from './auth/reset-password/reset-password';
-import { authGuard } from './auth/auth.guard'; // 👈 1. Import your brand new guard
+import { authGuard } from './auth/auth.guard'; 
 
 // Import your newly generated dashboard sub-components
-import { Dashboard } from './home/dashboard/dashboard';
+import { DashboardComponent } from './home/dashboard/dashboard';
 import { TrackingComponent } from './home/tracking/tracking';
 import { GoalsComponent } from './home/goals/goals';
 import { Challenges } from './home/challenges/challenges';
@@ -24,13 +24,13 @@ export const routes: Routes = [
     { 
         path: 'home', 
         component: Home,
-        canActivate: [authGuard], // 👈 2. Add the guard here to protect this shell and all its children
+        canActivate: [authGuard],
         children: [
             // Automatically drops users into the dashboard sub-view when reaching /home
             { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
             
             // Nested Child views that render inside home.html's <router-outlet>
-            { path: 'dashboard', component: Dashboard },
+            { path: 'dashboard', component: DashboardComponent },
             { path: 'tracking', component: TrackingComponent },
             { path: 'goals', component: GoalsComponent },
             { path: 'challenges', component: Challenges },
