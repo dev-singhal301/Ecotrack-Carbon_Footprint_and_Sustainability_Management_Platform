@@ -2,6 +2,7 @@ package com.ecotrack.ecotrack_backend.service;
 
 import com.ecotrack.ecotrack_backend.dto.CategoryImpactResponse;
 import com.ecotrack.ecotrack_backend.dto.FootprintOverviewResponse;
+import com.ecotrack.ecotrack_backend.dto.FootprintTrendPointResponse;
 import com.ecotrack.ecotrack_backend.entity.CarbonCategory;
 import com.ecotrack.ecotrack_backend.entity.CarbonEntry;
 import com.ecotrack.ecotrack_backend.entity.CarbonFootprint;
@@ -15,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
@@ -131,6 +133,69 @@ public class CarbonFootprintService {
         Map<CarbonCategory, BigDecimal> breakdown = sumByCategory(userId, windowStart, today);
         BigDecimal total = breakdown.values().stream().reduce(BigDecimal.ZERO, BigDecimal::add);
         return new FootprintOverviewResponse(total, breakdown);
+    }
+
+    /**
+     * Section: Emissions Trend Chart — daily snapshots from the last `days` days, oldest first.
+     * Backed by the carbon_footprint history table (populated by logDailySnapshot), NOT a live
+     * recompute, so a day only appears once its snapshot has been logged (i.e. the dashboard has
+     * been loaded at least once that day). Days is clamped to [1, 90] to keep the query bounded.
+     */
+    public List<FootprintTrendPointResponse> getFootprintTrend(Long userId, int days) {
+        int clampedDays = Math.max(1, Math.min(days, 90));
+        LocalDate windowStart = LocalDate.now().minusDays(clampedDays - 1L);
+        String periodFloor = windowStart.toString();
+
+        List<CarbonFootprint> rows = carbonFootprintRepository
+                .findByUserIdAndPeriodGreaterThanEqualOrderByPeriodAsc(userId, periodFloor);
+
+        List<FootprintTrendPointResponse> points = new ArrayList<>();
+        for (CarbonFootprint row : rows) {
+            points.add(new FootprintTrendPointResponse(
+                    row.getPeriod(),
+                    row.getTotalEmission(),
+                    row.getElectricityEmission(),
+                    row.getTransportationEmission(),
+                    row.getFuelEmission(),
+                    row.getWaterEmission(),
+                    row.getWasteEmission(),
+                    row.getFoodEmission()
+            ));
+        }
+        return points;
+    }
+
+    /**
+     * Section: Emissions Trend Chart — custom start/end date range, oldest first.
+     * Same source (carbon_footprint history table) and same gap caveat as getFootprintTrend:
+     * a day only appears if its snapshot was logged. Range is validated (from <= to) and
+     * capped at 366 days to keep the query bounded.
+     */
+    public List<FootprintTrendPointResponse> getFootprintTrendByRange(Long userId, LocalDate from, LocalDate to) {
+        if (from.isAfter(to)) {
+            throw new IllegalArgumentException("Start date must be on or before end date");
+        }
+        if (ChronoUnit.DAYS.between(from, to) > 365) {
+            throw new IllegalArgumentException("Date range cannot exceed 366 days");
+        }
+
+        List<CarbonFootprint> rows = carbonFootprintRepository
+                .findByUserIdAndPeriodBetweenOrderByPeriodAsc(userId, from.toString(), to.toString());
+
+        List<FootprintTrendPointResponse> points = new ArrayList<>();
+        for (CarbonFootprint row : rows) {
+            points.add(new FootprintTrendPointResponse(
+                    row.getPeriod(),
+                    row.getTotalEmission(),
+                    row.getElectricityEmission(),
+                    row.getTransportationEmission(),
+                    row.getFuelEmission(),
+                    row.getWaterEmission(),
+                    row.getWasteEmission(),
+                    row.getFoodEmission()
+            ));
+        }
+        return points;
     }
 
     // ── Historical log — one row per user per calendar day, upserted ──

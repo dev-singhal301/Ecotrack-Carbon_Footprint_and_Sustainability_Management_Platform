@@ -1,11 +1,13 @@
 package com.ecotrack.ecotrack_backend.controller;
 
 import com.ecotrack.ecotrack_backend.dto.DashboardSummaryResponse;
+import com.ecotrack.ecotrack_backend.dto.FootprintTrendPointResponse;
 import com.ecotrack.ecotrack_backend.entity.User;
 import com.ecotrack.ecotrack_backend.exception.GoalAccessDeniedException;
 import com.ecotrack.ecotrack_backend.repository.UserRepository;
 import com.ecotrack.ecotrack_backend.service.CarbonFootprintService;
 import com.ecotrack.ecotrack_backend.service.DashboardService;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -13,8 +15,11 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDate;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -54,6 +59,37 @@ public class DashboardController {
         DashboardSummaryResponse response = dashboardService.getDashboardSummary(userId);
 
         return ResponseEntity.ok(response);
+    }
+
+    /**
+     * GET /api/dashboard/trend?days=30
+     * GET /api/dashboard/trend?from=2026-06-01&to=2026-06-30
+     * Returns daily emissions snapshots (total + per-category) for the authenticated user,
+     * oldest first, for use in the trend/line chart.
+     * If both `from` and `to` are supplied, returns that custom date range (validated:
+     * from <= to, capped at 366 days). Otherwise falls back to the relative `days` window
+     * (defaults to 30, clamped to [1, 90] server-side).
+     */
+    @GetMapping("/trend")
+    public ResponseEntity<List<FootprintTrendPointResponse>> getTrend(
+            @RequestParam(name = "days", defaultValue = "30") int days,
+            @RequestParam(name = "from", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(name = "to", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @AuthenticationPrincipal UserDetails principal) {
+        if (principal == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        User user = extractUser(principal);
+        List<FootprintTrendPointResponse> trend;
+
+        if (from != null && to != null) {
+            trend = carbonFootprintService.getFootprintTrendByRange(user.getId(), from, to);
+        } else {
+            trend = carbonFootprintService.getFootprintTrend(user.getId(), days);
+        }
+
+        return ResponseEntity.ok(trend);
     }
 
     /**
