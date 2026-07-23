@@ -1,138 +1,165 @@
-.dashboard-container {
-  --bg: #f8f9fa;
-  --card: #ffffff;
-  --text-primary: #263238;
-  --text-secondary: #78909c;
-  --boundary: #37474f;
-  --eco-safe: #2e7d32;
-  --warning: #ed6c02;
-  --critical: #c62828;
+:host {
+  /* ---- Brand green 3-tier ramp ---- */
+  --eco-green-light: #60BA75;
+  --eco-green: #2d6a4f;
+  --eco-green-dark: #1b4332;
 
+  --eco-white: #ffffff;
+  --eco-red: #ef4444;
+  --eco-warning: #ed6c02;
+
+  --eco-positive-bg: #dcfce7;
+  --eco-positive-text: #15803d;
+
+  /* ---- Slate neutrals ---- */
+  --eco-slate-900: #0f172a;
+  --eco-slate-800: #1e293b;
+  --eco-slate-700: #334155;
+  --eco-slate-400: #94a3b8;
+
+  --eco-input-field-bg: #f8fafc;
+  --eco-input-border: #cbd5e1;
+  --eco-text-main: #1e293b;
+  --eco-text-muted: #64748b;
+  --eco-text-label: #475569;
+
+  /* ---- White/Off-white Background to match Tracking ---- */
+  --eco-bg-light: #f8fafc;
+
+  /* ---- Category Label Color System ---- */
+  --eco-cat-food-bg: #dcfce7;
+  --eco-cat-food-text: #15803d;
+
+  --eco-cat-water-bg: #e0f2fe;
+  --eco-cat-water-text: #0369a1;
+
+  --eco-cat-fuel-bg: #f3e8ff;
+  --eco-cat-fuel-text: #6b21a8;
+
+  --eco-cat-electricity-bg: #fef08a;
+  --eco-cat-electricity-text: #a16207;
+
+  --eco-cat-waste-bg: #fee2e2;
+  --eco-cat-waste-text: #b91c1c;
+
+  --eco-cat-transport-bg: #e0e7ff;
+  --eco-cat-transport-text: #4338ca;
+
+  display: block;
+}
+
+.dashboard-container {
+  padding: 24px;
   display: flex;
   flex-direction: column;
   gap: 20px;
-  width: 100%;
-  height: 100%;
-  padding: 24px;
   box-sizing: border-box;
-  background: var(--bg);
-  overflow-y: auto;
+  background: var(--eco-bg-light);
 }
 
 .dashboard-card {
-  background: var(--card);
-  border: 1px solid #e5e9ea;
-  border-radius: 16px;
-  box-sizing: border-box;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+  background: var(--eco-white);
+  /* Card border & radius matched directly to tracking.css */
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: none;
 }
 
+/* Error Banner & Loader */
 .data-error-banner {
-  background: #fdecea;
-  border: 1px solid #f3b8b3;
-  color: var(--critical);
-  font-size: 0.85rem;
-  font-weight: 600;
-  padding: 10px 14px;
+  background: rgba(239, 68, 68, 0.08);
+  color: var(--eco-red);
+  padding: 12px 16px;
   border-radius: 8px;
+  font-weight: 600;
 }
 
-.loading-state,
-.empty-state {
+.loading-state {
   text-align: center;
-  color: var(--text-secondary);
-  font-style: italic;
-  padding: 40px 20px;
+  padding: 48px;
+  color: var(--eco-text-muted);
+  font-size: 1.1rem;
 }
 
-/* ---------------- 1. Welcome banner ---------------- */
+/* ---------------- 1. Welcome Banner ---------------- */
 .welcome-banner {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 24px;
-  padding: 28px 32px;
-}
-
-.welcome-text {
-  flex: 1;
-  min-width: 0;
 }
 
 .welcome-greeting {
   margin: 0 0 10px;
-  font-size: 1.4rem;
-  font-weight: 700;
-  color: var(--text-primary);
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--eco-slate-900);
 }
 
 .rank-row {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 
 .rank-badge {
-  background: var(--eco-safe);
-  color: #ffffff;
-  font-size: 0.78rem;
-  font-weight: 700;
-  padding: 4px 12px;
-  border-radius: 999px;
+  background: var(--eco-green);
+  color: var(--eco-white);
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 20px;
   text-transform: uppercase;
-  letter-spacing: 0.4px;
+  letter-spacing: 0.5px;
 }
 
 .level-label {
-  color: var(--text-secondary);
   font-size: 0.85rem;
   font-weight: 600;
+  color: var(--eco-text-muted);
 }
 
 .xp-bar-track {
-  width: 100%;
-  max-width: 420px;
-  height: 10px;
-  background: #eef2f3;
+  height: 8px;
+  width: 280px;
+  background: #e2e8f0;
   border-radius: 999px;
   overflow: hidden;
+  margin-bottom: 6px;
 }
 
 .xp-bar-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--eco-safe), #66bb6a);
+  background: var(--eco-green-light);
   border-radius: 999px;
   transition: width 0.4s ease;
 }
 
 .xp-bar-caption {
-  display: block;
-  margin-top: 6px;
-  font-size: 0.76rem;
-  color: var(--text-secondary);
+  font-size: 0.75rem;
+  color: var(--eco-text-muted);
 }
 
 .btn-log-entry {
-  flex-shrink: 0;
-  background: var(--eco-safe);
-  color: #ffffff;
+  background: var(--eco-green);
+  color: var(--eco-white);
   border: none;
+  padding: 12px 20px;
   border-radius: 999px;
-  padding: 14px 26px;
-  font-size: 0.9rem;
   font-weight: 700;
+  font-size: 0.9rem;
   cursor: pointer;
-  white-space: nowrap;
   transition: background-color 0.2s ease, transform 0.15s ease;
 }
 
 .btn-log-entry:hover {
-  background: #1b5e20;
+  background: var(--eco-green-dark);
   transform: translateY(-1px);
 }
 
-/* ---------------- 2. KPI cards ---------------- */
+/* ---------------- 2. KPI Cards ---------------- */
 .kpi-row {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -140,72 +167,62 @@
 }
 
 .kpi-card {
-  position: relative;
-  padding: 20px 22px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  position: relative;
 }
 
 .kpi-label {
-  font-size: 0.8rem;
+  font-size: 0.85rem;
+  color: var(--eco-text-muted);
   font-weight: 600;
-  color: var(--text-secondary);
+  margin-bottom: 8px;
 }
 
 .kpi-value {
-  font-size: 1.6rem;
-  font-weight: 700;
-  color: var(--text-primary);
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--eco-slate-900);
 }
 
 .kpi-positive {
-  color: var(--eco-safe);
+  color: var(--eco-green);
 }
 
 .kpi-unit {
   font-size: 0.9rem;
   font-weight: 500;
-  color: var(--text-secondary);
+  color: var(--eco-text-muted);
 }
 
 .kpi-badge {
   position: absolute;
   top: 20px;
-  right: 22px;
-  background: #e6f2e6;
-  color: var(--eco-safe);
-  font-size: 0.78rem;
-  font-weight: 700;
-  padding: 4px 10px;
-  border-radius: 999px;
+  right: 20px;
+  background: var(--eco-positive-bg);
+  color: var(--eco-positive-text);
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 4px 8px;
+  border-radius: 6px;
 }
 
-/* ---------------- 3 & 4. Middle row ---------------- */
+/* ---------------- 3 & 4. Middle Panels ---------------- */
 .middle-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 20px;
-  flex: 1;
-  min-height: 0;
-}
-
-.category-panel,
-.goals-panel {
-  padding: 22px 24px;
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto;
 }
 
 .panel-heading {
-  margin: 0 0 16px;
-  font-size: 1.05rem;
+  margin-top: 0;
+  margin-bottom: 20px;
+  font-size: 1.1rem;
   font-weight: 700;
-  color: var(--text-primary);
+  color: var(--eco-slate-900);
 }
 
-/* ---- Category impact bars ---- */
+/* Category Impact Bars */
 .category-bar-row {
   margin-bottom: 14px;
 }
@@ -213,76 +230,90 @@
 .category-bar-label {
   display: flex;
   justify-content: space-between;
-  font-size: 0.82rem;
-  color: var(--text-primary);
+  align-items: center;
   margin-bottom: 6px;
 }
 
+.category-label-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.category-label-badge.food { background: var(--eco-cat-food-bg); color: var(--eco-cat-food-text); }
+.category-label-badge.water { background: var(--eco-cat-water-bg); color: var(--eco-cat-water-text); }
+.category-label-badge.fuel { background: var(--eco-cat-fuel-bg); color: var(--eco-cat-fuel-text); }
+.category-label-badge.electricity { background: var(--eco-cat-electricity-bg); color: var(--eco-cat-electricity-text); }
+.category-label-badge.waste { background: var(--eco-cat-waste-bg); color: var(--eco-cat-waste-text); }
+.category-label-badge.transportation { background: var(--eco-cat-transport-bg); color: var(--eco-cat-transport-text); }
+
 .category-bar-value {
-  color: var(--text-secondary);
-  font-weight: 600;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--eco-slate-800);
 }
 
 .category-bar-track {
-  width: 100%;
-  height: 10px;
-  background: #eef2f3;
+  height: 8px;
+  background: #f1f5f9;
   border-radius: 999px;
   overflow: hidden;
 }
 
 .category-bar-fill {
   height: 100%;
-  background: var(--boundary);
   border-radius: 999px;
-  transition: width 0.4s ease;
+  background: var(--eco-green-light);
 }
 
-/* ---- Active goal mini cards ---- */
+.category-bar-fill.food { background: var(--eco-cat-food-text); }
+.category-bar-fill.water { background: var(--eco-cat-water-text); }
+.category-bar-fill.fuel { background: var(--eco-cat-fuel-text); }
+.category-bar-fill.electricity { background: var(--eco-cat-electricity-text); }
+.category-bar-fill.waste { background: var(--eco-cat-waste-text); }
+.category-bar-fill.transportation { background: var(--eco-cat-transport-text); }
+
+/* Goal Meters */
 .mini-goal-list {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
 }
 
 .mini-goal-card {
-  border: 1px solid #eef2f3;
-  border-radius: 12px;
-  padding: 14px 16px;
+  background: var(--eco-input-field-bg);
+  border: 1px solid var(--eco-input-border);
+  border-radius: 8px;
+  padding: 12px;
 }
 
 .mini-goal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 10px;
   margin-bottom: 8px;
 }
 
 .mini-goal-name {
-  font-size: 0.88rem;
+  font-size: 0.85rem;
   font-weight: 700;
-  color: var(--text-primary);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  color: var(--eco-slate-800);
 }
 
 .status-pill {
-  flex-shrink: 0;
-  color: #ffffff;
-  font-size: 0.7rem;
-  font-weight: 700;
-  padding: 3px 9px;
-  border-radius: 999px;
+  color: var(--eco-white);
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
   text-transform: uppercase;
-  letter-spacing: 0.3px;
 }
 
 .mini-goal-track {
-  width: 100%;
-  height: 8px;
-  background: #eef2f3;
+  height: 6px;
+  background: #e2e8f0;
   border-radius: 999px;
   overflow: hidden;
   margin-bottom: 6px;
@@ -291,16 +322,21 @@
 .mini-goal-fill {
   height: 100%;
   border-radius: 999px;
-  transition: width 0.4s ease, background-color 0.3s ease;
 }
 
 .mini-goal-readout {
-  font-size: 0.78rem;
-  color: var(--text-secondary);
-  font-weight: 600;
+  font-size: 0.75rem;
+  color: var(--eco-text-muted);
 }
 
-/* ---------------- Responsive ---------------- */
+.empty-state {
+  color: var(--eco-slate-400);
+  font-style: italic;
+  font-size: 0.85rem;
+  padding: 16px 0;
+}
+
+/* Responsive Overrides */
 @media (max-width: 1024px) {
   .kpi-row {
     grid-template-columns: 1fr;
@@ -311,9 +347,5 @@
   .welcome-banner {
     flex-direction: column;
     align-items: flex-start;
-  }
-  .btn-log-entry {
-    width: 100%;
-    text-align: center;
   }
 }

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { DashboardService } from './dashboard.service';
@@ -15,7 +15,6 @@ export class Dashboard implements OnInit {
 
   summary: DashboardSummary | null = null;
   rankedCategoryImpacts: CategoryImpact[] = [];
-  maxCategoryEmission = 0;
 
   isLoading = false;
   dataError: string | null = null;
@@ -33,7 +32,8 @@ export class Dashboard implements OnInit {
 
   constructor(
     private dashboardService: DashboardService,
-    private router: Router
+    private router: Router,
+    private cdr: ChangeDetectorRef // 1. INJECT CHANGE DETECTOR
   ) {}
 
   ngOnInit(): void {
@@ -60,26 +60,25 @@ export class Dashboard implements OnInit {
   loadSummary(): void {
     this.isLoading = true;
     this.dataError = null;
+    this.cdr.detectChanges(); // 2. FORCE IMMEDIATE INITIAL UI FEEDBACK
 
     this.dashboardService.getSummary().subscribe({
       next: (summary) => {
         this.summary = summary;
-
-        // Defensive copy in case categoryImpacts is null/undefined
-        const impacts = summary?.categoryImpacts ? [...summary.categoryImpacts] : [];
-        this.rankedCategoryImpacts = impacts.sort((a, b) => b.totalEmissions - a.totalEmissions);
-
-        // Find highest single emission value to scale progress bars visually
-        this.maxCategoryEmission = this.rankedCategoryImpacts.length > 0 
-          ? Math.max(...this.rankedCategoryImpacts.map(c => c.totalEmissions)) 
-          : 0;
-
+        this.rankedCategoryImpacts = [...summary.categoryImpacts]
+          .sort((a, b) => b.totalEmissions - a.totalEmissions);
         this.isLoading = false;
+
+        // 3. FORCE IMMEDIATE RENDER ON DATA RECEIPT
+        this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Failed to load dashboard summary:', err);
         this.dataError = err.error?.message || 'Could not load your dashboard. Please try again.';
         this.isLoading = false;
+
+        // 4. FORCE IMMEDIATE RENDER ON ERROR
+        this.cdr.detectChanges();
       }
     });
   }
@@ -92,12 +91,15 @@ export class Dashboard implements OnInit {
     return this.categoryLabels[category] ?? category;
   }
 
-  // Returns bar fill % relative to the top emitting category
-  getCategoryBarWidth(emissions: number): number {
-    if (this.maxCategoryEmission <= 0) {
+  getCategoryBarWidth(emission: number): number {
+    if (!this.rankedCategoryImpacts.length) {
       return 0;
     }
-    return Math.min(100, Math.max(0, (emissions / this.maxCategoryEmission) * 100));
+    const max = Math.max(...this.rankedCategoryImpacts.map(c => c.totalEmissions));
+    if (max <= 0) {
+      return 0;
+    }
+    return (emission / max) * 100;
   }
 
   getGoalFillPercent(goal: GoalSnapshot): number {
@@ -119,12 +121,12 @@ export class Dashboard implements OnInit {
 
   getGoalStatusColor(goal: GoalSnapshot): string {
     if (goal.currentValue > goal.targetValue) {
-      return 'var(--critical)';
+      return 'var(--eco-red)';
     }
     if (this.getGoalFillPercent(goal) >= 85) {
-      return 'var(--warning)';
+      return 'var(--eco-warning)';
     }
-    return 'var(--eco-safe)';
+    return 'var(--eco-green)';
   }
 }
 

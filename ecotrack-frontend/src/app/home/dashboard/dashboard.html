@@ -50,13 +50,13 @@
 
         <div class="category-bar-row" *ngFor="let item of rankedCategoryImpacts">
           <div class="category-bar-label">
-            <span>{{ getCategoryLabel(item.categoryName) }}</span>
+            <span [class]="'category-label-badge ' + item.categoryName.toLowerCase()">{{ getCategoryLabel(item.categoryName) }}</span>
             <span class="category-bar-value">{{ item.totalEmissions | number:'1.1-1' }} kg</span>
           </div>
           <!-- Category Emission Impact Bar Fill -->
-            <div class="category-bar-track">
-              <div class="category-bar-fill" [style.width.%]="getCategoryBarWidth(item.totalEmissions)"></div>
-            </div>
+          <div class="category-bar-track">
+            <div [class]="'category-bar-fill ' + item.categoryName.toLowerCase()" [style.width.%]="getCategoryBarWidth(item.totalEmissions)"></div>
+          </div>
         </div>
 
         <div class="empty-state" *ngIf="rankedCategoryImpacts.length === 0">
@@ -69,7 +69,8 @@
         <h3 class="panel-heading">Active Goal Meters</h3>
 
         <div class="mini-goal-list">
-          <div class="mini-goal-card" *ngFor="let goal of summary.activeGoals ?? []">
+          <!-- Resolved NG8107 by using direct property access -->
+          <div class="mini-goal-card" *ngFor="let goal of summary.activeGoals">
             <div class="mini-goal-header">
               <span class="mini-goal-name">{{ goal.goalName }}</span>
               <span class="status-pill" [style.background]="getGoalStatusColor(goal)">{{ getGoalStatusLabel(goal) }}</span>
