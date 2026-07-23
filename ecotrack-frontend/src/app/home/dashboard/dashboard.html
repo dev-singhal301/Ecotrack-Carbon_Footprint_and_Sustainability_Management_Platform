@@ -9,6 +9,8 @@
     <section class="dashboard-card welcome-banner">
       <div class="welcome-text">
         <h2 class="welcome-greeting">{{ greetingText }}</h2>
+        <p class="welcome-subtext">Here is your eco-impact overview for today. Keep up the great work!</p>
+        
         <div class="rank-row">
           <span class="rank-badge">{{ summary.userRank }}</span>
           <span class="level-label">Level {{ summary.userLevel }}</span>
@@ -69,7 +71,6 @@
         <h3 class="panel-heading">Active Goal Meters</h3>
 
         <div class="mini-goal-list">
-          <!-- Resolved NG8107 by using direct property access -->
           <div class="mini-goal-card" *ngFor="let goal of summary.activeGoals">
             <div class="mini-goal-header">
               <span class="mini-goal-name">{{ goal.goalName }}</span>

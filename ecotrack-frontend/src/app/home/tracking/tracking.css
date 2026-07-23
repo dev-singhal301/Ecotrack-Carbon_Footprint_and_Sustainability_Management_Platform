@@ -44,6 +44,7 @@
   --eco-cat-transport-text: #0284c7;
 
   display: block;
+  height: 100%;
 }
 
 /* Core Split-Screen Container */
@@ -267,14 +268,34 @@ input:focus, select:focus {
 }
 
 /* ----------------------------------
-   Independent Table Scrolling 
+   Independent Table Scrolling (Desktop)
 ---------------------------------- */
 .table-scroll-container {
-  flex-grow: 1;
+  flex: 1 1 auto; /* FIX: Allows table container to fill available card space on desktop */
+  min-height: 200px;
   overflow-y: auto;
   border: 1.5px solid #e2e8f0;
   border-radius: 8px;
   background: var(--eco-white);
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Webkit Scrollbar Styling for Table */
+.table-scroll-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.table-scroll-container::-webkit-scrollbar-track {
+  background: var(--eco-input-field-bg);
+}
+
+.table-scroll-container::-webkit-scrollbar-thumb {
+  background: var(--eco-input-border);
+  border-radius: 4px;
+}
+
+.table-scroll-container::-webkit-scrollbar-thumb:hover {
+  background: var(--eco-slate-400);
 }
 
 .history-table {
@@ -443,10 +464,17 @@ input:focus, select:focus {
    Responsive Design (<= 1024px)
 ---------------------------------- */
 @media (max-width: 1024px) {
+  :host {
+    height: 100%;
+    overflow-y: auto; /* FIX: Enables parent page scroll on mobile/tablet */
+    -webkit-overflow-scrolling: touch;
+  }
+
   .tracking-split-container {
     flex-direction: column;
-    overflow-y: auto;
-    height: 100%;
+    overflow-y: visible; /* FIX: Stops container from cutting off bottom content */
+    height: auto;
+    min-height: 100%;
     padding: 16px;
   }
 
@@ -467,8 +495,8 @@ input:focus, select:focus {
   }
 
   .table-scroll-container {
-    height: 290px;
-    max-height: 290px;
+    height: 340px;
+    max-height: 340px;
     overflow-y: auto;
   }
 }

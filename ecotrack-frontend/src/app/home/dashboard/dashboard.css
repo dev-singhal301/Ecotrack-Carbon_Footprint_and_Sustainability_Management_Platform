@@ -55,11 +55,11 @@
   gap: 20px;
   box-sizing: border-box;
   background: var(--eco-bg-light);
+  height: fit-content; /* FIX: Prevents stretching into dead bottom space */
 }
 
 .dashboard-card {
   background: var(--eco-white);
-  /* Card border & radius matched directly to tracking.css */
   border: 1.5px solid #e2e8f0;
   border-radius: 12px;
   padding: 20px;
@@ -91,10 +91,18 @@
 }
 
 .welcome-greeting {
-  margin: 0 0 10px;
+  margin: 0 0 4px;
   font-size: 1.6rem;
   font-weight: 800;
   color: var(--eco-slate-900);
+}
+
+.welcome-subtext {
+  margin: 0 0 14px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  font-style: italic;
+  color: var(--eco-positive-text); /* Use var(--eco-slate-700) here if you prefer slate neutral instead */
 }
 
 .rank-row {
@@ -212,6 +220,7 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 20px;
+  align-items: stretch; /* FIX: Equal height alignment without pulling layout height */
 }
 
 .panel-heading {
@@ -275,11 +284,29 @@
 .category-bar-fill.waste { background: var(--eco-cat-waste-text); }
 .category-bar-fill.transportation { background: var(--eco-cat-transport-text); }
 
-/* Goal Meters */
+/* Goal Meters — Desktop Scrollbar Config */
 .mini-goal-list {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  max-height: 280px;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+.mini-goal-list::-webkit-scrollbar {
+  width: 5px;
+}
+.mini-goal-list::-webkit-scrollbar-track {
+  background: var(--eco-input-field-bg);
+  border-radius: 4px;
+}
+.mini-goal-list::-webkit-scrollbar-thumb {
+  background: var(--eco-input-border);
+  border-radius: 4px;
+}
+.mini-goal-list::-webkit-scrollbar-thumb:hover {
+  background: var(--eco-slate-400);
 }
 
 .mini-goal-card {
@@ -336,16 +363,38 @@
   padding: 16px 0;
 }
 
-/* Responsive Overrides */
+/* ---------------- Responsive Overrides ---------------- */
 @media (max-width: 1024px) {
+  :host {
+    height: 100%;
+    overflow-y: auto; /* Enables parent level scrolling for mobile/tablet */
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .dashboard-container {
+    height: auto;     /* Lets the container grow naturally with stacked cards */
+    padding: 16px;
+    gap: 16px;
+  }
+
   .kpi-row {
     grid-template-columns: 1fr;
   }
+
   .middle-row {
     grid-template-columns: 1fr;
   }
+
   .welcome-banner {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .xp-bar-track {
+    width: 100%;
+  }
+
+  .mini-goal-list {
+    max-height: 250px;
   }
 }
