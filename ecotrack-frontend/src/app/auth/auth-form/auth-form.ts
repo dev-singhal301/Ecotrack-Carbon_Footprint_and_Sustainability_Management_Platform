@@ -67,7 +67,11 @@ export class AuthForm implements AfterViewInit {
     this.updateValidators();
   }
 
-  ngAfterViewInit(): void {
+ngAfterViewInit(): void {
+    this.waitForGoogleScript();
+  }
+
+  private waitForGoogleScript(retries: number = 20): void {
     if (typeof google !== 'undefined' && google.accounts) {
       google.accounts.id.initialize({
         client_id: GOOGLE_CLIENT_ID,
@@ -78,9 +82,16 @@ export class AuthForm implements AfterViewInit {
         size: 'large',
         width: 300,
       });
-    } else {
-      console.error('Google Identity Services script did not load. Check index.html and your network connection.');
+      return;
     }
+
+    if (retries <= 0) {
+      console.error('Google Identity Services script failed to load after waiting.');
+      return;
+    }
+
+    // Script not ready yet — wait 100ms and try again
+    setTimeout(() => this.waitForGoogleScript(retries - 1), 100);
   }
 
   handleGoogleCredentialResponse(response: any): void {
