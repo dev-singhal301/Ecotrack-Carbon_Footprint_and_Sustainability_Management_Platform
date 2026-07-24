@@ -23,10 +23,9 @@
   --eco-text-muted: #64748b;
   --eco-text-label: #475569;
 
-  /* ---- White/Off-white Background to match Tracking ---- */
+  /* ---- Background Theme Palette ---- */
   --eco-bg-light: #f8fafc;
 
-  /* ---- Category Label Color System ---- */
   --eco-cat-food-bg: #dcfce7;
   --eco-cat-food-text: #15803d;
 
@@ -55,7 +54,7 @@
   gap: 20px;
   box-sizing: border-box;
   background: var(--eco-bg-light);
-  height: fit-content; /* FIX: Prevents stretching into dead bottom space */
+  height: fit-content;
 }
 
 .dashboard-card {
@@ -102,7 +101,7 @@
   font-size: 0.9rem;
   font-weight: 500;
   font-style: italic;
-  color: var(--eco-positive-text); /* Use var(--eco-slate-700) here if you prefer slate neutral instead */
+  color: var(--eco-positive-text);
 }
 
 .rank-row {
@@ -220,71 +219,113 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 20px;
-  align-items: stretch; /* FIX: Equal height alignment without pulling layout height */
+  align-items: stretch;
 }
 
 .panel-heading {
   margin-top: 0;
-  margin-bottom: 20px;
+  margin-bottom: 0;
   font-size: 1.1rem;
   font-weight: 700;
   color: var(--eco-slate-900);
 }
 
-/* Category Impact Bars */
-.category-bar-row {
-  margin-bottom: 14px;
-}
-
-.category-bar-label {
+.panel-header-actions {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 6px;
+  margin-bottom: 16px;
 }
 
-.category-label-badge {
-  font-size: 0.75rem;
+.title-with-badge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.panel-subtitle-badge {
+  font-size: 0.72rem;
   font-weight: 700;
-  padding: 2px 8px;
-  border-radius: 4px;
+  background: #f1f5f9;
+  color: var(--eco-text-muted);
+  padding: 3px 8px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.panel-total-metric {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.panel-total-metric .metric-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--eco-text-muted);
   text-transform: uppercase;
 }
 
-.category-label-badge.food { background: var(--eco-cat-food-bg); color: var(--eco-cat-food-text); }
-.category-label-badge.water { background: var(--eco-cat-water-bg); color: var(--eco-cat-water-text); }
-.category-label-badge.fuel { background: var(--eco-cat-fuel-bg); color: var(--eco-cat-fuel-text); }
-.category-label-badge.electricity { background: var(--eco-cat-electricity-bg); color: var(--eco-cat-electricity-text); }
-.category-label-badge.waste { background: var(--eco-cat-waste-bg); color: var(--eco-cat-waste-text); }
-.category-label-badge.transportation { background: var(--eco-cat-transport-bg); color: var(--eco-cat-transport-text); }
+.panel-total-metric .metric-value {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--eco-slate-900);
+}
 
-.category-bar-value {
-  font-size: 0.85rem;
+.panel-total-metric .metric-value small {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--eco-text-muted);
+}
+
+.category-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.daily-chart-container {
+  position: relative;
+  height: 250px;
+  width: 100%;
+}
+
+/* Legend Chips styled using background colors */
+.chart-legend-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed #e2e8f0;
+}
+
+.legend-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 6px;
   font-weight: 700;
-  color: var(--eco-slate-800);
 }
 
-.category-bar-track {
-  height: 8px;
-  background: #f1f5f9;
-  border-radius: 999px;
-  overflow: hidden;
+.legend-chip-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
 }
 
-.category-bar-fill {
-  height: 100%;
-  border-radius: 999px;
-  background: var(--eco-green-light);
+.legend-chip-label {
+  font-size: 0.75rem;
+  font-weight: 700;
 }
 
-.category-bar-fill.food { background: var(--eco-cat-food-text); }
-.category-bar-fill.water { background: var(--eco-cat-water-text); }
-.category-bar-fill.fuel { background: var(--eco-cat-fuel-text); }
-.category-bar-fill.electricity { background: var(--eco-cat-electricity-text); }
-.category-bar-fill.waste { background: var(--eco-cat-waste-text); }
-.category-bar-fill.transportation { background: var(--eco-cat-transport-text); }
+/* Goal Meters */
+.goals-panel .panel-heading {
+  margin-bottom: 20px;
+}
 
-/* Goal Meters — Desktop Scrollbar Config */
 .mini-goal-list {
   display: flex;
   flex-direction: column;
@@ -292,21 +333,6 @@
   max-height: 280px;
   overflow-y: auto;
   padding-right: 6px;
-}
-
-.mini-goal-list::-webkit-scrollbar {
-  width: 5px;
-}
-.mini-goal-list::-webkit-scrollbar-track {
-  background: var(--eco-input-field-bg);
-  border-radius: 4px;
-}
-.mini-goal-list::-webkit-scrollbar-thumb {
-  background: var(--eco-input-border);
-  border-radius: 4px;
-}
-.mini-goal-list::-webkit-scrollbar-thumb:hover {
-  background: var(--eco-slate-400);
 }
 
 .mini-goal-card {
@@ -363,25 +389,20 @@
   padding: 16px 0;
 }
 
-/* ---------------- Responsive Overrides ---------------- */
 @media (max-width: 1024px) {
   :host {
     height: 100%;
-    overflow-y: auto; /* Enables parent level scrolling for mobile/tablet */
+    overflow-y: auto;
     -webkit-overflow-scrolling: touch;
   }
 
   .dashboard-container {
-    height: auto;     /* Lets the container grow naturally with stacked cards */
+    height: auto;
     padding: 16px;
     gap: 16px;
   }
 
-  .kpi-row {
-    grid-template-columns: 1fr;
-  }
-
-  .middle-row {
+  .kpi-row, .middle-row {
     grid-template-columns: 1fr;
   }
 
@@ -396,5 +417,9 @@
 
   .mini-goal-list {
     max-height: 250px;
+  }
+
+  .daily-chart-container {
+    height: 280px;
   }
 }
