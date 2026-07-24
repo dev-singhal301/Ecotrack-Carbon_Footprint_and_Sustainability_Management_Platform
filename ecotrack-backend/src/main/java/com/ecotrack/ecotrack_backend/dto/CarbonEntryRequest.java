@@ -15,7 +15,6 @@ public class CarbonEntryRequest {
     @Positive
     private BigDecimal amount;
 
-    @NotBlank
     private String unit;
 
     @NotNull

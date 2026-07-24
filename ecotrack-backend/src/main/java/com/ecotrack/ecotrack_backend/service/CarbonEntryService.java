@@ -53,7 +53,7 @@ public class CarbonEntryService {
         entry.setEmissionFactor(factor);
         entry.setCategory(category);
         entry.setAmount(request.getAmount());
-        entry.setUnit(request.getUnit());
+        entry.setUnit(factor.getUnit());
         entry.setActivityDate(request.getActivityDate());
         // The core calculation: amount x factor_value
         entry.setCarbonEmission(request.getAmount().multiply(factor.getFactorValue()));

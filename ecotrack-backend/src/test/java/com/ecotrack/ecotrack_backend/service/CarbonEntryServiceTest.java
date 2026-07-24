@@ -100,6 +100,23 @@ class CarbonEntryServiceTest {
     }
 
     @Test
+    void createEntry_unitAlwaysDerivedFromFactor_ignoresClientUnit() {
+        CarbonEntryRequest request = new CarbonEntryRequest();
+        request.setCategory("TRANSPORTATION");
+        request.setAmount(new BigDecimal("10"));
+        request.setUnit("miles"); // client sends something wrong/irrelevant
+        request.setActivityDate(LocalDate.of(2026, 7, 13));
+
+        when(emissionFactorRepository.findByCategory(CarbonCategory.TRANSPORTATION))
+                .thenReturn(Optional.of(transportationFactor));
+        when(carbonEntryRepository.save(any(CarbonEntry.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        CarbonEntryResponse response = carbonEntryService.createEntry(request, testUser);
+
+        assertEquals("km", response.getUnit());
+    }
+
+    @Test
     void createEntry_invalidCategory_throwsInvalidCategoryException() {
         CarbonEntryRequest request = new CarbonEntryRequest();
         request.setCategory("FLYING"); // not a real enum value
