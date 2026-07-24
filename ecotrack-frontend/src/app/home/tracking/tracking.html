@@ -1,8 +1,11 @@
-<div class="tracking-split-container">
+<div class="tracking-split-container" [class.has-expanded-card]="expandedSection !== null">
 
-  <section class="form-section">
+  <!-- TOP-LEFT: Log New Activity Form -->
+  <section class="form-section" [class.expanded]="expandedSection === 'form'" [class.hidden]="expandedSection !== null && expandedSection !== 'form'">
     <div class="tracking-card">
-      <h2 class="section-title">Log New Activity</h2>
+      <div class="card-header-actions">
+        <h2 class="section-title">Log New Activity</h2>
+      </div>
 
       <form [formGroup]="trackingForm" (submit)="onLogSubmit(); $event.preventDefault()">
         <div class="form-group">
@@ -69,10 +72,17 @@
     </div>
   </section>
 
-  <section class="history-section">
+  <!-- TOP-RIGHT: Recent Logs History Section -->
+  <section class="history-section" [class.expanded]="expandedSection === 'history'" [class.hidden]="expandedSection !== null && expandedSection !== 'history'">
     <div class="tracking-card">
       <div class="history-header">
         <h2 class="section-title">Recent Logs</h2>
+        
+        <div class="card-action-buttons">
+          <button type="button" class="btn-toggle-expand" (click)="toggleExpand('history')" [title]="expandedSection === 'history' ? 'Minimize' : 'Maximize'">
+            <i class="fa-solid" [class.fa-maximize]="expandedSection !== 'history'" [class.fa-minimize]="expandedSection === 'history'"></i>
+          </button>
+        </div>
 
         <div class="filter-controls">
           <div class="filter-group">
@@ -117,7 +127,6 @@
             </tr>
           </thead>
           <tbody>
-            <!-- Skeleton loader: 5 placeholder rows while a request is in flight -->
             <ng-container *ngIf="isLoading">
               <tr class="skeleton-row" *ngFor="let skeletonRow of [1, 2, 3, 4, 5]">
                 <td><div class="skeleton-block"></div></td>
@@ -151,6 +160,105 @@
           </tbody>
         </table>
       </div>
+    </div>
+  </section>
+
+  <!-- BOTTOM-LEFT: Emission Trends Chart Section -->
+  <section class="chart-section-left" [class.expanded]="expandedSection === 'trend'" [class.hidden]="expandedSection !== null && expandedSection !== 'trend'">
+    <div class="tracking-card">
+      <div class="card-header-actions">
+        <h2 class="section-title">Emission Trends</h2>
+        <button type="button" class="btn-toggle-expand" (click)="toggleExpand('trend')" [title]="expandedSection === 'trend' ? 'Minimize' : 'Maximize'">
+          <i class="fa-solid" [class.fa-maximize]="expandedSection !== 'trend'" [class.fa-minimize]="expandedSection === 'trend'"></i>
+        </button>
+      </div>
+      <div class="chart-container-body">
+        <canvas baseChart
+          [data]="monthlyChartData"
+          [options]="monthlyChartOptions"
+          [type]="monthlyChartType">
+        </canvas>
+      </div>
+    </div>
+  </section>
+
+  <!-- BOTTOM-RIGHT: Category Footprint Chart Section (Option 2 Refined) -->
+  <section class="chart-section-right" [class.expanded]="expandedSection === 'breakdown'" [class.hidden]="expandedSection !== null && expandedSection !== 'breakdown'">
+    <div class="tracking-card donut-card">
+      
+      <!-- Card Header with Subtitle Badge & Maximization Toggle -->
+      <div class="card-header-actions">
+        <div class="title-with-badge">
+          <h2 class="section-title">Category Footprint</h2>
+          <span class="category-subtitle-badge">
+            <i class="fa-solid fa-chart-pie"></i>
+            Monthly Share
+          </span>
+        </div>
+
+        <button type="button" class="btn-toggle-expand" (click)="toggleExpand('breakdown')" [title]="expandedSection === 'breakdown' ? 'Minimize' : 'Maximize'">
+          <i class="fa-solid" [class.fa-maximize]="expandedSection !== 'breakdown'" [class.fa-minimize]="expandedSection === 'breakdown'"></i>
+        </button>
+      </div>
+
+      <!-- Main Content Layout (Chart + Interactive Legend Grid) -->
+      <div class="donut-card-content">
+        
+        <!-- Left: Donut Chart Wrapper with Dynamic Center Summary Overlay -->
+        <div class="donut-chart-wrapper" (mouseleave)="onChartMouseLeave()">
+          <canvas baseChart
+            [data]="breakdownChartData"
+            [options]="breakdownChartOptions"
+            [type]="breakdownChartType">
+          </canvas>
+
+          <!-- Dynamic Center Metric Overlay -->
+          <div class="donut-center-overlay">
+            <ng-container *ngIf="hoveredCategory; else defaultSummary">
+              <span class="center-category-title" [style.color]="hoveredCategory.color">
+                {{ hoveredCategory.name }}
+              </span>
+              <span class="center-metric-value">
+                {{ hoveredCategory.value | number:'1.1-2' }} <small>kg</small>
+              </span>
+              <span class="center-percentage-pill" [style.background-color]="hoveredCategory.color + '20'" [style.color]="hoveredCategory.color">
+                {{ hoveredCategory.percentage }}% of total
+              </span>
+            </ng-container>
+
+            <ng-template #defaultSummary>
+              <span class="center-label-muted">Monthly Total</span>
+              <span class="center-metric-value">
+                {{ totalMonthlyEmission | number:'1.1-2' }} <small>kg</small>
+              </span>
+              <span class="center-subtext">CO₂ Footprint</span>
+            </ng-template>
+          </div>
+        </div>
+
+        <!-- Right: Interactive Category Legend Grid -->
+        <div class="donut-legend-list">
+          <div 
+            *ngFor="let item of categoryList" 
+            class="legend-item-row"
+            [class.active]="hoveredCategory?.name === item.name"
+            (mouseenter)="hoveredCategory = item"
+            (mouseleave)="hoveredCategory = null">
+            
+            <div class="legend-label-group">
+              <span class="legend-color-dot" [style.background-color]="item.color"></span>
+              <span class="legend-cat-name">{{ item.name }}</span>
+            </div>
+
+            <div class="legend-value-group">
+              <span class="legend-cat-value">{{ item.value | number:'1.1-2' }} <small>kg</small></span>
+              <span class="legend-cat-pct">{{ item.percentage }}%</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
     </div>
   </section>
 

@@ -1,21 +1,33 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormGroup, FormControl, Validators } from '@angular/forms';
+import { BaseChartDirective } from 'ng2-charts';
+import { ChartConfiguration, ChartOptions, Chart, registerables } from 'chart.js';
 import { CarbonEntryService, CarbonEntryRequest, CarbonEntryResponse } from './carbon-entry.service';
+
+Chart.register(...registerables);
+
+export interface CategorySummary {
+  name: string;
+  value: number;
+  percentage: number;
+  color: string;
+}
 
 @Component({
   selector: 'app-tracking',
   standalone: true,
-  // FormsModule stays — the filter controls (category/from/to) still use [(ngModel)].
-  // ReactiveFormsModule is new — only the log-entry form migrates to it.
-  imports: [CommonModule, FormsModule, ReactiveFormsModule],
+  imports: [
+    CommonModule, 
+    FormsModule, 
+    ReactiveFormsModule,
+    BaseChartDirective
+  ],
   templateUrl: './tracking.html',
   styleUrls: ['./tracking.css']
 })
 export class TrackingComponent implements OnInit {
 
-  // Reactive form replacing the old template-driven `entry` object.
-  // 'unit' stays disabled — it's a derived, read-only field, never user-edited.
   trackingForm = new FormGroup({
     category: new FormControl('', Validators.required),
     amount: new FormControl<number | null>(null, [Validators.required, Validators.min(0.01)]),
@@ -23,14 +35,14 @@ export class TrackingComponent implements OnInit {
     activityDate: new FormControl('', Validators.required)
   });
 
-  // Search & Filter state variables (unchanged — still template-driven)
   filters = {
     category: '',
     from: '',
     to: ''
   };
 
-  // Dynamic preview mapping matching backend emission factors seeding
+  expandedSection: string | null = null;
+
   private unitMapping: { [key: string]: { unit: string } } = {
     'TRANSPORTATION': { unit: 'km' },
     'ELECTRICITY': { unit: 'kWh' },
@@ -40,15 +52,127 @@ export class TrackingComponent implements OnInit {
     'FUEL': { unit: 'litres' }
   };
 
-  // Bound array for the HTML structural template table grid
   historyLogs: CarbonEntryResponse[] = [];
-
-  // Drives the skeleton-loader rows while a history fetch is in flight
   isLoading: boolean = false;
-
-  // Entries currently mid fade-out — kept separate from historyLogs so the
-  // CSS transition has time to play before the row is actually removed.
   removingIds = new Set<number>();
+
+  // Center Summary Dynamic State Variables
+  totalMonthlyEmission: number = 0;
+  hoveredCategory: CategorySummary | null = null;
+  categoryList: CategorySummary[] = [];
+
+  // Category Color Palette
+  readonly categoryColors: { [key: string]: string } = {
+    'FOOD': '#22c55e',          // Soft Emerald
+    'WATER': '#0ea5e9',         // Sky Blue
+    'FUEL': '#a855f7',          // Soft Purple
+    'ELECTRICITY': '#eab308',   // Vibrant Amber
+    'WASTE': '#ef4444',          // Coral Red
+    'TRANSPORTATION': '#6366f1'  // Indigo Blue
+  };
+
+  // =========================================================================
+  // 1. Emission Trends (Line Chart) Configuration
+  // =========================================================================
+  public monthlyChartType: ChartConfiguration<'line'>['type'] = 'line';
+
+  public monthlyChartData: ChartConfiguration<'line'>['data'] = {
+    labels: [],
+    datasets: [
+      {
+        data: [],
+        label: 'Daily Footprint (kg CO₂)',
+        fill: true,
+        borderColor: '#0fac34',
+        borderWidth: 2,
+        cubicInterpolationMode: 'monotone',
+        tension: 0.4,
+        backgroundColor: (context) => {
+          const chart = context.chart;
+          const { ctx, chartArea } = chart;
+          if (!chartArea) return 'rgba(15, 172, 52, 0.1)';
+
+          const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+          gradient.addColorStop(0, 'rgba(15, 172, 52, 0.25)');
+          gradient.addColorStop(1, 'rgba(15, 172, 52, 0.01)');
+          return gradient;
+        },
+        pointBackgroundColor: '#0fac34',
+        pointBorderColor: '#ffffff',
+        pointBorderWidth: 2,
+        pointHoverBackgroundColor: '#0a7d25',
+        pointHoverRadius: 5,
+        pointRadius: 0,
+        pointHitRadius: 10
+      }
+    ]
+  };
+
+  public monthlyChartOptions: ChartOptions<'line'> = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { 
+        display: false,
+        position: 'top',
+        align: 'end'
+      },
+      tooltip: { mode: 'index', intersect: false }
+    },
+    scales: {
+      x: { 
+        title: { display: true, text: 'July 2026', font: { weight: 'bold' } },
+        grid: { display: false }
+      },
+      y: { 
+        title: { display: true, text: 'kg CO₂' }, 
+        beginAtZero: true,
+        grid: { color: 'rgba(0, 0, 0, 0.05)' }
+      }
+    }
+  };
+
+  // =========================================================================
+  // 2. Category Footprint (Single-Ring Donut Chart) Configuration
+  // =========================================================================
+  public breakdownChartType: ChartConfiguration<'doughnut'>['type'] = 'doughnut';
+
+  public breakdownChartData: ChartConfiguration<'doughnut'>['data'] = {
+    labels: ['FOOD', 'WATER', 'FUEL', 'ELECTRICITY', 'WASTE', 'TRANSPORTATION'],
+    datasets: [
+      {
+        data: [0, 0, 0, 0, 0, 0],
+        backgroundColor: [
+          '#22c55e',
+          '#0ea5e9',
+          '#a855f7',
+          '#eab308',
+          '#ef4444',
+          '#6366f1'
+        ],
+        borderWidth: 2,
+        borderColor: '#ffffff',
+        hoverOffset: 10
+      }
+    ]
+  };
+
+  public breakdownChartOptions: ChartOptions<'doughnut'> = {
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: '76%', // Modern slender ring creating spacious center
+    plugins: {
+      legend: { 
+        display: false // Using custom interactive HTML legend list
+      },
+      tooltip: {
+        enabled: false // Tooltip replaced by dynamic center content overlay
+      }
+    },
+    onHover: (event, activeElements) => {
+      this.onChartHover(activeElements);
+    }
+  };
 
   constructor(
     private carbonService: CarbonEntryService,
@@ -71,23 +195,33 @@ export class TrackingComponent implements OnInit {
   onCategoryChange(): void {
     const category = this.trackingForm.get('category')?.value ?? '';
     const mapping = this.unitMapping[category];
-    // patchValue still updates a disabled control's value/display, it's
-    // only excluded from .value (not getRawValue()) when reading back out.
     this.trackingForm.patchValue({ unit: mapping ? mapping.unit : '' });
   }
 
-  // Load live, filtered entries from PostgreSQL database via Spring Boot API
+  toggleExpand(section: string): void {
+    this.expandedSection = this.expandedSection === section ? null : section;
+
+    const isTrendExpanded = this.expandedSection === 'trend';
+
+    if (this.monthlyChartOptions.plugins?.legend) {
+      this.monthlyChartOptions.plugins.legend.display = isTrendExpanded;
+    }
+
+    this.monthlyChartData = { ...this.monthlyChartData };
+    this.breakdownChartData = { ...this.breakdownChartData };
+
+    this.cdr.detectChanges();
+  }
+
   loadHistory(): void {
     this.isLoading = true;
 
     this.carbonService.getHistory(this.filters.category, this.filters.from, this.filters.to)
       .subscribe({
         next: (data) => {
-          // Sort strictly by entryId descending (newest log is always on top)
           this.historyLogs = data.sort((a, b) => b.entryId - a.entryId);
           this.isLoading = false;
-
-          // FORCE IMMEDIATE UI UPDATE
+          this.updateCharts();
           this.cdr.detectChanges();
         },
         error: (err) => {
@@ -98,16 +232,12 @@ export class TrackingComponent implements OnInit {
       });
   }
 
-  // Persists standard submissions directly into the remote database
   onLogSubmit(): void {
     if (this.trackingForm.invalid) {
-      // Marks every control touched so validation messages appear,
-      // replacing the old blanket alert() with inline field feedback.
       this.trackingForm.markAllAsTouched();
       return;
     }
 
-    // getRawValue() (not .value) so the disabled 'unit' control is included.
     const raw = this.trackingForm.getRawValue();
     const payload: CarbonEntryRequest = {
       category: raw.category ?? '',
@@ -118,10 +248,8 @@ export class TrackingComponent implements OnInit {
 
     this.carbonService.createEntry(payload).subscribe({
       next: (savedEntry: CarbonEntryResponse) => {
-        // Prepend the newly created entry directly to the top of the local view array
         this.historyLogs = [savedEntry, ...this.historyLogs];
 
-        // Reset cleanly back to defaults, with today's date prepopulated again.
         this.trackingForm.reset({
           category: '',
           amount: null,
@@ -129,7 +257,7 @@ export class TrackingComponent implements OnInit {
           activityDate: this.getTodayDate()
         });
 
-        // FORCE IMMEDIATE UI UPDATE
+        this.updateCharts();
         this.cdr.detectChanges();
       },
       error: (err) => {
@@ -139,7 +267,6 @@ export class TrackingComponent implements OnInit {
     });
   }
 
-  // Remove records from persistent storage table
   onDeleteEntry(id: number): void {
     if (!confirm('Are you sure you want to delete this recorded log permanently?')) {
       return;
@@ -147,16 +274,15 @@ export class TrackingComponent implements OnInit {
 
     this.carbonService.deleteEntry(id).subscribe({
       next: () => {
-        // Mark the row as removing so the CSS fade-out transition can play,
-        // then actually drop it from the array once the animation finishes.
         this.removingIds.add(id);
         this.cdr.detectChanges();
 
         setTimeout(() => {
           this.historyLogs = this.historyLogs.filter(item => item.entryId !== id);
           this.removingIds.delete(id);
+          this.updateCharts();
           this.cdr.detectChanges();
-        }, 280); // matches --row-fade-duration in tracking.css
+        }, 280);
       },
       error: (err) => {
         alert(err.error?.message || 'Failed to remove log record from database.');
@@ -164,12 +290,137 @@ export class TrackingComponent implements OnInit {
     });
   }
 
-  // Resets the filter models and forces change detection
   clearFilters(): void {
-    this.filters = { category: '', from: '', to: '' }; // Clean values
-    this.loadHistory(); // Reload fully-unfiltered history log
-
-    // Explicitly enforce UI synchronization to clear visual date inputs
+    this.filters = { category: '', from: '', to: '' };
+    this.loadHistory();
     this.cdr.detectChanges();
+  }
+
+  // Handle Chart Hover Events to update Center Summary
+  private onChartHover(activeElements: any[]): void {
+    if (activeElements && activeElements.length > 0) {
+      const index = activeElements[0].index;
+      if (this.categoryList[index]) {
+        this.hoveredCategory = this.categoryList[index];
+        this.cdr.detectChanges();
+      }
+    } else if (this.hoveredCategory !== null) {
+      this.hoveredCategory = null;
+      this.cdr.detectChanges();
+    }
+  }
+
+  // Handle Mouse Leave on Chart Container
+  onChartMouseLeave(): void {
+    this.hoveredCategory = null;
+    this.cdr.detectChanges();
+  }
+
+  private updateCharts(): void {
+    if (!this.historyLogs || this.historyLogs.length === 0) {
+      this.monthlyChartData.labels = [];
+      this.monthlyChartData.datasets[0].data = [];
+      this.breakdownChartData.datasets[0].data = [0, 0, 0, 0, 0, 0];
+      this.totalMonthlyEmission = 0;
+      this.categoryList = [];
+      return;
+    }
+
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth();
+
+    const monthLabel = now.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+    if (this.monthlyChartOptions.scales?.['x']?.title) {
+      this.monthlyChartOptions.scales['x'].title.text = monthLabel;
+    }
+
+    // -----------------------------------------------------------------------
+    // 1. Line Chart Calculation
+    // -----------------------------------------------------------------------
+    const dailyTotals: { [dateKey: string]: number } = {};
+    
+    this.historyLogs.forEach(entry => {
+      const date = entry.activityDate;
+      const emission = entry.carbonEmission || 0; 
+      dailyTotals[date] = (dailyTotals[date] || 0) + emission;
+    });
+
+    const sortedDates = Object.keys(dailyTotals).sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
+    const dayLabels = sortedDates.map(d => {
+      const parts = d.split('-');
+      return parts.length === 3 ? parts[2] : d;
+    });
+
+    this.monthlyChartData = {
+      labels: dayLabels,
+      datasets: [
+        {
+          ...this.monthlyChartData.datasets[0],
+          data: sortedDates.map(date => Number(dailyTotals[date].toFixed(2)))
+        }
+      ]
+    };
+
+    // -----------------------------------------------------------------------
+    // 2. Single-Ring Donut Chart Calculation (Current Month)
+    // -----------------------------------------------------------------------
+    const categoryTotals: { [cat: string]: number } = {
+      'FOOD': 0,
+      'WATER': 0,
+      'FUEL': 0,
+      'ELECTRICITY': 0,
+      'WASTE': 0,
+      'TRANSPORTATION': 0
+    };
+
+    let monthlySum = 0;
+
+    this.historyLogs.forEach(entry => {
+      if (entry.activityDate) {
+        const entryDate = new Date(entry.activityDate);
+        if (entryDate.getFullYear() === currentYear && entryDate.getMonth() === currentMonth) {
+          const cat = entry.category.toUpperCase();
+          const val = entry.carbonEmission || 0;
+          if (categoryTotals[cat] !== undefined) {
+            categoryTotals[cat] += val;
+            monthlySum += val;
+          }
+        }
+      }
+    });
+
+    this.totalMonthlyEmission = Number(monthlySum.toFixed(2));
+
+    const categories = ['FOOD', 'WATER', 'FUEL', 'ELECTRICITY', 'WASTE', 'TRANSPORTATION'];
+    
+    // Build Structured Category List for Center Display & UI Legend
+    this.categoryList = categories.map(cat => {
+      const val = Number(categoryTotals[cat].toFixed(2));
+      const pct = this.totalMonthlyEmission > 0 
+        ? Number(((val / this.totalMonthlyEmission) * 100).toFixed(1)) 
+        : 0;
+
+      return {
+        name: cat,
+        value: val,
+        percentage: pct,
+        color: this.categoryColors[cat]
+      };
+    });
+
+    // Update Donut Chart Data
+    this.breakdownChartData = {
+      labels: categories,
+      datasets: [
+        {
+          data: this.categoryList.map(c => c.value),
+          backgroundColor: categories.map(cat => this.categoryColors[cat]),
+          borderWidth: 2,
+          borderColor: '#ffffff',
+          hoverOffset: 10
+        }
+      ]
+    };
   }
 }
