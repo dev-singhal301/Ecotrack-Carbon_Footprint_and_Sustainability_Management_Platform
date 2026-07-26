@@ -1,7 +1,14 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap');
+
 /* ----------------------------------
-   Corporate Theme Color Tokens
+   Corporate Theme & Typography Tokens
 ---------------------------------- */
 .goals-split-container {
+  /* ---- Typography Variables ---- */
+  --eco-font-heading: 'Nunito', 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+  --eco-font-body: 'Nunito', 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+
+  /* ---- Color Tokens ---- */
   --bg: #f8f9fa;
   --card: #ffffff;
   --text-primary: #263238;
@@ -19,10 +26,11 @@
   box-sizing: border-box;
   background: var(--bg);
   overflow: hidden;
+  font-family: var(--eco-font-body);
 }
 
 /* ----------------------------------
-   Shared card surface
+   Shared Card Surface
 ---------------------------------- */
 .goal-card {
   background: var(--card);
@@ -34,7 +42,7 @@
 }
 
 /* ----------------------------------
-   LEFT: Wide config builder
+   LEFT: Wide Config Builder
 ---------------------------------- */
 .form-panel {
   flex: 0 0 380px;
@@ -52,9 +60,11 @@
 
 .panel-title {
   margin: 0 0 20px;
+  font-family: var(--eco-font-heading);
   font-size: 1.25rem;
-  font-weight: 700;
+  font-weight: 800;
   color: var(--text-primary);
+  letter-spacing: -0.01em;
 }
 
 .form-group {
@@ -64,13 +74,16 @@
 }
 
 label {
-  font-weight: 600;
+  font-family: var(--eco-font-heading);
+  font-weight: 700;
   font-size: 0.85rem;
   margin-bottom: 6px;
   color: var(--text-primary);
 }
 
 input, select {
+  font-family: var(--eco-font-body);
+  font-weight: 600;
   padding: 11px 14px;
   border: 1.5px solid #cfd8dc;
   border-radius: 8px;
@@ -100,19 +113,21 @@ option:disabled {
 .field-error {
   display: block;
   margin-top: 6px;
-  font-size: 0.76rem;
+  font-size: 0.78rem;
+  font-weight: 600;
   color: var(--critical);
 }
 
 .form-level-error {
   margin: -4px 0 12px;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .field-hint {
   display: block;
   margin-top: 6px;
-  font-size: 0.74rem;
+  font-size: 0.76rem;
+  font-weight: 500;
   color: var(--text-secondary);
 }
 
@@ -128,15 +143,16 @@ option:disabled {
 }
 
 .xp-preview-label {
-  font-size: 0.82rem;
-  font-weight: 600;
+  font-size: 0.84rem;
+  font-weight: 700;
   color: var(--text-secondary);
   white-space: nowrap;
 }
 
 .xp-preview-value {
+  font-family: var(--eco-font-heading);
   font-size: 1.05rem;
-  font-weight: 700;
+  font-weight: 800;
   color: var(--eco-safe);
 }
 
@@ -147,8 +163,9 @@ option:disabled {
   color: #ffffff;
   border: none;
   border-radius: 8px;
+  font-family: var(--eco-font-heading);
   font-size: 0.95rem;
-  font-weight: 600;
+  font-weight: 800;
   cursor: pointer;
   transition: background-color 0.2s ease, opacity 0.2s ease;
   margin-top: auto;
@@ -183,13 +200,14 @@ option:disabled {
 }
 
 .tab-btn {
+  font-family: var(--eco-font-heading);
   padding: 10px 20px;
   border: 1.5px solid #cfd8dc;
   background: var(--card);
   color: var(--text-secondary);
   border-radius: 999px;
   font-size: 0.88rem;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
   transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
@@ -208,8 +226,8 @@ option:disabled {
   background: #fdecea;
   border: 1px solid #f3b8b3;
   color: var(--critical);
-  font-size: 0.82rem;
-  font-weight: 600;
+  font-size: 0.84rem;
+  font-weight: 700;
   padding: 10px 14px;
   border-radius: 8px;
   margin-bottom: 14px;
@@ -227,6 +245,8 @@ option:disabled {
   color: var(--text-secondary);
   padding: 80px 20px;
   font-style: italic;
+  font-size: 0.92rem;
+  font-weight: 500;
   grid-column: 1 / -1;
 }
 
@@ -268,9 +288,10 @@ option:disabled {
 
 .meter-title {
   margin: 0 0 2px;
-  font-size: 1rem;
-  font-weight: 700;
-  line-height: 1.4;
+  font-family: var(--eco-font-heading);
+  font-size: 1.02rem;
+  font-weight: 800;
+  line-height: 1.35;
   padding-top: 4px;
   color: var(--text-primary);
   width: 100%;
@@ -282,11 +303,12 @@ option:disabled {
 }
 
 .meter-status {
+  font-family: var(--eco-font-heading);
   font-size: 0.74rem;
-  font-weight: 700;
+  font-weight: 800;
   margin-bottom: 2px;
   text-transform: uppercase;
-  letter-spacing: 0.4px;
+  letter-spacing: 0.5px;
 }
 
 /* Center Overlay Layout Container */
@@ -331,8 +353,9 @@ option:disabled {
 }
 
 .gauge-label-text {
+  font-family: var(--eco-font-body);
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 700;
   fill: var(--text-secondary);
   user-select: none;
 }
@@ -349,8 +372,9 @@ option:disabled {
 }
 
 .gauge-center-value {
+  font-family: var(--eco-font-heading);
   font-size: 1.05rem;
-  font-weight: 700;
+  font-weight: 800;
   color: var(--text-primary);
   font-feature-settings: "tnum";
   transition: transform 0.2s ease, color 0.2s ease;
@@ -361,9 +385,9 @@ option:disabled {
 }
 
 .meter-xp {
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   color: var(--text-secondary);
-  font-weight: 600;
+  font-weight: 700;
   margin-top: 4px;
   background: #f8fafc;
   padding: 4px 12px;
@@ -381,7 +405,7 @@ option:disabled {
 
 .days-left-count {
   color: var(--boundary);
-  font-weight: 700;
+  font-weight: 800;
 }
 
 /* ----------------------------------
@@ -415,13 +439,15 @@ option:disabled {
 
 .history-row-title {
   margin: 0;
-  font-size: 0.92rem;
-  font-weight: 700;
+  font-family: var(--eco-font-heading);
+  font-size: 0.95rem;
+  font-weight: 800;
   color: var(--text-primary);
 }
 
 .history-row-dates {
-  font-size: 0.76rem;
+  font-size: 0.78rem;
+  font-weight: 500;
   color: var(--text-secondary);
 }
 
@@ -436,9 +462,9 @@ option:disabled {
 .stat-chip {
   background: #eef2f3;
   color: var(--text-primary);
-  font-size: 0.76rem;
-  font-weight: 600;
-  padding: 5px 10px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 5px 12px;
   border-radius: 999px;
   white-space: nowrap;
 }
@@ -504,6 +530,6 @@ option:disabled {
   .goals-grid {
     height: auto;
     grid-template-rows: auto;
-    grid-template-columns: 1fr; /* Drop down to single column grid layouts on mobile viewports */
+    grid-template-columns: 1fr;
   }
 }

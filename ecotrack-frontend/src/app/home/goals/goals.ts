@@ -24,12 +24,12 @@ export class Goals implements OnInit {
   readonly arcLength = Math.PI * 80;
 
   readonly trackLabels: Record<string, string> = {
-    REDUCE_CARBON_EMISSIONS: 'Overall Carbon Emissions (kg CO\u2082)',
+    REDUCE_CARBON_EMISSIONS: 'Overall Carbon Emissions (kg CO₂)',
     REDUCE_ELECTRICITY_CONSUMPTION: 'Electricity Consumption (kWh)',
     REDUCE_WATER_USAGE: 'Water Usage (Liters)',
     REDUCE_TRANSPORTATION_EMISSIONS: 'Transit Distance (km)',
     REDUCE_FUEL_CONSUMPTION: 'Fuel Usage (Liters)',
-    REDUCE_FOOD_EMISSIONS: 'Food Footprint (kg CO\u2082)',
+    REDUCE_FOOD_EMISSIONS: 'Food Footprint (kg CO₂)',
     REDUCE_WASTE_GENERATION: 'Waste Generation (kg)'
   };
 
@@ -53,12 +53,6 @@ export class Goals implements OnInit {
   dataError: string | null = null;
   activeGoalTypesReady = false;
 
-  // Single source of truth for "what is genuinely, currently locked" —
-  // written in exactly ONE place (refreshActiveGoalsCache$), so there is
-  // no longer a second competing writer that can race it and wipe it out
-  // depending on which tab happens to be open. Also reused directly as
-  // the Active tab's display data, so viewing that tab no longer fires
-  // the ACTIVE-status + per-goal-progress fetch twice.
   private activeGoalsCache: GoalWithProgress[] = [];
   private activeGoalTypes = new Set<string>();
 
@@ -96,18 +90,12 @@ export class Goals implements OnInit {
     this.dataError = null;
     this.cdr.detectChanges();
 
-    // Locks are refreshed on every tab load, regardless of which tab is
-    // being viewed — this is the ONLY place activeGoalsCache/
-    // activeGoalTypes gets written, so there's nothing left to race.
     this.refreshActiveGoalsCache$().subscribe(() => {
       if (status !== this.activeTab) {
         return;
       }
 
       if (status === 'ACTIVE') {
-        // The Active tab's display IS the cache we just refreshed — no
-        // second fetch needed. The template's own *ngIf="isTaskActive(goal)"
-        // still does the final per-card filtering, same as before.
         this.displayedGoals = this.activeGoalsCache;
         this.isLoading = false;
         this.cdr.detectChanges();
@@ -135,8 +123,6 @@ export class Goals implements OnInit {
     });
   }
 
-  // Fetches ACTIVE-status goals + their progress, computes activeGoalTypes
-  // from them, and populates activeGoalsCache — all in one place, once.
   private refreshActiveGoalsCache$(): Observable<void> {
     return this.goalService.getGoals('ACTIVE').pipe(
       switchMap(activeGoals => {
@@ -155,6 +141,7 @@ export class Goals implements OnInit {
               progress: progresses[i],
               daysLeft: this.calculateDaysLeft(g.endDate)
             }));
+
             this.activeGoalTypes = new Set(
               this.activeGoalsCache.filter(g => this.isTaskActive(g)).map(g => g.goalType)
             );
@@ -166,7 +153,25 @@ export class Goals implements OnInit {
   }
 
   private loadProgressForGoals(goals: GoalResponse[], status: GoalStatus): void {
-    if (goals.length === 0) {
+    let mergedGoals: GoalWithProgress[] = [...goals];
+
+    if (status === 'EXPIRED') {
+      const liveFailed = this.activeGoalsCache.filter(g => this.isTaskFailed(g));
+      liveFailed.forEach(lf => {
+        if (!mergedGoals.some(m => m.goalId === lf.goalId)) {
+          mergedGoals.push(lf);
+        }
+      });
+    } else if (status === 'COMPLETED') {
+      const liveAccomplished = this.activeGoalsCache.filter(g => this.isTaskAccomplished(g));
+      liveAccomplished.forEach(la => {
+        if (!mergedGoals.some(m => m.goalId === la.goalId)) {
+          mergedGoals.push(la);
+        }
+      });
+    }
+
+    if (mergedGoals.length === 0) {
       if (status === this.activeTab) {
         this.displayedGoals = [];
         this.isLoading = false;
@@ -175,7 +180,9 @@ export class Goals implements OnInit {
       return;
     }
 
-    const requests = goals.map(g => this.goalService.getGoalProgress(g.goalId));
+    const requests: Observable<GoalProgressResponse>[] = mergedGoals.map(g => {
+      return g.progress ? of(g.progress) : this.goalService.getGoalProgress(g.goalId);
+    });
 
     forkJoin(requests).subscribe({
       next: (progresses) => {
@@ -183,9 +190,9 @@ export class Goals implements OnInit {
           return;
         }
 
-        this.displayedGoals = goals.map((g, i) => ({
+        this.displayedGoals = mergedGoals.map((g, i) => ({
           ...g,
-          progress: progresses[i],
+          progress: progresses[i] || g.progress,
           daysLeft: this.calculateDaysLeft(g.endDate)
         }));
 
@@ -197,7 +204,7 @@ export class Goals implements OnInit {
           return;
         }
         console.error('Failed to load goal progress:', err);
-        this.displayedGoals = goals.map(g => ({ ...g, daysLeft: this.calculateDaysLeft(g.endDate) }));
+        this.displayedGoals = mergedGoals.map(g => ({ ...g, daysLeft: this.calculateDaysLeft(g.endDate) }));
         this.isLoading = false;
         this.dataError = 'Some progress data could not be loaded. Showing available goals only.';
         this.cdr.detectChanges();
@@ -244,10 +251,10 @@ export class Goals implements OnInit {
 
   get calculatedDurationDays(): number {
     const chosenDateStr = this.goalForm.get('endDate')?.value;
-    if (!chosenDateStr) return 0; // Return 0 when no date is picked yet
+    if (!chosenDateStr) return 0;
 
-    const today = new Date(this.todayStr() + 'T00:00:00');
-    const end = new Date(chosenDateStr + 'T00:00:00');
+    const today = this.parseLocalDate(this.todayStr());
+    const end = this.parseLocalDate(chosenDateStr);
     const diffTime = end.getTime() - today.getTime();
     const days = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return days <= 0 ? 1 : days;
@@ -255,7 +262,7 @@ export class Goals implements OnInit {
 
   get projectedMaxXp(): number {
     const days = this.calculatedDurationDays;
-    if (days <= 0) return 0; // Return 0 XP if no valid duration is set
+    if (days <= 0) return 0;
     let multiplier = 1.0;
     if (days >= 30) multiplier = 1.5;
     else if (days >= 14) multiplier = 1.2;
@@ -384,7 +391,7 @@ export class Goals implements OnInit {
     const targetVal = goal.targetValue;
 
     if (currentVal >= targetVal * 0.85) return 'Approaching Ceiling Warning';
-    return 'On Track \u2014 Eco-Safe';
+    return 'On Track — Eco-Safe';
   }
 
   getArcDashoffset(goal: GoalWithProgress): number {
@@ -419,11 +426,16 @@ export class Goals implements OnInit {
     if (!endDateStr) return 0;
 
     const normalizedDate = endDateStr.includes('T') ? endDateStr.split('T')[0] : endDateStr;
-    const today = new Date(this.todayStr() + 'T00:00:00');
-    const end = new Date(normalizedDate + 'T00:00:00');
+    const today = this.parseLocalDate(this.todayStr());
+    const end = this.parseLocalDate(normalizedDate);
     const timeDiff = end.getTime() - today.getTime();
     const days = Math.ceil(timeDiff / (1000 * 3600 * 24));
     return days < 0 ? 0 : days;
+  }
+
+  private parseLocalDate(dateStr: string): Date {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    return new Date(y, m - 1, d);
   }
 
   private todayStr(): string {
@@ -431,7 +443,7 @@ export class Goals implements OnInit {
   }
 
   private addDays(dateStr: string, days: number): string {
-    const d = new Date(dateStr + 'T00:00:00');
+    const d = this.parseLocalDate(dateStr);
     d.setDate(d.getDate() + days);
     return this.formatDate(d);
   }

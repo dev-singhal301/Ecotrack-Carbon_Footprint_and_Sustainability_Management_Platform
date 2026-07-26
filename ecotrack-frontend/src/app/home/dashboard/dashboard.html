@@ -25,7 +25,10 @@
           <div class="xp-bar-fill" [style.width.%]="xpProgressPercent"></div>
         </div>
         <div class="xp-bar-caption">
-          {{ summary?.currentXp || 0 }} / {{ summary?.nextLevelXpTarget || 500 }} XP
+          {{ currentLevelXpProgress }} / {{ xpForNextLevel }} XP (Total: {{ summary?.currentXp || 0 }} XP)
+          <span class="xp-sub-note" style="display: block; font-size: 0.8em; color: #64748b; margin-top: 4px;">
+            (Includes daily logs, streaks & goal rewards)
+          </span>
         </div>
       </div>
 
@@ -44,20 +47,31 @@
       </div>
 
       <div class="dashboard-card kpi-card">
-        <span class="kpi-label">Carbon Saved vs Baseline</span>
-        <div class="kpi-value kpi-positive">
+        <span class="kpi-label">Carbon Saved</span>
+        <div class="kpi-value" [class.kpi-positive]="!isZeroOrOverBaseline" [class.kpi-negative]="isZeroOrOverBaseline">
           {{ (summary?.carbonSaved || 0) | number:'1.1-1' }} <span class="kpi-unit">kg CO₂</span>
         </div>
-        <span class="kpi-badge" *ngIf="summary?.savingsPercentage">
-          ↓ {{ summary?.savingsPercentage }}%
+        <span
+          class="kpi-badge"
+          [class.kpi-badge-negative]="isZeroOrOverBaseline"
+          *ngIf="summary?.savingsPercentage !== undefined">
+          <ng-container *ngIf="!isZeroOrOverBaseline">&darr; {{ summary?.savingsPercentage }}%</ng-container>
+          <ng-container *ngIf="isZeroOrOverBaseline">No savings yet</ng-container>
         </span>
       </div>
 
+      <!-- Replaced Redundant Reward Points Card with Eco-Budget Health -->
       <div class="dashboard-card kpi-card">
-        <span class="kpi-label">Reward Points</span>
-        <div class="kpi-value">
-          {{ summary?.totalRewardPoints || 0 }} <span class="kpi-unit">pts</span>
+        <span class="kpi-label">Eco-Budget Health</span>
+        <div class="kpi-value" [style.color]="budgetHealthColor">
+          {{ budgetHealthLabel }}
         </div>
+        <span class="kpi-badge" *ngIf="summary?.activeGoals?.length">
+          {{ overallBudgetUsedPercent | number:'1.0-0' }}% Avg Capacity Used
+        </span>
+        <span class="kpi-badge" *ngIf="!summary?.activeGoals?.length">
+          No Active Meters
+        </span>
       </div>
     </div>
 
@@ -92,7 +106,7 @@
           </div>
         </ng-template>
 
-        <!-- Dynamic Legend Chips styled with Background System colors -->
+        <!-- Dynamic Legend Chips -->
         <div class="chart-legend-row" *ngIf="activeCategories.length > 0">
           <div class="legend-chip" *ngFor="let cat of activeCategories" [style.background-color]="cat.color">
             <span class="legend-chip-dot" [style.background-color]="cat.textColor"></span>
@@ -101,35 +115,34 @@
         </div>
       </div>
 
-      <!-- Active Goal Progress -->
-      <div class="dashboard-card goals-panel">
-        <h3 class="panel-heading">Active Goal Progress</h3>
+      <!-- Recent Activity Feed (Replaced Active Goal Progress) -->
+      <div class="dashboard-card activity-panel">
+        <div class="panel-header-actions">
+          <h3 class="panel-heading">Recent XP Earned</h3>
+          <button class="btn-link" (click)="navigateToGoals()">View Goals &rarr;</button>
+        </div>
         
-        <div class="mini-goal-list" *ngIf="summary?.activeGoals?.length; else emptyGoals">
-          <div class="mini-goal-card" *ngFor="let goal of summary?.activeGoals">
-            <div class="mini-goal-header">
-              <span class="mini-goal-name">{{ goal.goalName }}</span>
-              <span class="status-pill" [style.background-color]="getGoalStatusColor(goal)">
-                {{ getGoalStatusLabel(goal) }}
-              </span>
+        <div class="activity-list" *ngIf="recentActivities.length; else emptyActivities">
+          <div class="activity-item" *ngFor="let item of recentActivities">
+            <div class="activity-icon" [ngClass]="item.category.toLowerCase()">
+              <i *ngIf="item.category === 'GOAL'" class="fas fa-bullseye"></i>
+              <i *ngIf="item.category === 'LOG'" class="fas fa-clipboard-list"></i>
+              <i *ngIf="item.category === 'STREAK'" class="fas fa-fire"></i>
             </div>
             
-            <div class="mini-goal-track">
-              <div 
-                class="mini-goal-fill" 
-                [style.width.%]="getGoalFillPercent(goal)"
-                [style.background-color]="getGoalStatusColor(goal)">
-              </div>
+            <div class="activity-details">
+              <span class="activity-title">{{ item.activityName }}</span>
+              <span class="activity-time">{{ item.timestamp }}</span>
             </div>
 
-            <div class="mini-goal-readout">
-              {{ goal.currentValue | number:'1.1-1' }} / {{ goal.targetValue | number:'1.1-1' }} {{ ($any(goal).unit || 'kg CO₂') }}
+            <div class="activity-xp">
+              +{{ item.xpEarned }} XP
             </div>
           </div>
         </div>
 
-        <ng-template #emptyGoals>
-          <div class="empty-state">No active goals currently set.</div>
+        <ng-template #emptyActivities>
+          <div class="empty-state">No recent activity logged yet.</div>
         </ng-template>
       </div>
 

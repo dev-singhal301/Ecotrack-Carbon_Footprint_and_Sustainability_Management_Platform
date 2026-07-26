@@ -59,9 +59,13 @@
           <input
             type="date"
             id="activityDate"
-            formControlName="activityDate">
-          <span class="field-error" *ngIf="trackingForm.get('activityDate')?.invalid && trackingForm.get('activityDate')?.touched">
+            formControlName="activityDate"
+            [max]="maxActivityDate">
+          <span class="field-error" *ngIf="trackingForm.get('activityDate')?.touched && trackingForm.get('activityDate')?.hasError('required')">
             Activity date is required
+          </span>
+          <span class="field-error" *ngIf="trackingForm.get('activityDate')?.touched && trackingForm.get('activityDate')?.hasError('futureDate')">
+            Activity date can't be in the future
           </span>
         </div>
 
@@ -167,7 +171,20 @@
   <section class="chart-section-left" [class.expanded]="expandedSection === 'trend'" [class.hidden]="expandedSection !== null && expandedSection !== 'trend'">
     <div class="tracking-card">
       <div class="card-header-actions">
-        <h2 class="section-title">Emission Trends</h2>
+        <div class="title-with-badge">
+          <h2 class="section-title">Emission Trends</h2>
+          
+          <!-- Integrated Month Selector -->
+          <select 
+            class="chart-month-select" 
+            [(ngModel)]="selectedChartMonth" 
+            (change)="onMonthFilterChange()">
+            <option *ngFor="let m of availableMonths" [value]="m.value">
+              {{ m.label }}
+            </option>
+          </select>
+        </div>
+
         <button type="button" class="btn-toggle-expand" (click)="toggleExpand('trend')" [title]="expandedSection === 'trend' ? 'Minimize' : 'Maximize'">
           <i class="fa-solid" [class.fa-maximize]="expandedSection !== 'trend'" [class.fa-minimize]="expandedSection === 'trend'"></i>
         </button>
@@ -182,11 +199,10 @@
     </div>
   </section>
 
-  <!-- BOTTOM-RIGHT: Category Footprint Chart Section (Option 2 Refined) -->
+  <!-- BOTTOM-RIGHT: Category Footprint Chart Section -->
   <section class="chart-section-right" [class.expanded]="expandedSection === 'breakdown'" [class.hidden]="expandedSection !== null && expandedSection !== 'breakdown'">
     <div class="tracking-card donut-card">
       
-      <!-- Card Header with Subtitle Badge & Maximization Toggle -->
       <div class="card-header-actions">
         <div class="title-with-badge">
           <h2 class="section-title">Category Footprint</h2>
@@ -201,10 +217,7 @@
         </button>
       </div>
 
-      <!-- Main Content Layout (Chart + Interactive Legend Grid) -->
       <div class="donut-card-content">
-        
-        <!-- Left: Donut Chart Wrapper with Dynamic Center Summary Overlay -->
         <div class="donut-chart-wrapper" (mouseleave)="onChartMouseLeave()">
           <canvas baseChart
             [data]="breakdownChartData"
@@ -212,7 +225,6 @@
             [type]="breakdownChartType">
           </canvas>
 
-          <!-- Dynamic Center Metric Overlay -->
           <div class="donut-center-overlay">
             <ng-container *ngIf="hoveredCategory; else defaultSummary">
               <span class="center-category-title" [style.color]="hoveredCategory.color">
@@ -236,7 +248,6 @@
           </div>
         </div>
 
-        <!-- Right: Interactive Category Legend Grid -->
         <div class="donut-legend-list">
           <div 
             *ngFor="let item of categoryList" 

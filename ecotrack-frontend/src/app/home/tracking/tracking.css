@@ -1,5 +1,11 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap');
+
 :host {
-  /* Centralized Palette */
+  /* ---- Typography Variables ---- */
+  --eco-font-heading: 'Nunito', 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+  --eco-font-body: 'Nunito', 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+
+  /* ---- Centralized Palette ---- */
   --eco-bg-light: #B1D3B9;       
   --eco-green: #60BA75;          
   --eco-green-dark: #0fac34;     
@@ -41,6 +47,7 @@
   height: 100%;
   width: 100%;
   box-sizing: border-box;
+  font-family: var(--eco-font-body);
 }
 
 /* ----------------------------------
@@ -125,9 +132,11 @@
 
 .section-title {
   margin: 0;
+  font-family: var(--eco-font-heading);
   font-size: 1.15rem;
-  font-weight: 700;
+  font-weight: 800;
   color: #1e352f;
+  letter-spacing: -0.01em;
 }
 
 .card-header-actions {
@@ -186,18 +195,21 @@ form {
 }
 
 label {
-  font-weight: 600;
-  font-size: 0.8rem;
+  font-family: var(--eco-font-heading);
+  font-weight: 700;
+  font-size: 0.82rem;
   margin-bottom: 4px;
   color: var(--eco-text-label);
 }
 
 input, select {
+  font-family: var(--eco-font-body);
+  font-weight: 600;
   width: 100%;
   padding: 8px 10px;
   border: 1.5px solid var(--eco-input-border);
   border-radius: 8px;
-  font-size: 0.85rem;
+  font-size: 0.88rem;
   background-color: var(--eco-input-field-bg);
   color: var(--eco-text-main);
   box-sizing: border-box;
@@ -214,6 +226,7 @@ input:focus, select:focus {
   background-color: #e2e8f0;
   border-color: var(--eco-input-border);
   color: var(--eco-text-muted);
+  font-weight: 700;
   cursor: not-allowed;
   height: 37px;
 }
@@ -221,7 +234,8 @@ input:focus, select:focus {
 .field-error {
   display: block;
   margin-top: 4px;
-  font-size: 0.75rem;
+  font-size: 0.76rem;
+  font-weight: 600;
   color: var(--eco-red);
 }
 
@@ -232,8 +246,9 @@ input:focus, select:focus {
   color: var(--eco-white);
   border: none;
   border-radius: 8px;
+  font-family: var(--eco-font-heading);
   font-size: 0.9rem;
-  font-weight: 600;
+  font-weight: 800;
   cursor: pointer;
   transition: background-color 0.2s ease, opacity 0.2s ease;
   margin-top: auto;
@@ -283,7 +298,7 @@ input:focus, select:focus {
 }
 
 .filter-group label {
-  font-size: 0.75rem;
+  font-size: 0.76rem;
   margin-bottom: 2px;
 }
 
@@ -294,7 +309,7 @@ input:focus, select:focus {
 .filter-controls select,
 .filter-controls input {
   padding: 6px 8px;
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   border-radius: 6px;
   height: 32px;
   box-sizing: border-box;
@@ -305,14 +320,15 @@ input:focus, select:focus {
 }
 
 .btn-clear {
+  font-family: var(--eco-font-heading);
   background: #f1f5f9;
   border: 1px solid var(--eco-input-border);
   color: var(--eco-text-label);
   border-radius: 6px;
   padding: 6px 12px;
   cursor: pointer;
-  font-size: 0.78rem;
-  font-weight: 500;
+  font-size: 0.8rem;
+  font-weight: 700;
   height: 32px;
   box-sizing: border-box;
   transition: background-color 0.2s ease;
@@ -362,11 +378,12 @@ input:focus, select:focus {
 }
 
 .history-table th {
+  font-family: var(--eco-font-heading);
   background-color: var(--eco-input-field-bg);
   color: var(--eco-text-label);
-  font-weight: 600;
+  font-weight: 800;
   padding: 10px;
-  font-size: 0.78rem;
+  font-size: 0.76rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   border-bottom: 1.5px solid #e2e8f0;
@@ -377,7 +394,8 @@ input:focus, select:focus {
 
 .history-table td {
   padding: 10px;
-  font-size: 0.82rem;
+  font-size: 0.84rem;
+  font-weight: 600;
   border-bottom: 1px solid #f1f5f9;
   color: var(--eco-text-main);
   vertical-align: middle;
@@ -389,11 +407,12 @@ input:focus, select:focus {
 
 /* Category Badges System */
 .category-badge {
+  font-family: var(--eco-font-heading);
   display: inline-block;
   padding: 3px 8px;
   border-radius: 6px;
-  font-size: 0.7rem;
-  font-weight: 700;
+  font-size: 0.72rem;
+  font-weight: 800;
   letter-spacing: 0.5px;
   text-transform: uppercase;
 }
@@ -435,7 +454,8 @@ input:focus, select:focus {
 }
 
 .emission-value {
-  font-weight: 700;
+  font-family: var(--eco-font-heading);
+  font-weight: 800;
   color: var(--eco-slate-900);
 }
 
@@ -458,6 +478,8 @@ input:focus, select:focus {
   color: var(--eco-slate-400);
   padding: 32px !important;
   font-style: italic;
+  font-size: 0.88rem;
+  font-weight: 500;
 }
 
 /* ----------------------------------
@@ -491,13 +513,14 @@ input:focus, select:focus {
 }
 
 .category-subtitle-badge {
+  font-family: var(--eco-font-heading);
   display: inline-flex;
   align-items: center;
   gap: 4px;
   background-color: var(--eco-cat-food-bg);
   color: var(--eco-cat-food-text);
-  font-size: 0.72rem;
-  font-weight: 700;
+  font-size: 0.74rem;
+  font-weight: 800;
   padding: 3px 8px;
   border-radius: 12px;
   border: 1px solid rgba(21, 128, 61, 0.15);
@@ -542,14 +565,16 @@ input:focus, select:focus {
 }
 
 .center-label-muted {
+  font-family: var(--eco-font-heading);
   font-size: 0.72rem;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--eco-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .center-metric-value {
+  font-family: var(--eco-font-heading);
   font-size: 1.25rem;
   font-weight: 800;
   color: var(--eco-slate-900);
@@ -559,26 +584,28 @@ input:focus, select:focus {
 
 .center-metric-value small {
   font-size: 0.75rem;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--eco-text-muted);
 }
 
 .center-subtext {
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   color: var(--eco-text-label);
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .center-category-title {
-  font-size: 0.78rem;
-  font-weight: 700;
+  font-family: var(--eco-font-heading);
+  font-size: 0.8rem;
+  font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.4px;
 }
 
 .center-percentage-pill {
-  font-size: 0.68rem;
-  font-weight: 700;
+  font-family: var(--eco-font-heading);
+  font-size: 0.7rem;
+  font-weight: 800;
   padding: 2px 6px;
   border-radius: 10px;
   margin-top: 2px;
@@ -629,8 +656,8 @@ input:focus, select:focus {
 }
 
 .legend-cat-name {
-  font-size: 0.8rem;
-  font-weight: 600;
+  font-size: 0.82rem;
+  font-weight: 700;
   color: var(--eco-text-main);
 }
 
@@ -641,20 +668,22 @@ input:focus, select:focus {
 }
 
 .legend-cat-value {
-  font-size: 0.8rem;
-  font-weight: 700;
+  font-family: var(--eco-font-heading);
+  font-size: 0.82rem;
+  font-weight: 800;
   color: var(--eco-slate-900);
 }
 
 .legend-cat-value small {
-  font-size: 0.7rem;
-  font-weight: 500;
+  font-size: 0.72rem;
+  font-weight: 600;
   color: var(--eco-text-muted);
 }
 
 .legend-cat-pct {
-  font-size: 0.72rem;
-  font-weight: 700;
+  font-family: var(--eco-font-heading);
+  font-size: 0.74rem;
+  font-weight: 800;
   color: var(--eco-text-muted);
   background-color: #e2e8f0;
   padding: 2px 6px;

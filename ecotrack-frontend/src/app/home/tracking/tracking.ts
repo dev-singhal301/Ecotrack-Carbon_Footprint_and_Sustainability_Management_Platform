@@ -1,6 +1,6 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule, ReactiveFormsModule, FormGroup, FormControl, Validators } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule, FormGroup, FormControl, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { BaseChartDirective } from 'ng2-charts';
 import { ChartConfiguration, ChartOptions, Chart, registerables } from 'chart.js';
 import { CarbonEntryService, CarbonEntryRequest, CarbonEntryResponse } from './carbon-entry.service';
@@ -18,8 +18,8 @@ export interface CategorySummary {
   selector: 'app-tracking',
   standalone: true,
   imports: [
-    CommonModule, 
-    FormsModule, 
+    CommonModule,
+    FormsModule,
     ReactiveFormsModule,
     BaseChartDirective
   ],
@@ -28,11 +28,22 @@ export interface CategorySummary {
 })
 export class TrackingComponent implements OnInit {
 
+  readonly maxActivityDate = this.getTodayDate();
+
+  // Robust future date validator comparing dates normalized to midnight
+  private notFutureDateValidator = (control: AbstractControl): ValidationErrors | null => {
+    if (!control.value) return null;
+    const selected = new Date(control.value);
+    const today = new Date();
+    today.setHours(23, 59, 59, 999); // Allow up to end of today
+    return selected > today ? { futureDate: true } : null;
+  };
+
   trackingForm = new FormGroup({
     category: new FormControl('', Validators.required),
     amount: new FormControl<number | null>(null, [Validators.required, Validators.min(0.01)]),
     unit: new FormControl({ value: '', disabled: true }),
-    activityDate: new FormControl('', Validators.required)
+    activityDate: new FormControl('', [Validators.required, this.notFutureDateValidator])
   });
 
   filters = {
@@ -40,6 +51,10 @@ export class TrackingComponent implements OnInit {
     from: '',
     to: ''
   };
+
+  // Month selector state for charts (Format: 'YYYY-MM')
+  selectedChartMonth: string = this.getCurrentYearMonth();
+  availableMonths: { label: string; value: string }[] = [];
 
   expandedSection: string | null = null;
 
@@ -56,24 +71,19 @@ export class TrackingComponent implements OnInit {
   isLoading: boolean = false;
   removingIds = new Set<number>();
 
-  // Center Summary Dynamic State Variables
   totalMonthlyEmission: number = 0;
   hoveredCategory: CategorySummary | null = null;
   categoryList: CategorySummary[] = [];
 
-  // Category Color Palette
   readonly categoryColors: { [key: string]: string } = {
-    'FOOD': '#22c55e',          // Soft Emerald
-    'WATER': '#0ea5e9',         // Sky Blue
-    'FUEL': '#a855f7',          // Soft Purple
-    'ELECTRICITY': '#eab308',   // Vibrant Amber
-    'WASTE': '#ef4444',          // Coral Red
-    'TRANSPORTATION': '#6366f1'  // Indigo Blue
+    'FOOD': '#22c55e',
+    'WATER': '#0ea5e9',
+    'FUEL': '#a855f7',
+    'ELECTRICITY': '#eab308',
+    'WASTE': '#ef4444',
+    'TRANSPORTATION': '#6366f1'
   };
 
-  // =========================================================================
-  // 1. Emission Trends (Line Chart) Configuration
-  // =========================================================================
   public monthlyChartType: ChartConfiguration<'line'>['type'] = 'line';
 
   public monthlyChartData: ChartConfiguration<'line'>['data'] = {
@@ -102,7 +112,7 @@ export class TrackingComponent implements OnInit {
         pointBorderWidth: 2,
         pointHoverBackgroundColor: '#0a7d25',
         pointHoverRadius: 5,
-        pointRadius: 0,
+        pointRadius: 3,
         pointHitRadius: 10
       }
     ]
@@ -112,29 +122,22 @@ export class TrackingComponent implements OnInit {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
-      legend: { 
-        display: false,
-        position: 'top',
-        align: 'end'
-      },
+      legend: { display: false },
       tooltip: { mode: 'index', intersect: false }
     },
     scales: {
-      x: { 
-        title: { display: true, text: 'July 2026', font: { weight: 'bold' } },
+      x: {
+        title: { display: true, text: 'Day of Month', font: { weight: 'bold' } },
         grid: { display: false }
       },
-      y: { 
-        title: { display: true, text: 'kg CO₂' }, 
+      y: {
+        title: { display: true, text: 'kg CO₂' },
         beginAtZero: true,
         grid: { color: 'rgba(0, 0, 0, 0.05)' }
       }
     }
   };
 
-  // =========================================================================
-  // 2. Category Footprint (Single-Ring Donut Chart) Configuration
-  // =========================================================================
   public breakdownChartType: ChartConfiguration<'doughnut'>['type'] = 'doughnut';
 
   public breakdownChartData: ChartConfiguration<'doughnut'>['data'] = {
@@ -160,14 +163,10 @@ export class TrackingComponent implements OnInit {
   public breakdownChartOptions: ChartOptions<'doughnut'> = {
     responsive: true,
     maintainAspectRatio: false,
-    cutout: '76%', // Modern slender ring creating spacious center
+    cutout: '76%',
     plugins: {
-      legend: { 
-        display: false // Using custom interactive HTML legend list
-      },
-      tooltip: {
-        enabled: false // Tooltip replaced by dynamic center content overlay
-      }
+      legend: { display: false },
+      tooltip: { enabled: false }
     },
     onHover: (event, activeElements) => {
       this.onChartHover(activeElements);
@@ -192,6 +191,13 @@ export class TrackingComponent implements OnInit {
     return `${yyyy}-${mm}-${dd}`;
   }
 
+  private getCurrentYearMonth(): string {
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    return `${yyyy}-${mm}`;
+  }
+
   onCategoryChange(): void {
     const category = this.trackingForm.get('category')?.value ?? '';
     const mapping = this.unitMapping[category];
@@ -202,14 +208,12 @@ export class TrackingComponent implements OnInit {
     this.expandedSection = this.expandedSection === section ? null : section;
 
     const isTrendExpanded = this.expandedSection === 'trend';
-
     if (this.monthlyChartOptions.plugins?.legend) {
       this.monthlyChartOptions.plugins.legend.display = isTrendExpanded;
     }
 
     this.monthlyChartData = { ...this.monthlyChartData };
     this.breakdownChartData = { ...this.breakdownChartData };
-
     this.cdr.detectChanges();
   }
 
@@ -219,8 +223,14 @@ export class TrackingComponent implements OnInit {
     this.carbonService.getHistory(this.filters.category, this.filters.from, this.filters.to)
       .subscribe({
         next: (data) => {
-          this.historyLogs = data.sort((a, b) => b.entryId - a.entryId);
+          this.historyLogs = data.sort((a, b) => {
+            if (a.activityDate !== b.activityDate) {
+              return b.activityDate.localeCompare(a.activityDate);
+            }
+            return b.entryId - a.entryId;
+          });
           this.isLoading = false;
+          this.populateAvailableMonths();
           this.updateCharts();
           this.cdr.detectChanges();
         },
@@ -230,6 +240,39 @@ export class TrackingComponent implements OnInit {
           this.cdr.detectChanges();
         }
       });
+  }
+
+  private populateAvailableMonths(): void {
+    const monthMap = new Map<string, string>();
+    
+    // Always include current month
+    const now = new Date();
+    const currentKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const currentLabel = now.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+    monthMap.set(currentKey, currentLabel);
+
+    // Extract unique months from history logs
+    this.historyLogs.forEach(entry => {
+      if (entry.activityDate) {
+        const [year, month] = entry.activityDate.split('-');
+        const key = `${year}-${month}`;
+        if (!monthMap.has(key)) {
+          const d = new Date(Number(year), Number(month) - 1, 1);
+          const label = d.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+          monthMap.set(key, label);
+        }
+      }
+    });
+
+    this.availableMonths = Array.from(monthMap.entries()).map(([value, label]) => ({
+      value,
+      label
+    })).sort((a, b) => b.value.localeCompare(a.value));
+  }
+
+  onMonthFilterChange(): void {
+    this.updateCharts();
+    this.cdr.detectChanges();
   }
 
   onLogSubmit(): void {
@@ -248,7 +291,12 @@ export class TrackingComponent implements OnInit {
 
     this.carbonService.createEntry(payload).subscribe({
       next: (savedEntry: CarbonEntryResponse) => {
-        this.historyLogs = [savedEntry, ...this.historyLogs];
+        this.historyLogs = [savedEntry, ...this.historyLogs].sort((a, b) => {
+          if (a.activityDate !== b.activityDate) {
+            return b.activityDate.localeCompare(a.activityDate);
+          }
+          return b.entryId - a.entryId;
+        });
 
         this.trackingForm.reset({
           category: '',
@@ -257,6 +305,7 @@ export class TrackingComponent implements OnInit {
           activityDate: this.getTodayDate()
         });
 
+        this.populateAvailableMonths();
         this.updateCharts();
         this.cdr.detectChanges();
       },
@@ -280,6 +329,7 @@ export class TrackingComponent implements OnInit {
         setTimeout(() => {
           this.historyLogs = this.historyLogs.filter(item => item.entryId !== id);
           this.removingIds.delete(id);
+          this.populateAvailableMonths();
           this.updateCharts();
           this.cdr.detectChanges();
         }, 280);
@@ -296,7 +346,6 @@ export class TrackingComponent implements OnInit {
     this.cdr.detectChanges();
   }
 
-  // Handle Chart Hover Events to update Center Summary
   private onChartHover(activeElements: any[]): void {
     if (activeElements && activeElements.length > 0) {
       const index = activeElements[0].index;
@@ -310,61 +359,62 @@ export class TrackingComponent implements OnInit {
     }
   }
 
-  // Handle Mouse Leave on Chart Container
   onChartMouseLeave(): void {
     this.hoveredCategory = null;
     this.cdr.detectChanges();
   }
 
   private updateCharts(): void {
-    if (!this.historyLogs || this.historyLogs.length === 0) {
-      this.monthlyChartData.labels = [];
-      this.monthlyChartData.datasets[0].data = [];
-      this.breakdownChartData.datasets[0].data = [0, 0, 0, 0, 0, 0];
-      this.totalMonthlyEmission = 0;
-      this.categoryList = [];
-      return;
-    }
+    const [targetYearStr, targetMonthStr] = this.selectedChartMonth.split('-');
+    const targetYear = Number(targetYearStr);
+    const targetMonth = Number(targetMonthStr) - 1; // 0-indexed month
 
-    const now = new Date();
-    const currentYear = now.getFullYear();
-    const currentMonth = now.getMonth();
+    const selectedMonthObj = new Date(targetYear, targetMonth, 1);
+    const monthLabel = selectedMonthObj.toLocaleString('en-US', { month: 'long', year: 'numeric' });
 
-    const monthLabel = now.toLocaleString('en-US', { month: 'long', year: 'numeric' });
-    if (this.monthlyChartOptions.scales?.['x']?.title) {
-      this.monthlyChartOptions.scales['x'].title.text = monthLabel;
-    }
+    // Update scale label cleanly
+    this.monthlyChartOptions = {
+      ...this.monthlyChartOptions,
+      scales: {
+        ...this.monthlyChartOptions.scales,
+        x: {
+          ...this.monthlyChartOptions.scales?.['x'],
+          title: { display: true, text: monthLabel, font: { weight: 'bold' } }
+        }
+      }
+    };
 
-    // -----------------------------------------------------------------------
-    // 1. Line Chart Calculation
-    // -----------------------------------------------------------------------
-    const dailyTotals: { [dateKey: string]: number } = {};
+    // Filter logs for selected month
+    const filteredLogs = this.historyLogs.filter(entry => {
+      if (!entry.activityDate) return false;
+      const [y, m] = entry.activityDate.split('-').map(Number);
+      return y === targetYear && (m - 1) === targetMonth;
+    });
+
+    // 1. Build Daily Footprint Line Chart
+    const dailyTotals: { [day: number]: number } = {};
+    const daysInMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
+
+    // Map existing records to day numbers
+    filteredLogs.forEach(entry => {
+      const day = Number(entry.activityDate.split('-')[2]);
+      const emission = entry.carbonEmission || 0;
+      dailyTotals[day] = (dailyTotals[day] || 0) + emission;
+    });
+
+    const sortedDays = Object.keys(dailyTotals).map(Number).sort((a, b) => a - b);
     
-    this.historyLogs.forEach(entry => {
-      const date = entry.activityDate;
-      const emission = entry.carbonEmission || 0; 
-      dailyTotals[date] = (dailyTotals[date] || 0) + emission;
-    });
-
-    const sortedDates = Object.keys(dailyTotals).sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
-    const dayLabels = sortedDates.map(d => {
-      const parts = d.split('-');
-      return parts.length === 3 ? parts[2] : d;
-    });
-
     this.monthlyChartData = {
-      labels: dayLabels,
+      labels: sortedDays.map(d => `${d}`),
       datasets: [
         {
           ...this.monthlyChartData.datasets[0],
-          data: sortedDates.map(date => Number(dailyTotals[date].toFixed(2)))
+          data: sortedDays.map(day => Number(dailyTotals[day].toFixed(2)))
         }
       ]
     };
 
-    // -----------------------------------------------------------------------
-    // 2. Single-Ring Donut Chart Calculation (Current Month)
-    // -----------------------------------------------------------------------
+    // 2. Build Category Footprint Breakdown
     const categoryTotals: { [cat: string]: number } = {
       'FOOD': 0,
       'WATER': 0,
@@ -376,29 +426,23 @@ export class TrackingComponent implements OnInit {
 
     let monthlySum = 0;
 
-    this.historyLogs.forEach(entry => {
-      if (entry.activityDate) {
-        const entryDate = new Date(entry.activityDate);
-        if (entryDate.getFullYear() === currentYear && entryDate.getMonth() === currentMonth) {
-          const cat = entry.category.toUpperCase();
-          const val = entry.carbonEmission || 0;
-          if (categoryTotals[cat] !== undefined) {
-            categoryTotals[cat] += val;
-            monthlySum += val;
-          }
-        }
+    filteredLogs.forEach(entry => {
+      const cat = entry.category.toUpperCase();
+      const val = entry.carbonEmission || 0;
+      if (categoryTotals[cat] !== undefined) {
+        categoryTotals[cat] += val;
+        monthlySum += val;
       }
     });
 
     this.totalMonthlyEmission = Number(monthlySum.toFixed(2));
 
     const categories = ['FOOD', 'WATER', 'FUEL', 'ELECTRICITY', 'WASTE', 'TRANSPORTATION'];
-    
-    // Build Structured Category List for Center Display & UI Legend
+
     this.categoryList = categories.map(cat => {
       const val = Number(categoryTotals[cat].toFixed(2));
-      const pct = this.totalMonthlyEmission > 0 
-        ? Number(((val / this.totalMonthlyEmission) * 100).toFixed(1)) 
+      const pct = this.totalMonthlyEmission > 0
+        ? Number(((val / this.totalMonthlyEmission) * 100).toFixed(1))
         : 0;
 
       return {
@@ -409,7 +453,6 @@ export class TrackingComponent implements OnInit {
       };
     });
 
-    // Update Donut Chart Data
     this.breakdownChartData = {
       labels: categories,
       datasets: [

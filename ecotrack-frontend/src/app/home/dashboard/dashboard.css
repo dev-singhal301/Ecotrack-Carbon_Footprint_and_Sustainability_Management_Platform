@@ -1,4 +1,11 @@
+@import url('https://fonts.googleapis.com/css2?family=Agbalumo&family=Nunito:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap');
+
 :host {
+  /* ---- Typography Variables ---- */
+  --eco-font-greeting: 'Agbalumo', 'Playfair Display', Georgia, serif;
+  --eco-font-body: 'Nunito', 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+  --eco-font-heading: 'Nunito', 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+
   /* ---- Brand green 3-tier ramp ---- */
   --eco-green-light: #60BA75;
   --eco-green: #2d6a4f;
@@ -11,14 +18,16 @@
   --eco-positive-bg: #dcfce7;
   --eco-positive-text: #15803d;
 
-  /* ---- Slate neutrals ---- */
+  /* ---- Refined Slate & Heading Colors ---- */
+  --eco-heading-color: #0f172a;       /* Deep slate heading color */
+  --eco-heading-accent: #0d2818;      /* Deep forest dark hue */
   --eco-slate-900: #0f172a;
   --eco-slate-800: #1e293b;
   --eco-slate-700: #334155;
   --eco-slate-400: #94a3b8;
 
   --eco-input-field-bg: #f8fafc;
-  --eco-input-border: #cbd5e1;
+  --eco-input-border: #e2e8f0;
   --eco-text-main: #1e293b;
   --eco-text-muted: #64748b;
   --eco-text-label: #475569;
@@ -26,25 +35,8 @@
   /* ---- Background Theme Palette ---- */
   --eco-bg-light: #f8fafc;
 
-  --eco-cat-food-bg: #dcfce7;
-  --eco-cat-food-text: #15803d;
-
-  --eco-cat-water-bg: #e0f2fe;
-  --eco-cat-water-text: #0369a1;
-
-  --eco-cat-fuel-bg: #f3e8ff;
-  --eco-cat-fuel-text: #6b21a8;
-
-  --eco-cat-electricity-bg: #fef08a;
-  --eco-cat-electricity-text: #a16207;
-
-  --eco-cat-waste-bg: #fee2e2;
-  --eco-cat-waste-text: #b91c1c;
-
-  --eco-cat-transport-bg: #e0e7ff;
-  --eco-cat-transport-text: #4338ca;
-
   display: block;
+  font-family: var(--eco-font-body);
 }
 
 .dashboard-container {
@@ -60,9 +52,10 @@
 .dashboard-card {
   background: var(--eco-white);
   border: 1.5px solid #e2e8f0;
-  border-radius: 12px;
+  border-radius: 14px;
   padding: 20px;
-  box-shadow: none;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 /* Error Banner & Loader */
@@ -91,17 +84,19 @@
 
 .welcome-greeting {
   margin: 0 0 4px;
-  font-size: 1.6rem;
-  font-weight: 800;
-  color: var(--eco-slate-900);
+  font-family: var(--eco-font-greeting);
+  font-size: 2rem;
+  font-weight: 400; /* Agbalumo is designed around regular weight */
+  color: var(--eco-green-dark);
+  line-height: 1.25;
 }
 
 .welcome-subtext {
   margin: 0 0 14px;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   font-weight: 500;
   font-style: italic;
-  color: var(--eco-positive-text);
+  color: var(--eco-text-muted);
 }
 
 .rank-row {
@@ -114,18 +109,18 @@
 .rank-badge {
   background: var(--eco-green);
   color: var(--eco-white);
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   font-weight: 800;
-  padding: 4px 10px;
+  padding: 4px 12px;
   border-radius: 20px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .level-label {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--eco-text-muted);
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--eco-slate-700);
 }
 
 .xp-bar-track {
@@ -139,31 +134,35 @@
 
 .xp-bar-fill {
   height: 100%;
-  background: var(--eco-green-light);
+  background: linear-gradient(90deg, var(--eco-green-light) 0%, var(--eco-green) 100%);
   border-radius: 999px;
   transition: width 0.4s ease;
 }
 
 .xp-bar-caption {
-  font-size: 0.75rem;
-  color: var(--eco-text-muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--eco-slate-700);
 }
 
 .btn-log-entry {
   background: var(--eco-green);
   color: var(--eco-white);
   border: none;
-  padding: 12px 20px;
+  padding: 12px 22px;
   border-radius: 999px;
-  font-weight: 700;
+  font-family: var(--eco-font-heading);
+  font-weight: 800;
   font-size: 0.9rem;
   cursor: pointer;
-  transition: background-color 0.2s ease, transform 0.15s ease;
+  transition: background-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+  box-shadow: 0 2px 8px rgba(45, 106, 79, 0.2);
 }
 
 .btn-log-entry:hover {
   background: var(--eco-green-dark);
   transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(45, 106, 79, 0.3);
 }
 
 /* ---------------- 2. KPI Cards ---------------- */
@@ -180,25 +179,35 @@
 }
 
 .kpi-label {
-  font-size: 0.85rem;
+  font-family: var(--eco-font-heading);
+  font-size: 0.82rem;
   color: var(--eco-text-muted);
-  font-weight: 600;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
   margin-bottom: 8px;
 }
 
 .kpi-value {
-  font-size: 1.8rem;
+  font-family: var(--eco-font-heading);
+  font-size: 1.85rem;
   font-weight: 800;
-  color: var(--eco-slate-900);
+  color: var(--eco-heading-color);
+  letter-spacing: -0.01em;
 }
 
 .kpi-positive {
   color: var(--eco-green);
 }
 
+.kpi-negative {
+  color: var(--eco-red);
+}
+
 .kpi-unit {
+  font-family: var(--eco-font-body);
   font-size: 0.9rem;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--eco-text-muted);
 }
 
@@ -208,10 +217,15 @@
   right: 20px;
   background: var(--eco-positive-bg);
   color: var(--eco-positive-text);
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   font-weight: 800;
   padding: 4px 8px;
   border-radius: 6px;
+}
+
+.kpi-badge-negative {
+  background: #fee2e2;
+  color: var(--eco-red);
 }
 
 /* ---------------- 3 & 4. Middle Panels ---------------- */
@@ -225,9 +239,10 @@
 .panel-heading {
   margin-top: 0;
   margin-bottom: 0;
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--eco-slate-900);
+  font-family: var(--eco-font-heading);
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--eco-heading-color);
 }
 
 .panel-header-actions {
@@ -244,14 +259,14 @@
 }
 
 .panel-subtitle-badge {
-  font-size: 0.72rem;
-  font-weight: 700;
+  font-size: 0.7rem;
+  font-weight: 800;
   background: #f1f5f9;
   color: var(--eco-text-muted);
   padding: 3px 8px;
   border-radius: 6px;
   text-transform: uppercase;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.05em;
 }
 
 .panel-total-metric {
@@ -261,19 +276,22 @@
 }
 
 .panel-total-metric .metric-label {
-  font-size: 0.72rem;
-  font-weight: 600;
+  font-size: 0.7rem;
+  font-weight: 700;
   color: var(--eco-text-muted);
   text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
 .panel-total-metric .metric-value {
-  font-size: 1.05rem;
+  font-family: var(--eco-font-heading);
+  font-size: 1.1rem;
   font-weight: 800;
-  color: var(--eco-slate-900);
+  color: var(--eco-heading-color);
 }
 
 .panel-total-metric .metric-value small {
+  font-family: var(--eco-font-body);
   font-size: 0.75rem;
   font-weight: 600;
   color: var(--eco-text-muted);
@@ -290,7 +308,7 @@
   width: 100%;
 }
 
-/* Legend Chips styled using background colors */
+/* Legend Chips */
 .chart-legend-row {
   display: flex;
   flex-wrap: wrap;
@@ -321,74 +339,118 @@
   font-weight: 700;
 }
 
-/* Goal Meters */
-.goals-panel .panel-heading {
-  margin-bottom: 20px;
-}
-
-.mini-goal-list {
+/* ---------------- Activity / Recent XP Feed Section ---------------- */
+.activity-panel {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+}
+
+.btn-link {
+  background: transparent;
+  border: none;
+  color: var(--eco-green);
+  font-family: var(--eco-font-heading);
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.15s ease;
+}
+
+.btn-link:hover {
+  color: var(--eco-green-dark);
+  text-decoration: underline;
+}
+
+.activity-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
   max-height: 280px;
   overflow-y: auto;
-  padding-right: 6px;
+  padding-right: 4px;
 }
 
-.mini-goal-card {
+.activity-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
   background: var(--eco-input-field-bg);
   border: 1px solid var(--eco-input-border);
-  border-radius: 8px;
-  padding: 12px;
+  border-radius: 10px;
+  transition: transform 0.15s ease, border-color 0.15s ease;
 }
 
-.mini-goal-header {
+.activity-item:hover {
+  transform: translateX(2px);
+  border-color: #cbd5e1;
+}
+
+/* Font Awesome Icon Containers */
+.activity-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
+  justify-content: center;
+  font-size: 1rem;
+  flex-shrink: 0;
 }
 
-.mini-goal-name {
-  font-size: 0.85rem;
+.activity-icon.goal {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.activity-icon.log {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.activity-icon.streak {
+  background: #ffedd5;
+  color: #c2410c;
+}
+
+.activity-details {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.activity-title {
+  font-size: 0.88rem;
   font-weight: 700;
   color: var(--eco-slate-800);
 }
 
-.status-pill {
-  color: var(--eco-white);
-  font-size: 0.65rem;
-  font-weight: 800;
-  padding: 2px 6px;
-  border-radius: 4px;
-  text-transform: uppercase;
-}
-
-.mini-goal-track {
-  height: 6px;
-  background: #e2e8f0;
-  border-radius: 999px;
-  overflow: hidden;
-  margin-bottom: 6px;
-}
-
-.mini-goal-fill {
-  height: 100%;
-  border-radius: 999px;
-}
-
-.mini-goal-readout {
+.activity-time {
   font-size: 0.75rem;
   color: var(--eco-text-muted);
+  margin-top: 1px;
+}
+
+.activity-xp {
+  font-family: var(--eco-font-heading);
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--eco-green);
+  background: rgba(45, 106, 79, 0.08);
+  padding: 4px 10px;
+  border-radius: 20px;
 }
 
 .empty-state {
   color: var(--eco-slate-400);
   font-style: italic;
-  font-size: 0.85rem;
-  padding: 16px 0;
+  font-size: 0.88rem;
+  padding: 24px 0;
+  text-align: center;
 }
 
+/* ---------------- Responsive Rules ---------------- */
 @media (max-width: 1024px) {
   :host {
     height: 100%;
@@ -415,7 +477,7 @@
     width: 100%;
   }
 
-  .mini-goal-list {
+  .activity-list {
     max-height: 250px;
   }
 

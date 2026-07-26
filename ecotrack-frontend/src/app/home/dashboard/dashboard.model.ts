@@ -23,6 +23,15 @@ export interface GoalSnapshot {
   rewardPoints: number;
 }
 
+// Represents recent XP events (e.g., daily logs, streaks, completed goals)
+export interface XpActivityItem {
+  id: number;
+  activityName: string;
+  category: string;
+  xpEarned: number;
+  timestamp: string;
+}
+
 export interface DashboardSummary {
   username: string;
   userLevel: number;
@@ -35,4 +44,5 @@ export interface DashboardSummary {
   totalRewardPoints: number;
   categoryImpacts: CategoryImpact[];
   activeGoals: GoalSnapshot[];
+  recentActivities?: XpActivityItem[];
 }
