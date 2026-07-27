@@ -4,13 +4,15 @@ public class AuthResponse {
     private String token;
     private String name;
     private String email;
+    private boolean hasPassword;
 
     public AuthResponse() {}
 
-    public AuthResponse(String token, String name, String email) {
+    public AuthResponse(String token, String name, String email, boolean hasPassword) {
         this.token = token;
         this.name = name;
         this.email = email;
+        this.hasPassword = hasPassword;
     }
 
     public String getToken() { return token; }
@@ -19,4 +21,6 @@ public class AuthResponse {
     public void setName(String name) { this.name = name; }
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
+    public boolean isHasPassword() { return hasPassword; }
+    public void setHasPassword(boolean hasPassword) { this.hasPassword = hasPassword; }
 }
