@@ -14,17 +14,21 @@ import { Analytics } from './home/analytics/analytics';
 import { Leaderboard } from './home/leaderboard/leaderboard';
 import { Profile } from './home/profile/profile';
 import { Settings } from './home/settings/settings';
+import { SetPasswordPrompt } from './auth/set-password-prompt/set-password-prompt';
+import { mustSetPasswordGuard } from './auth/must-set-password.guard';
 
 export const routes: Routes = [
     // Unify both under a single clean authentication route path
     { path: 'auth', component: AuthForm },
     { path: 'reset-password', component: ResetPassword },
+    { path: 'set-password', component: SetPasswordPrompt },
     
     // Parent Route for the Dashboard layout shell
     { 
         path: 'home', 
         component: Home,
         canActivate: [authGuard],
+        canActivateChild: [mustSetPasswordGuard],
         children: [
             // Automatically drops users into the dashboard sub-view when reaching /home
             { path: '', redirectTo: 'dashboard', pathMatch: 'full' },

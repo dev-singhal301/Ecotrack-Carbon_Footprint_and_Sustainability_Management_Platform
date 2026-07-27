@@ -58,7 +58,7 @@ export class AuthForm implements AfterViewInit {
       name: [''],
       // Enforce strict syntax formatting via Regex to completely filter out incomplete inputs
       email: ['', [
-        Validators.required, 
+        Validators.required,
         Validators.email,
         Validators.pattern(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/)
       ]],
@@ -67,7 +67,7 @@ export class AuthForm implements AfterViewInit {
     this.updateValidators();
   }
 
-ngAfterViewInit(): void {
+  ngAfterViewInit(): void {
     this.waitForGoogleScript();
   }
 
@@ -99,10 +99,14 @@ ngAfterViewInit(): void {
     this.successMessage.set('');
     this.isSubmitting.set(true);
 
-    this.auth.googleLogin(response.credential).subscribe({
-      next: () => {
+this.auth.googleLogin(response.credential).subscribe({
+      next: (authResponse) => {
         this.isSubmitting.set(false);
-        this.router.navigate(['/home']);
+        if (!authResponse.hasPassword) {
+          this.router.navigate(['/set-password']);
+        } else {
+          this.router.navigate(['/home']);
+        }
       },
       error: (err) => {
         this.isSubmitting.set(false);
@@ -135,7 +139,7 @@ ngAfterViewInit(): void {
     this.isForgotPasswordMode.set(show);
     this.errorMessage.set('');
     this.successMessage.set('');
-    
+
     // Clear the validators and reset fields safely
     this.authForm.get('name')?.setValue('');
     this.authForm.get('password')?.setValue('');
@@ -169,7 +173,7 @@ ngAfterViewInit(): void {
    */
   handleForgotPasswordRequest(): void {
     const emailControl = this.authForm.get('email');
-    
+
     if (emailControl?.invalid) {
       emailControl.markAsTouched();
       return;
@@ -180,7 +184,7 @@ ngAfterViewInit(): void {
     this.successMessage.set('');
 
     const email = emailControl?.value;
-    
+
     // Ensure you add forgotPassword(email) to your frontend Auth file
     this.auth.forgotPassword(email).subscribe({
       next: (res: any) => {

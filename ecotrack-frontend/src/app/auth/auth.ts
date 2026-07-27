@@ -18,6 +18,7 @@ interface AuthResponse {
   token: string | null;
   name: string;
   email: string;
+  hasPassword: boolean;
 }
 
 @Injectable({
@@ -26,6 +27,7 @@ interface AuthResponse {
 export class Auth {
   private baseUrl = 'http://localhost:8080/api/auth';
   private token: string | null = null; // in-memory storage, per team agreement
+  private hasPasswordFlag: boolean | null = null;
 
   constructor(private http: HttpClient) { }
 
@@ -46,6 +48,8 @@ export class Auth {
           // Sync with localStorage so it survives hard browser refreshes
           localStorage.setItem('ecotrack_auth_token', response.token);
         }
+        this.hasPasswordFlag = response.hasPassword;
+        localStorage.setItem('ecotrack_has_password', String(response.hasPassword));
       }),
       catchError((error) => {
         const message = error.error?.message || 'Invalid email or password.';
@@ -61,6 +65,8 @@ export class Auth {
         if (response.token) {
           localStorage.setItem('ecotrack_auth_token', response.token);
         }
+        this.hasPasswordFlag = response.hasPassword;
+        localStorage.setItem('ecotrack_has_password', String(response.hasPassword));
       }),
       catchError((error) => {
         const message = error.error?.message || 'Google sign-in failed. Please try again.';
@@ -85,6 +91,26 @@ export class Auth {
         return throwError(() => new Error(message));
       })
     );
+  }
+
+  setPassword(newPassword: string): Observable<any> {
+    return this.http.post(`${this.baseUrl}/set-password`, { newPassword }).pipe(
+      tap(() => {
+        this.hasPasswordFlag = true;
+        localStorage.setItem('ecotrack_has_password', 'true');
+      }),
+      catchError((error) => {
+        const message = error.error?.message || 'Failed to set password. Please try again.';
+        return throwError(() => new Error(message));
+      })
+    );
+  }
+
+  hasPassword(): boolean {
+    if (this.hasPasswordFlag === null) {
+      this.hasPasswordFlag = localStorage.getItem('ecotrack_has_password') === 'true';
+    }
+    return this.hasPasswordFlag;
   }
 
   getToken(): string | null {
