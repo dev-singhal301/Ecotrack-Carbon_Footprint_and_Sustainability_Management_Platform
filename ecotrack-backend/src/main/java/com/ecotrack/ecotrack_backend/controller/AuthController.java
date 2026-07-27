@@ -8,6 +8,7 @@ import com.ecotrack.ecotrack_backend.dto.GoogleLoginRequest;
 import com.ecotrack.ecotrack_backend.dto.ResetPasswordRequest;
 import com.ecotrack.ecotrack_backend.dto.SetPasswordRequest;
 import com.ecotrack.ecotrack_backend.service.AuthService;
+import com.ecotrack.ecotrack_backend.service.EmailService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -28,9 +29,11 @@ import java.util.stream.Collectors;
 public class AuthController {
 
     private final AuthService authService;
+    private final EmailService emailService;
 
-    public AuthController(AuthService authService) {
+    public AuthController(AuthService authService, EmailService emailService) {
         this.authService = authService;
+        this.emailService = emailService;
     }
 
     @PostMapping("/register")
@@ -51,17 +54,25 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
+    /**
+     * Generates a reset token and emails it as a clickable link via EmailService.
+     * Deliberately swallows both "email not found" and "send failed" cases into
+     * the same generic response — returning a 404 for unknown emails would let
+     * this endpoint be used to check which addresses are registered.
+     */
     @PostMapping("/forgot-password")
     public ResponseEntity<Map<String, String>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
-        String token = authService.generateResetPasswordToken(request.getEmail());
+        try {
+            String token = authService.generateResetPasswordToken(request.getEmail());
+            emailService.sendPasswordResetEmail(request.getEmail(), token);
+        } catch (IllegalArgumentException ex) {
+            System.out.println("Password reset requested for unknown email: " + request.getEmail());
+        } catch (Exception ex) {
+            System.out.println("Failed to send password reset email: " + ex.getMessage());
+        }
 
-        // Placeholder until an email service is wired up (Milestone 2+).
-        // Never leave this in a build that touches production data.
-        System.out.println("====== SYSTEM RESET TOKEN GENERATED FOR " + request.getEmail() + " ======");
-        System.out.println("TOKEN VALUE: " + token);
-        System.out.println("==================================================================");
-
-        return ResponseEntity.ok(messageBody("Password reset processing initiated successfully."));
+        return ResponseEntity.ok(messageBody(
+                "If an account exists for that email, a password reset link has been sent."));
     }
 
     /**
