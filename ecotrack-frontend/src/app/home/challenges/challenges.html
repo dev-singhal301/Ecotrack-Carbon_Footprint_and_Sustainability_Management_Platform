@@ -1,1 +1,125 @@
-<p>challenges works!</p>
+<div class="challenges-container">
+  
+  <!-- Header Title Section -->
+  <div class="header-section">
+    <h1 class="header-title">EcoTrack Challenges</h1>
+    <p class="header-subtitle">Join community sustainability challenges, track your impact, and earn XP rewards!</p>
+  </div>
+
+  <!-- Search & Filter Controls Bar -->
+  <div class="controls-bar">
+    
+    <!-- Tab Navigation Pills -->
+    <div class="tab-pills">
+      <button 
+        *ngFor="let tab of tabs"
+        (click)="setActiveTab(tab)"
+        [class.active]="activeTab === tab"
+        class="tab-btn">
+        {{ tab === 'ALL' ? 'All Challenges' : tab }}
+      </button>
+    </div>
+
+    <!-- Category Dropdown & Search Box -->
+    <div class="filter-group">
+      <select [(ngModel)]="selectedCategory" class="category-select">
+        <option *ngFor="let cat of categories" [value]="cat">{{ cat }}</option>
+      </select>
+
+      <input 
+        type="text" 
+        [(ngModel)]="searchQuery" 
+        placeholder="Search challenges..." 
+        class="search-input" />
+    </div>
+  </div>
+
+  <!-- Empty State Warning -->
+  <div *ngIf="filteredChallenges.length === 0" class="empty-state">
+    <p>No challenges match your current search or filter criteria.</p>
+  </div>
+
+  <!-- Challenge Cards Grid -->
+  <div class="cards-grid">
+    
+    <div *ngFor="let ch of filteredChallenges" class="challenge-card">
+      
+      <div class="card-content-wrapper">
+        <!-- Card Header Banner with Badge Overlay -->
+        <div class="card-banner">
+          <img [src]="ch.cardImageUrl" [alt]="ch.title" class="banner-img" />
+          
+          <!-- Badge Icon Overlay -->
+          <div class="badge-overlay">
+            <img [src]="ch.badgeImageUrl" alt="Badge" class="badge-img" />
+          </div>
+
+          <!-- XP Badge -->
+          <span class="xp-badge">+{{ ch.rewardXp }} XP</span>
+        </div>
+
+        <!-- Card Content Body -->
+        <div class="card-body">
+          
+          <!-- Category & Type Pills -->
+          <div class="pills-group">
+            <span class="category-pill">{{ ch.category }}</span>
+            <span class="type-pill">
+              {{ ch.challengeType === 'CARBON_REDUCTION' ? 'Carbon Cut' : 'Activity' }}
+            </span>
+          </div>
+
+          <!-- Title & Description -->
+          <h3 class="card-title">{{ ch.title }}</h3>
+          <p class="card-desc">{{ ch.description }}</p>
+
+          <!-- Target Info -->
+          <div class="target-info">
+            Target: <span class="target-value">{{ ch.targetValue }} {{ ch.unit }}</span>
+          </div>
+
+          <!-- Active Participation Progress Bar -->
+          <div *ngIf="getParticipation(ch.challengeId) as userCh" class="progress-container">
+            <div class="progress-header">
+              <span class="progress-label">Progress</span>
+              <span class="progress-text">{{ userCh.currentValue }} / {{ ch.targetValue }} {{ ch.unit }} ({{ userCh.completionPercentage }}%)</span>
+            </div>
+            <div class="progress-bar-bg">
+              <div [style.width.%]="userCh.completionPercentage" class="progress-bar-fill"></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Card Action Footer -->
+      <div class="card-footer">
+        <span class="date-range">{{ ch.startDate }} - {{ ch.endDate }}</span>
+
+        <!-- Dynamic Action Button -->
+        <ng-container [ngSwitch]="getParticipation(ch.challengeId)?.status">
+          <button *ngSwitchCase="'IN_PROGRESS'" disabled class="btn-joined">
+            Joined ✓
+          </button>
+
+          <button *ngSwitchCase="'COMPLETED'" disabled class="btn-completed">
+            Completed 🏆
+          </button>
+
+          <button 
+            *ngSwitchDefault
+            [disabled]="ch.status !== 'ACTIVE'"
+            (click)="joinChallenge(ch)"
+            [class.btn-active]="ch.status === 'ACTIVE'"
+            [class.btn-disabled]="ch.status !== 'ACTIVE'"
+            class="btn-action">
+            {{ ch.status === 'ACTIVE' ? 'Join Challenge' : (ch.status === 'UPCOMING' ? 'Upcoming' : 'Ended') }}
+          </button>
+        </ng-container>
+      </div>
+
+    </div>
+
+  </div>
+
+</div>

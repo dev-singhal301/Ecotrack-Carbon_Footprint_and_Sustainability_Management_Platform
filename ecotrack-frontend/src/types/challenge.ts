@@ -7,6 +7,22 @@ export type ChallengeType = 'CARBON_REDUCTION' | 'ACTIVITY_BASED';
 export type TrackingType = 'COUNT' | 'DISTANCE' | 'DURATION' | 'BOOLEAN';
 
 /**
+ * Categories supported by emission factors and challenge filtering.
+ */
+export type ChallengeCategory = 
+  | 'TRANSPORTATION' 
+  | 'ELECTRICITY' 
+  | 'FOOD' 
+  | 'WASTE' 
+  | 'WATER' 
+  | 'FUEL';
+
+/**
+ * Filter tabs available on the User Challenge Hub UI.
+ */
+export type ChallengeTab = 'ALL' | 'ACTIVE' | 'UPCOMING' | 'JOINED' | 'COMPLETED';
+
+/**
  * Derived challenge lifecycle state evaluated at runtime based on start_date, end_date, and cancelled flag.
  */
 export type DerivedChallengeStatus = 'UPCOMING' | 'ACTIVE' | 'ENDED' | 'CANCELLED';
@@ -40,7 +56,7 @@ export interface MilestoneBadgeOption extends AssetOption {
 export interface CreateChallengePayload {
   title: string;
   description: string;
-  category: string;
+  category: ChallengeCategory;
   challengeType: ChallengeType;
   trackingType?: TrackingType | null; // NULL if CARBON_REDUCTION
   targetValue: number;
@@ -54,13 +70,13 @@ export interface CreateChallengePayload {
 }
 
 /**
- * Full Challenge entity returned by the backend GET /api/challenges endpoints.
+ * Full Challenge entity returned by backend GET /api/challenges endpoints.
  */
 export interface Challenge {
   challengeId: number;
   title: string;
   description: string;
-  category: string;
+  category: ChallengeCategory;
   challengeType: ChallengeType;
   trackingType: TrackingType | null;
   targetValue: number;
@@ -80,7 +96,7 @@ export interface Challenge {
 }
 
 /**
- * User participation & progress entity (user_challenges).
+ * User participation & progress entity (user_challenges table).
  */
 export interface UserChallenge {
   userChallengeId: number;

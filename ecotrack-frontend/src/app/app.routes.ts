@@ -8,7 +8,7 @@ import { authGuard } from './auth/auth.guard';
 import { DashboardComponent } from './home/dashboard/dashboard';
 import { TrackingComponent } from './home/tracking/tracking';
 import { GoalsComponent } from './home/goals/goals';
-import { Challenges } from './home/challenges/challenges';
+import { ChallengesComponent } from './home/challenges/challenges';
 import { AiTips } from './home/ai-tips/ai-tips';
 import { Analytics } from './home/analytics/analytics';
 import { Leaderboard } from './home/leaderboard/leaderboard';
@@ -37,7 +37,7 @@ export const routes: Routes = [
             { path: 'dashboard', component: DashboardComponent },
             { path: 'tracking', component: TrackingComponent },
             { path: 'goals', component: GoalsComponent },
-            { path: 'challenges', component: Challenges },
+            { path: 'challenges', component: ChallengesComponent },
             { path: 'ai-tips', component: AiTips },
             { path: 'analytics', component: Analytics },
             { path: 'leaderboard', component: Leaderboard },
