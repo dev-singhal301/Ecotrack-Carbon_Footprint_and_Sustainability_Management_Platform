@@ -19,6 +19,7 @@ interface AuthResponse {
   name: string;
   email: string;
   hasPassword: boolean;
+  role: string; // "ROLE_ADMIN" or "ROLE_USER"
 }
 
 @Injectable({
@@ -28,6 +29,7 @@ export class Auth {
   private baseUrl = 'http://localhost:8080/api/auth';
   private token: string | null = null; // in-memory storage, per team agreement
   private hasPasswordFlag: boolean | null = null;
+  private roleValue: string | null = null;
 
   constructor(private http: HttpClient) { }
 
@@ -50,6 +52,8 @@ export class Auth {
         }
         this.hasPasswordFlag = response.hasPassword;
         localStorage.setItem('ecotrack_has_password', String(response.hasPassword));
+        this.roleValue = response.role;
+        localStorage.setItem('ecotrack_role', response.role);
       }),
       catchError((error) => {
         const message = error.error?.message || 'Invalid email or password.';
@@ -67,6 +71,8 @@ export class Auth {
         }
         this.hasPasswordFlag = response.hasPassword;
         localStorage.setItem('ecotrack_has_password', String(response.hasPassword));
+        this.roleValue = response.role;
+        localStorage.setItem('ecotrack_role', response.role);
       }),
       catchError((error) => {
         const message = error.error?.message || 'Google sign-in failed. Please try again.';
@@ -121,8 +127,23 @@ export class Auth {
     return this.token;
   }
 
+  getRole(): string | null {
+    if (!this.roleValue) {
+      this.roleValue = localStorage.getItem('ecotrack_role');
+    }
+    return this.roleValue;
+  }
+
+  isAdmin(): boolean {
+    return this.getRole() === 'ROLE_ADMIN';
+  }
+
   logout(): void {
     this.token = null;
+    this.hasPasswordFlag = null;
+    this.roleValue = null;
     localStorage.removeItem('ecotrack_auth_token'); // Clean out completely on logout
+    localStorage.removeItem('ecotrack_has_password');
+    localStorage.removeItem('ecotrack_role');
   }
 }

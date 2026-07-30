@@ -103,7 +103,11 @@ this.auth.googleLogin(response.credential).subscribe({
       next: (authResponse) => {
         this.isSubmitting.set(false);
         if (!authResponse.hasPassword) {
+          // Must set a password before going anywhere else — takes priority
+          // over role, an admin who signed up via Google still needs this.
           this.router.navigate(['/set-password']);
+        } else if (this.auth.isAdmin()) {
+          this.router.navigate(['/home-admin']);
         } else {
           this.router.navigate(['/home']);
         }
@@ -220,7 +224,11 @@ this.auth.googleLogin(response.credential).subscribe({
       this.auth.login({ email, password }).subscribe({
         next: () => {
           this.isSubmitting.set(false);
-          this.router.navigate(['/home']);
+          if (this.auth.isAdmin()) {
+            this.router.navigate(['/home-admin']);
+          } else {
+            this.router.navigate(['/home']);
+          }
         },
         error: (err) => {
           this.isSubmitting.set(false);

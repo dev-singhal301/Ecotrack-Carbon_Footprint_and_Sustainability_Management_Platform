@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -22,6 +23,10 @@ import java.util.List;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity // required for @PreAuthorize("hasRole('ADMIN')") to have any effect — the one
+                       // piece from the earlier attempt that's a real security requirement, not
+                       // cosmetic. Kept separate from the exceptionHandling/custom-handler attempt
+                       // that broke things, since this line alone never touched request handling.
 public class SecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;

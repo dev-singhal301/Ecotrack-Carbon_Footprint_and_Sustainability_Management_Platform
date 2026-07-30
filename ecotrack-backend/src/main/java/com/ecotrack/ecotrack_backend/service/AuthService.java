@@ -66,7 +66,7 @@ public class AuthService {
 
         userRepository.save(user);
 
-        return new AuthResponse(null, user.getName(), user.getEmail(), true);
+        return new AuthResponse(null, user.getName(), user.getEmail(), true, user.getRole().getName());
     }
 
    public AuthResponse login(LoginRequest request) {
@@ -81,7 +81,7 @@ public class AuthService {
 
         String token = jwtUtil.generateToken(user.getEmail());
 
-        return new AuthResponse(token, user.getName(), user.getEmail(), user.getPassword() != null);
+        return new AuthResponse(token, user.getName(), user.getEmail(), user.getPassword() != null, user.getRole().getName());
     }
 
     /*
@@ -121,7 +121,7 @@ public class AuthService {
         userRepository.save(user);
 
         String token = jwtUtil.generateToken(user.getEmail());
-        return new AuthResponse(token, user.getName(), user.getEmail(), user.getPassword() != null);
+        return new AuthResponse(token, user.getName(), user.getEmail(), user.getPassword() != null, user.getRole().getName());
     }
 
     /*
