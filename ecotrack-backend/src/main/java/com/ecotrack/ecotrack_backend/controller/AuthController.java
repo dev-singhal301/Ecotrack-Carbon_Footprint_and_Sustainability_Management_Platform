@@ -128,4 +128,5 @@ public class AuthController {
     private Map<String, String> messageBody(String message) {
         return Map.of("message", message != null ? message : "An unexpected error occurred.");
     }
+    
 }

@@ -34,7 +34,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
      */
     Optional<User> findByResetPasswordToken(String resetPasswordToken);
 
-<<<<<<< HEAD
     // --- Admin Dashboard summary queries ---
     // Kept as narrow, purpose-built count queries rather than pulling full
     // User lists into memory just to count them.
@@ -44,7 +43,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
     long countByRole_Name(String roleName);
 
     long countByCreatedAtAfter(java.time.LocalDateTime after);
-=======
     // ── Leaderboard & Gamification Additions ──
 
     /**
@@ -57,5 +55,4 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * used to compute a user's exact overall rank position.
      */
     long countByCurrentXpGreaterThan(Integer currentXp);
->>>>>>> 149d54b (feat(backend): Implement gamification to most files)
 }
