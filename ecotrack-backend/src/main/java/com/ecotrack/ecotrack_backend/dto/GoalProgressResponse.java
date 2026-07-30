@@ -1,6 +1,7 @@
 package com.ecotrack.ecotrack_backend.dto;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 public class GoalProgressResponse {
@@ -10,21 +11,37 @@ public class GoalProgressResponse {
     private BigDecimal targetValue;
     private BigDecimal completionPercentage;
     private boolean completed;
+    private LocalDate completedDate;
     private LocalDateTime lastUpdated;
     private BigDecimal baselineValue;
 
     public GoalProgressResponse() {
     }
 
+    // Original constructor (retained for backward compatibility)
     public GoalProgressResponse(Long goalId, BigDecimal currentValue, BigDecimal targetValue,
-            BigDecimal baselineValue, BigDecimal completionPercentage,
-            boolean completed, LocalDateTime lastUpdated) {
+                                BigDecimal baselineValue, BigDecimal completionPercentage,
+                                boolean completed, LocalDateTime lastUpdated) {
         this.goalId = goalId;
         this.currentValue = currentValue;
         this.targetValue = targetValue;
         this.baselineValue = baselineValue;
         this.completionPercentage = completionPercentage;
         this.completed = completed;
+        this.lastUpdated = lastUpdated;
+    }
+
+    // Extended constructor with completedDate
+    public GoalProgressResponse(Long goalId, BigDecimal currentValue, BigDecimal targetValue,
+                                BigDecimal baselineValue, BigDecimal completionPercentage,
+                                boolean completed, LocalDate completedDate, LocalDateTime lastUpdated) {
+        this.goalId = goalId;
+        this.currentValue = currentValue;
+        this.targetValue = targetValue;
+        this.baselineValue = baselineValue;
+        this.completionPercentage = completionPercentage;
+        this.completed = completed;
+        this.completedDate = completedDate;
         this.lastUpdated = lastUpdated;
     }
 
@@ -66,6 +83,14 @@ public class GoalProgressResponse {
 
     public void setCompleted(boolean completed) {
         this.completed = completed;
+    }
+
+    public LocalDate getCompletedDate() {
+        return completedDate;
+    }
+
+    public void setCompletedDate(LocalDate completedDate) {
+        this.completedDate = completedDate;
     }
 
     public LocalDateTime getLastUpdated() {

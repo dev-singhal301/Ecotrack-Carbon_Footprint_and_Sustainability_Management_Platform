@@ -40,8 +40,17 @@ public class User {
     private boolean enabled = true;
 
     // Gamification fields
+    @Column(name = "user_level", nullable = false)
+    private Integer userLevel = 1;
+
+    @Column(name = "user_rank", length = 50)
+    private String userRank = "Eco Starter";
+
     @Column(name = "current_xp", nullable = false)
     private Integer currentXp = 0;
+
+    @Column(name = "next_level_xp_target", nullable = false)
+    private Integer nextLevelXpTarget = 50;
 
     @Column(name = "reward_points", nullable = false)
     private Integer rewardPoints = 0;
@@ -63,7 +72,10 @@ public class User {
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
+        if (this.userLevel == null) this.userLevel = 1;
+        if (this.userRank == null) this.userRank = "Eco Starter";
         if (this.currentXp == null) this.currentXp = 0;
+        if (this.nextLevelXpTarget == null) this.nextLevelXpTarget = 50;
         if (this.rewardPoints == null) this.rewardPoints = 0;
     }
 
@@ -141,12 +153,36 @@ public class User {
         this.enabled = enabled;
     }
 
+    public Integer getUserLevel() {
+        return userLevel;
+    }
+
+    public void setUserLevel(Integer userLevel) {
+        this.userLevel = userLevel;
+    }
+
+    public String getUserRank() {
+        return userRank;
+    }
+
+    public void setUserRank(String userRank) {
+        this.userRank = userRank;
+    }
+
     public Integer getCurrentXp() {
         return currentXp != null ? currentXp : 0;
     }
 
     public void setCurrentXp(Integer currentXp) {
         this.currentXp = currentXp;
+    }
+
+    public Integer getNextLevelXpTarget() {
+        return nextLevelXpTarget;
+    }
+
+    public void setNextLevelXpTarget(Integer nextLevelXpTarget) {
+        this.nextLevelXpTarget = nextLevelXpTarget;
     }
 
     public Integer getRewardPoints() {

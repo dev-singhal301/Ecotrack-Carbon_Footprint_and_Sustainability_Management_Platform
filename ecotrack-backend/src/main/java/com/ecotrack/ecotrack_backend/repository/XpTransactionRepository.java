@@ -21,8 +21,8 @@ public interface XpTransactionRepository extends JpaRepository<XpTransaction, Lo
             u.name AS name,
             u.user_rank AS userRank,
             u.user_level AS userLevel,
-            COALESCE(SUM(x.xp_amount), 0) AS monthlyXp,
-            DENSE_RANK() OVER (ORDER BY COALESCE(SUM(x.xp_amount), 0) DESC) AS rank
+            CAST(COALESCE(SUM(x.xp_amount), 0) AS BIGINT) AS monthlyXp,
+            CAST(DENSE_RANK() OVER (ORDER BY COALESCE(SUM(x.xp_amount), 0) DESC) AS BIGINT) AS rank
         FROM users u
         LEFT JOIN xp_transactions x 
             ON u.id = x.user_id 
@@ -35,10 +35,10 @@ public interface XpTransactionRepository extends JpaRepository<XpTransaction, Lo
     List<Object[]> findMonthlyLeaderboardRaw(@Param("limit") int limit);
 
     /**
-     * Calculates the active user's monthly XP.
+     * Calculates the active user's monthly XP for the current calendar month.
      */
     @Query(value = """
-        SELECT COALESCE(SUM(xp_amount), 0) 
+        SELECT CAST(COALESCE(SUM(xp_amount), 0) AS BIGINT)
         FROM xp_transactions 
         WHERE user_id = :userId 
           AND created_at >= DATE_TRUNC('month', CURRENT_TIMESTAMP)

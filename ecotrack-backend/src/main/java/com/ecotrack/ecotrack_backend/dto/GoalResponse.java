@@ -10,6 +10,7 @@ public class GoalResponse {
     private String goalType;
     private BigDecimal targetValue;
     private Integer rewardPoints;
+    private Integer xpReward;
     private String status;
     private LocalDate startDate;
     private LocalDate endDate;
@@ -18,15 +19,32 @@ public class GoalResponse {
     public GoalResponse() {
     }
 
+    // Original constructor (retained for backward compatibility)
     public GoalResponse(Long goalId, String goalName, String goalType, BigDecimal targetValue,
-            BigDecimal baselineValue, Integer rewardPoints, String status,
-            LocalDate startDate, LocalDate endDate) {
+                        BigDecimal baselineValue, Integer rewardPoints, String status,
+                        LocalDate startDate, LocalDate endDate) {
         this.goalId = goalId;
         this.goalName = goalName;
         this.goalType = goalType;
         this.targetValue = targetValue;
         this.baselineValue = baselineValue;
         this.rewardPoints = rewardPoints;
+        this.status = status;
+        this.startDate = startDate;
+        this.endDate = endDate;
+    }
+
+    // Full constructor including xpReward
+    public GoalResponse(Long goalId, String goalName, String goalType, BigDecimal targetValue,
+                        BigDecimal baselineValue, Integer rewardPoints, Integer xpReward, String status,
+                        LocalDate startDate, LocalDate endDate) {
+        this.goalId = goalId;
+        this.goalName = goalName;
+        this.goalType = goalType;
+        this.targetValue = targetValue;
+        this.baselineValue = baselineValue;
+        this.rewardPoints = rewardPoints;
+        this.xpReward = xpReward;
         this.status = status;
         this.startDate = startDate;
         this.endDate = endDate;
@@ -70,6 +88,14 @@ public class GoalResponse {
 
     public void setRewardPoints(Integer rewardPoints) {
         this.rewardPoints = rewardPoints;
+    }
+
+    public Integer getXpReward() {
+        return xpReward;
+    }
+
+    public void setXpReward(Integer xpReward) {
+        this.xpReward = xpReward;
     }
 
     public String getStatus() {

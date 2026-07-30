@@ -40,8 +40,8 @@ public class DashboardController {
 
     /**
      * GET /api/dashboard/summary
-     * Fetches the unified dashboard summary response for the authenticated user.
-     * Automatically logs a daily historical snapshot upon request.
+     * Fetches the unified dashboard summary response for the authenticated user
+     * including carbon footprint metrics, gamification stats (XP, level, rank), and goals.
      */
     @GetMapping("/summary")
     public ResponseEntity<DashboardSummaryResponse> getSummary(@AuthenticationPrincipal UserDetails principal) {
@@ -64,11 +64,7 @@ public class DashboardController {
     /**
      * GET /api/dashboard/trend?days=30
      * GET /api/dashboard/trend?from=2026-06-01&to=2026-06-30
-     * Returns daily emissions snapshots (total + per-category) for the authenticated user,
-     * oldest first, for use in the trend/line chart.
-     * If both `from` and `to` are supplied, returns that custom date range (validated:
-     * from <= to, capped at 366 days). Otherwise falls back to the relative `days` window
-     * (defaults to 30, clamped to [1, 90] server-side).
+     * Returns daily emissions snapshots (total + per-category) for line chart trends.
      */
     @GetMapping("/trend")
     public ResponseEntity<List<FootprintTrendPointResponse>> getTrend(

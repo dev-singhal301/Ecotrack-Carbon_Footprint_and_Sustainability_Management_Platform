@@ -45,6 +45,7 @@ public class CarbonFootprintService {
     /**
      * Section 2: Total Carbon Footprint across all logged activities.
      */
+    @Transactional(readOnly = true)
     public BigDecimal getTotalCarbonFootprint(Long userId) {
         BigDecimal total = carbonEntryRepository.sumTotalCarbonEmissionByUserId(userId);
         return total != null ? total : BigDecimal.ZERO;
@@ -54,6 +55,7 @@ public class CarbonFootprintService {
      * Section 2: Carbon Saved vs Baseline (comparing current 30-day rolling window to previous 30-day window).
      * Returns savings as a positive number if emissions went down.
      */
+    @Transactional(readOnly = true)
     public BigDecimal getCarbonSavedVsBaseline(Long userId) {
         LocalDate today = LocalDate.now();
         LocalDate currentStart = today.minusDays(ROLLING_WINDOW_DAYS - 1);
@@ -74,6 +76,7 @@ public class CarbonFootprintService {
     /**
      * Section 2: Percentage reduction badge (e.g., 12.5% drop).
      */
+    @Transactional(readOnly = true)
     public Double getSavingsPercentage(Long userId) {
         LocalDate today = LocalDate.now();
         LocalDate currentStart = today.minusDays(ROLLING_WINDOW_DAYS - 1);
@@ -98,6 +101,7 @@ public class CarbonFootprintService {
      * Section 3: Ranked Category Impact List.
      * Uses repository aggregate query to fetch emissions per category, ordered descending.
      */
+    @Transactional(readOnly = true)
     public List<CategoryImpactResponse> getCategoryImpactList(Long userId) {
         List<Object[]> rawData = carbonEntryRepository.findCategoryImpactByUserId(userId);
         BigDecimal grandTotal = getTotalCarbonFootprint(userId);
@@ -109,15 +113,15 @@ public class CarbonFootprintService {
             BigDecimal emissions = (BigDecimal) row[1];
 
             double percentageShare = 0.0;
-            if (grandTotal.compareTo(BigDecimal.ZERO) > 0) {
+            if (grandTotal.compareTo(BigDecimal.ZERO) > 0 && emissions != null) {
                 percentageShare = emissions.divide(grandTotal, 4, RoundingMode.HALF_UP)
-                                          .multiply(BigDecimal.valueOf(100))
-                                          .doubleValue();
+                                           .multiply(BigDecimal.valueOf(100))
+                                           .doubleValue();
             }
 
             responseList.add(new CategoryImpactResponse(
                 category.name(),
-                emissions,
+                emissions != null ? emissions : BigDecimal.ZERO,
                 percentageShare
             ));
         }
@@ -127,6 +131,7 @@ public class CarbonFootprintService {
 
     // ── Live reads for the dashboard ──
 
+    @Transactional(readOnly = true)
     public FootprintOverviewResponse getOverview(Long userId) {
         LocalDate today = LocalDate.now();
         LocalDate windowStart = today.minusDays(ROLLING_WINDOW_DAYS - 1);
@@ -137,10 +142,8 @@ public class CarbonFootprintService {
 
     /**
      * Section: Emissions Trend Chart — daily snapshots from the last `days` days, oldest first.
-     * Backed by the carbon_footprint history table (populated by logDailySnapshot), NOT a live
-     * recompute, so a day only appears once its snapshot has been logged (i.e. the dashboard has
-     * been loaded at least once that day). Days is clamped to [1, 90] to keep the query bounded.
      */
+    @Transactional(readOnly = true)
     public List<FootprintTrendPointResponse> getFootprintTrend(Long userId, int days) {
         int clampedDays = Math.max(1, Math.min(days, 90));
         LocalDate windowStart = LocalDate.now().minusDays(clampedDays - 1L);
@@ -167,11 +170,12 @@ public class CarbonFootprintService {
 
     /**
      * Section: Emissions Trend Chart — custom start/end date range, oldest first.
-     * Same source (carbon_footprint history table) and same gap caveat as getFootprintTrend:
-     * a day only appears if its snapshot was logged. Range is validated (from <= to) and
-     * capped at 366 days to keep the query bounded.
      */
+    @Transactional(readOnly = true)
     public List<FootprintTrendPointResponse> getFootprintTrendByRange(Long userId, LocalDate from, LocalDate to) {
+        Objects.requireNonNull(from, "Start date must not be null");
+        Objects.requireNonNull(to, "End date must not be null");
+
         if (from.isAfter(to)) {
             throw new IllegalArgumentException("Start date must be on or before end date");
         }
@@ -219,12 +223,12 @@ public class CarbonFootprintService {
                 });
 
         footprint.setTotalEmission(total);
-        footprint.setElectricityEmission(breakdown.get(CarbonCategory.ELECTRICITY));
-        footprint.setTransportationEmission(breakdown.get(CarbonCategory.TRANSPORTATION));
-        footprint.setFuelEmission(breakdown.get(CarbonCategory.FUEL));
-        footprint.setWaterEmission(breakdown.get(CarbonCategory.WATER));
-        footprint.setWasteEmission(breakdown.get(CarbonCategory.WASTE));
-        footprint.setFoodEmission(breakdown.get(CarbonCategory.FOOD));
+        footprint.setElectricityEmission(breakdown.getOrDefault(CarbonCategory.ELECTRICITY, BigDecimal.ZERO));
+        footprint.setTransportationEmission(breakdown.getOrDefault(CarbonCategory.TRANSPORTATION, BigDecimal.ZERO));
+        footprint.setFuelEmission(breakdown.getOrDefault(CarbonCategory.FUEL, BigDecimal.ZERO));
+        footprint.setWaterEmission(breakdown.getOrDefault(CarbonCategory.WATER, BigDecimal.ZERO));
+        footprint.setWasteEmission(breakdown.getOrDefault(CarbonCategory.WASTE, BigDecimal.ZERO));
+        footprint.setFoodEmission(breakdown.getOrDefault(CarbonCategory.FOOD, BigDecimal.ZERO));
 
         carbonFootprintRepository.save(footprint);
     }

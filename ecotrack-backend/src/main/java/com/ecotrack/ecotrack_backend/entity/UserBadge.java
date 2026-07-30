@@ -21,7 +21,14 @@ public class UserBadge {
     private Long badgeId;
 
     @Column(name = "awarded_at", nullable = false, updatable = false)
-    private LocalDateTime awardedAt = LocalDateTime.now();
+    private LocalDateTime awardedAt;
+
+    @PrePersist
+    protected void onCreate() {
+        if (this.awardedAt == null) {
+            this.awardedAt = LocalDateTime.now();
+        }
+    }
 
     public UserBadge() {}
 
@@ -32,15 +39,35 @@ public class UserBadge {
     }
 
     // Getters and Setters
-    public Long getUserBadgeId() { return userBadgeId; }
-    public void setUserBadgeId(Long userBadgeId) { this.userBadgeId = userBadgeId; }
+    public Long getUserBadgeId() { 
+        return userBadgeId; 
+    }
+    
+    public void setUserBadgeId(Long userBadgeId) { 
+        this.userBadgeId = userBadgeId; 
+    }
 
-    public Long getUserId() { return userId; }
-    public void setUserId(Long userId) { this.userId = userId; }
+    public Long getUserId() { 
+        return userId; 
+    }
+    
+    public void setUserId(Long userId) { 
+        this.userId = userId; 
+    }
 
-    public Long getBadgeId() { return badgeId; }
-    public void setBadgeId(Long badgeId) { this.badgeId = badgeId; }
+    public Long getBadgeId() { 
+        return badgeId; 
+    }
+    
+    public void setBadgeId(Long badgeId) { 
+        this.badgeId = badgeId; 
+    }
 
-    public LocalDateTime getAwardedAt() { return awardedAt; }
-    public void setAwardedAt(LocalDateTime awardedAt) { this.awardedAt = awardedAt; }
+    public LocalDateTime getAwardedAt() { 
+        return awardedAt; 
+    }
+    
+    public void setAwardedAt(LocalDateTime awardedAt) { 
+        this.awardedAt = awardedAt; 
+    }
 }

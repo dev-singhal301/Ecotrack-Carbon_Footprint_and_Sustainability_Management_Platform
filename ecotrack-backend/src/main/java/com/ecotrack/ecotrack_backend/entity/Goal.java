@@ -13,7 +13,7 @@ public class Goal {
     @Column(name = "goal_id")
     private Long goalId;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
@@ -48,41 +48,121 @@ public class Goal {
     @Column(name = "start_entry_id")
     private Long startEntryId = 0L;
 
+    @PrePersist
+    protected void onCreate() {
+        if (this.baselineValue == null) {
+            this.baselineValue = BigDecimal.ZERO;
+        }
+        if (this.rewardPoints == null) {
+            this.rewardPoints = 0;
+        }
+        if (this.xpReward == null) {
+            this.xpReward = 100;
+        }
+        if (this.status == null) {
+            this.status = "ACTIVE";
+        }
+        if (this.startEntryId == null) {
+            this.startEntryId = 0L;
+        }
+    }
+
     public Goal() {}
 
-    public Long getGoalId() { return goalId; }
-    public void setGoalId(Long goalId) { this.goalId = goalId; }
+    // Getters and Setters
+    public Long getGoalId() {
+        return goalId;
+    }
 
-    public User getUser() { return user; }
-    public void setUser(User user) { this.user = user; }
+    public void setGoalId(Long goalId) {
+        this.goalId = goalId;
+    }
 
-    public String getGoalName() { return goalName; }
-    public void setGoalName(String goalName) { this.goalName = goalName; }
+    public User getUser() {
+        return user;
+    }
 
-    public String getGoalType() { return goalType; }
-    public void setGoalType(String goalType) { this.goalType = goalType; }
+    public void setUser(User user) {
+        this.user = user;
+    }
 
-    public BigDecimal getTargetValue() { return targetValue; }
-    public void setTargetValue(BigDecimal targetValue) { this.targetValue = targetValue; }
+    public String getGoalName() {
+        return goalName;
+    }
 
-    public BigDecimal getBaselineValue() { return baselineValue; }
-    public void setBaselineValue(BigDecimal baselineValue) { this.baselineValue = baselineValue; }
+    public void setGoalName(String goalName) {
+        this.goalName = goalName;
+    }
 
-    public Integer getRewardPoints() { return rewardPoints; }
-    public void setRewardPoints(Integer rewardPoints) { this.rewardPoints = rewardPoints; }
+    public String getGoalType() {
+        return goalType;
+    }
 
-    public Integer getXpReward() { return xpReward; }
-    public void setXpReward(Integer xpReward) { this.xpReward = xpReward; }
+    public void setGoalType(String goalType) {
+        this.goalType = goalType;
+    }
 
-    public LocalDate getStartDate() { return startDate; }
-    public void setStartDate(LocalDate startDate) { this.startDate = startDate; }
+    public BigDecimal getTargetValue() {
+        return targetValue;
+    }
 
-    public LocalDate getEndDate() { return endDate; }
-    public void setEndDate(LocalDate endDate) { this.endDate = endDate; }
+    public void setTargetValue(BigDecimal targetValue) {
+        this.targetValue = targetValue;
+    }
 
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
+    public BigDecimal getBaselineValue() {
+        return baselineValue;
+    }
 
-    public Long getStartEntryId() { return startEntryId; }
-    public void setStartEntryId(Long startEntryId) { this.startEntryId = startEntryId; }
+    public void setBaselineValue(BigDecimal baselineValue) {
+        this.baselineValue = baselineValue;
+    }
+
+    public Integer getRewardPoints() {
+        return rewardPoints;
+    }
+
+    public void setRewardPoints(Integer rewardPoints) {
+        this.rewardPoints = rewardPoints;
+    }
+
+    public Integer getXpReward() {
+        return xpReward;
+    }
+
+    public void setXpReward(Integer xpReward) {
+        this.xpReward = xpReward;
+    }
+
+    public LocalDate getStartDate() {
+        return startDate;
+    }
+
+    public void setStartDate(LocalDate startDate) {
+        this.startDate = startDate;
+    }
+
+    public LocalDate getEndDate() {
+        return endDate;
+    }
+
+    public void setEndDate(LocalDate endDate) {
+        this.endDate = endDate;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public Long getStartEntryId() {
+        return startEntryId;
+    }
+
+    public void setStartEntryId(Long startEntryId) {
+        this.startEntryId = startEntryId;
+    }
 }

@@ -25,7 +25,14 @@ public class XpTransaction {
     private Long sourceId;
 
     @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt = LocalDateTime.now();
+    private LocalDateTime createdAt;
+
+    @PrePersist
+    protected void onCreate() {
+        if (this.createdAt == null) {
+            this.createdAt = LocalDateTime.now();
+        }
+    }
 
     public XpTransaction() {}
 
@@ -38,21 +45,51 @@ public class XpTransaction {
     }
 
     // Getters and Setters
-    public Long getXpTransactionId() { return xpTransactionId; }
-    public void setXpTransactionId(Long xpTransactionId) { this.xpTransactionId = xpTransactionId; }
+    public Long getXpTransactionId() {
+        return xpTransactionId;
+    }
 
-    public Long getUserId() { return userId; }
-    public void setUserId(Long userId) { this.userId = userId; }
+    public void setXpTransactionId(Long xpTransactionId) {
+        this.xpTransactionId = xpTransactionId;
+    }
 
-    public Integer getXpAmount() { return xpAmount; }
-    public void setXpAmount(Integer xpAmount) { this.xpAmount = xpAmount; }
+    public Long getUserId() {
+        return userId;
+    }
 
-    public String getSourceType() { return sourceType; }
-    public void setSourceType(String sourceType) { this.sourceType = sourceType; }
+    public void setUserId(Long userId) {
+        this.userId = userId;
+    }
 
-    public Long getSourceId() { return sourceId; }
-    public void setSourceId(Long sourceId) { this.sourceId = sourceId; }
+    public Integer getXpAmount() {
+        return xpAmount;
+    }
 
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public void setXpAmount(Integer xpAmount) {
+        this.xpAmount = xpAmount;
+    }
+
+    public String getSourceType() {
+        return sourceType;
+    }
+
+    public void setSourceType(String sourceType) {
+        this.sourceType = sourceType;
+    }
+
+    public Long getSourceId() {
+        return sourceId;
+    }
+
+    public void setSourceId(Long sourceId) {
+        this.sourceId = sourceId;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
 }

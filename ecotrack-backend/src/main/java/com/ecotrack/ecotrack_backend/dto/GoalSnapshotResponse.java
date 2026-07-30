@@ -11,9 +11,11 @@ public class GoalSnapshotResponse {
     private BigDecimal currentValue;
     private BigDecimal completionPercentage;
     private Integer rewardPoints;
+    private Integer xpReward;
 
     public GoalSnapshotResponse() {}
 
+    // Original constructor (retained for backward compatibility)
     public GoalSnapshotResponse(Long goalId, String goalName, String goalType, BigDecimal targetValue,
                                 BigDecimal currentValue, BigDecimal completionPercentage, Integer rewardPoints) {
         this.goalId = goalId;
@@ -23,6 +25,20 @@ public class GoalSnapshotResponse {
         this.currentValue = currentValue;
         this.completionPercentage = completionPercentage;
         this.rewardPoints = rewardPoints;
+    }
+
+    // Extended constructor with xpReward
+    public GoalSnapshotResponse(Long goalId, String goalName, String goalType, BigDecimal targetValue,
+                                BigDecimal currentValue, BigDecimal completionPercentage,
+                                Integer rewardPoints, Integer xpReward) {
+        this.goalId = goalId;
+        this.goalName = goalName;
+        this.goalType = goalType;
+        this.targetValue = targetValue;
+        this.currentValue = currentValue;
+        this.completionPercentage = completionPercentage;
+        this.rewardPoints = rewardPoints;
+        this.xpReward = xpReward;
     }
 
     // Getters and Setters
@@ -46,4 +62,7 @@ public class GoalSnapshotResponse {
 
     public Integer getRewardPoints() { return rewardPoints; }
     public void setRewardPoints(Integer rewardPoints) { this.rewardPoints = rewardPoints; }
+
+    public Integer getXpReward() { return xpReward; }
+    public void setXpReward(Integer xpReward) { this.xpReward = xpReward; }
 }

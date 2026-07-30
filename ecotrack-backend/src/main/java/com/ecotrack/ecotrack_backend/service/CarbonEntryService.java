@@ -5,12 +5,16 @@ import com.ecotrack.ecotrack_backend.dto.CarbonEntryResponse;
 import com.ecotrack.ecotrack_backend.entity.CarbonCategory;
 import com.ecotrack.ecotrack_backend.entity.CarbonEntry;
 import com.ecotrack.ecotrack_backend.entity.EmissionFactor;
+import com.ecotrack.ecotrack_backend.entity.Goal;
 import com.ecotrack.ecotrack_backend.entity.User;
 import com.ecotrack.ecotrack_backend.exception.CarbonEntryNotFoundException;
 import com.ecotrack.ecotrack_backend.exception.InvalidCategoryException;
 import com.ecotrack.ecotrack_backend.repository.CarbonEntryRepository;
 import com.ecotrack.ecotrack_backend.repository.EmissionFactorRepository;
+import com.ecotrack.ecotrack_backend.repository.GoalRepository;
+import com.ecotrack.ecotrack_backend.repository.UserRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -18,20 +22,26 @@ import java.util.List;
 @Service
 public class CarbonEntryService {
 
+    private static final int LOG_ENTRY_XP = 10; // XP awarded per logged activity
+
     private final CarbonEntryRepository carbonEntryRepository;
     private final EmissionFactorRepository emissionFactorRepository;
+    private final UserRepository userRepository;
+    private final GoalRepository goalRepository;
+    private final GoalService goalService;
 
-    // Constructor injection, matching Milestone 1 convention
     public CarbonEntryService(CarbonEntryRepository carbonEntryRepository,
-                              EmissionFactorRepository emissionFactorRepository) {
+                              EmissionFactorRepository emissionFactorRepository,
+                              UserRepository userRepository,
+                              GoalRepository goalRepository,
+                              GoalService goalService) {
         this.carbonEntryRepository = carbonEntryRepository;
         this.emissionFactorRepository = emissionFactorRepository;
+        this.userRepository = userRepository;
+        this.goalRepository = goalRepository;
+        this.goalService = goalService;
     }
 
-    // Converts the DTO's raw String into the CarbonCategory enum.
-    // Dev's DTOs use String (not the enum), so this boundary conversion has to
-    // happen somewhere — the service layer is the right place, keeping the
-    // controller and DTOs unaware of the enum entirely.
     private CarbonCategory parseCategory(String rawCategory) {
         try {
             return CarbonCategory.valueOf(rawCategory.toUpperCase());
@@ -41,6 +51,7 @@ public class CarbonEntryService {
         }
     }
 
+    @Transactional
     public CarbonEntryResponse createEntry(CarbonEntryRequest request, User user) {
         CarbonCategory category = parseCategory(request.getCategory());
 
@@ -55,13 +66,20 @@ public class CarbonEntryService {
         entry.setAmount(request.getAmount());
         entry.setUnit(factor.getUnit());
         entry.setActivityDate(request.getActivityDate());
-        // The core calculation: amount x factor_value
         entry.setCarbonEmission(request.getAmount().multiply(factor.getFactorValue()));
 
         CarbonEntry saved = carbonEntryRepository.save(entry);
+
+        // 1. Gamification: Award XP and check level-up
+        awardXpAndLevelUp(user, LOG_ENTRY_XP);
+
+        // 2. Refresh progress for active goals affected by this new entry
+        triggerActiveGoalRecalculation(user.getId());
+
         return toResponse(saved);
     }
 
+    @Transactional(readOnly = true)
     public List<CarbonEntryResponse> getHistory(Long userId, String rawCategory, LocalDate from, LocalDate to) {
         List<CarbonEntry> entries;
 
@@ -79,6 +97,7 @@ public class CarbonEntryService {
         return entries.stream().map(this::toResponse).toList();
     }
 
+    @Transactional(readOnly = true)
     public CarbonEntryResponse getEntryById(Long userId, Long entryId) {
         CarbonEntry entry = carbonEntryRepository.findById(entryId)
                 .filter(e -> e.getUser().getId().equals(userId))
@@ -86,11 +105,58 @@ public class CarbonEntryService {
         return toResponse(entry);
     }
 
+    @Transactional
     public void deleteEntry(Long userId, Long entryId) {
         CarbonEntry entry = carbonEntryRepository.findById(entryId)
                 .filter(e -> e.getUser().getId().equals(userId))
                 .orElseThrow(() -> new CarbonEntryNotFoundException("Carbon entry not found: " + entryId));
+
         carbonEntryRepository.delete(entry);
+
+        // Recalculate goal progress to accurately reflect the removal of emissions
+        triggerActiveGoalRecalculation(userId);
+    }
+
+    // ── Gamification Helpers ──
+
+    private void awardXpAndLevelUp(User user, int xpAmount) {
+        User fetchedUser = userRepository.findById(user.getId())
+                .orElse(user);
+
+        int newXp = fetchedUser.getCurrentXp() + xpAmount;
+        fetchedUser.setCurrentXp(newXp);
+
+        while (newXp >= fetchedUser.getNextLevelXpTarget()) {
+            fetchedUser.setUserLevel(fetchedUser.getUserLevel() + 1);
+            fetchedUser.setNextLevelXpTarget(fetchedUser.getNextLevelXpTarget() + 50);
+            updateUserRank(fetchedUser);
+        }
+
+        userRepository.save(fetchedUser);
+    }
+
+    private void updateUserRank(User user) {
+        int level = user.getUserLevel();
+        if (level >= 20) {
+            user.setUserRank("Eco Master");
+        } else if (level >= 10) {
+            user.setUserRank("Eco Guardian");
+        } else if (level >= 5) {
+            user.setUserRank("Eco Warrior");
+        } else {
+            user.setUserRank("Eco Starter");
+        }
+    }
+
+    private void triggerActiveGoalRecalculation(Long userId) {
+        List<Goal> activeGoals = goalRepository.findByUserIdAndStatus(userId, "ACTIVE");
+        for (Goal goal : activeGoals) {
+            try {
+                goalService.calculateProgress(userId, goal.getGoalId());
+            } catch (Exception ignored) {
+                // Silently ignore individual goal evaluation errors to prevent blocking entry creation
+            }
+        }
     }
 
     private CarbonEntryResponse toResponse(CarbonEntry entry) {

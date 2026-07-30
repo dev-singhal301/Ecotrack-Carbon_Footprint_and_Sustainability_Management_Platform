@@ -14,7 +14,7 @@ public class GoalProgress {
     @Column(name = "progress_id")
     private Long progressId;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "goal_id", nullable = false)
     private Goal goal;
 
@@ -39,26 +39,68 @@ public class GoalProgress {
     @PreUpdate
     protected void onSave() {
         this.lastUpdated = LocalDateTime.now();
+        if (this.currentValue == null) {
+            this.currentValue = BigDecimal.ZERO;
+        }
+        if (this.completionPercentage == null) {
+            this.completionPercentage = BigDecimal.ZERO;
+        }
     }
 
-    public Long getProgressId() { return progressId; }
-    public void setProgressId(Long progressId) { this.progressId = progressId; }
+    // Getters and Setters
+    public Long getProgressId() {
+        return progressId;
+    }
 
-    public Goal getGoal() { return goal; }
-    public void setGoal(Goal goal) { this.goal = goal; }
+    public void setProgressId(Long progressId) {
+        this.progressId = progressId;
+    }
 
-    public BigDecimal getCurrentValue() { return currentValue; }
-    public void setCurrentValue(BigDecimal currentValue) { this.currentValue = currentValue; }
+    public Goal getGoal() {
+        return goal;
+    }
 
-    public BigDecimal getCompletionPercentage() { return completionPercentage; }
-    public void setCompletionPercentage(BigDecimal completionPercentage) { this.completionPercentage = completionPercentage; }
+    public void setGoal(Goal goal) {
+        this.goal = goal;
+    }
 
-    public boolean isCompleted() { return completed; }
-    public void setCompleted(boolean completed) { this.completed = completed; }
+    public BigDecimal getCurrentValue() {
+        return currentValue;
+    }
 
-    public LocalDate getCompletedDate() { return completedDate; }
-    public void setCompletedDate(LocalDate completedDate) { this.completedDate = completedDate; }
+    public void setCurrentValue(BigDecimal currentValue) {
+        this.currentValue = currentValue;
+    }
 
-    public LocalDateTime getLastUpdated() { return lastUpdated; }
-    public void setLastUpdated(LocalDateTime lastUpdated) { this.lastUpdated = lastUpdated; }
+    public BigDecimal getCompletionPercentage() {
+        return completionPercentage;
+    }
+
+    public void setCompletionPercentage(BigDecimal completionPercentage) {
+        this.completionPercentage = completionPercentage;
+    }
+
+    public boolean isCompleted() {
+        return completed;
+    }
+
+    public void setCompleted(boolean completed) {
+        this.completed = completed;
+    }
+
+    public LocalDate getCompletedDate() {
+        return completedDate;
+    }
+
+    public void setCompletedDate(LocalDate completedDate) {
+        this.completedDate = completedDate;
+    }
+
+    public LocalDateTime getLastUpdated() {
+        return lastUpdated;
+    }
+
+    public void setLastUpdated(LocalDateTime lastUpdated) {
+        this.lastUpdated = lastUpdated;
+    }
 }

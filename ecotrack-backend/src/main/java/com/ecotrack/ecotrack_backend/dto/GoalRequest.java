@@ -9,25 +9,36 @@ import java.math.BigDecimal;
 
 public class GoalRequest {
 
-    @NotBlank
+    @NotBlank(message = "Goal name is required")
     private String goalName;
 
-    @NotBlank
+    @NotBlank(message = "Goal type is required")
     private String goalType;
 
-    @NotNull
-    @Positive
+    @NotNull(message = "Target value is required")
+    @Positive(message = "Target value must be greater than zero")
     private BigDecimal targetValue;
 
-    // ── Swapped fields ──
-    @NotNull
-    @Positive
-    private Integer durationDays; // Replacing explicit start/end dates
+    @NotNull(message = "Duration in days is required")
+    @Positive(message = "Duration must be at least 1 day")
+    private Integer durationDays;
 
-    @PositiveOrZero
-    private Integer rewardPoints; 
+    @PositiveOrZero(message = "Reward points cannot be negative")
+    private Integer rewardPoints;
+
+    @PositiveOrZero(message = "XP reward cannot be negative")
+    private Integer xpReward;
 
     public GoalRequest() {}
+
+    public GoalRequest(String goalName, String goalType, BigDecimal targetValue, Integer durationDays, Integer rewardPoints, Integer xpReward) {
+        this.goalName = goalName;
+        this.goalType = goalType;
+        this.targetValue = targetValue;
+        this.durationDays = durationDays;
+        this.rewardPoints = rewardPoints;
+        this.xpReward = xpReward;
+    }
 
     public String getGoalName() { return goalName; }
     public void setGoalName(String goalName) { this.goalName = goalName; }
@@ -38,10 +49,12 @@ public class GoalRequest {
     public BigDecimal getTargetValue() { return targetValue; }
     public void setTargetValue(BigDecimal targetValue) { this.targetValue = targetValue; }
 
-    // ── Getter & Setter for durationDays ──
     public Integer getDurationDays() { return durationDays; }
     public void setDurationDays(Integer durationDays) { this.durationDays = durationDays; }
 
     public Integer getRewardPoints() { return rewardPoints; }
-    public void setRewardPoints(Integer rewardPoints) { this.rewardPoints = rewardPoints;}
+    public void setRewardPoints(Integer rewardPoints) { this.rewardPoints = rewardPoints; }
+
+    public Integer getXpReward() { return xpReward; }
+    public void setXpReward(Integer xpReward) { this.xpReward = xpReward; }
 }

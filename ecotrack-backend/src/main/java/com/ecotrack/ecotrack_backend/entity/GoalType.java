@@ -7,5 +7,18 @@ public enum GoalType {
     REDUCE_TRANSPORTATION_EMISSIONS,
     REDUCE_FUEL_CONSUMPTION,
     REDUCE_FOOD_EMISSIONS,
-    REDUCE_WASTE_GENERATION
+    REDUCE_WASTE_GENERATION;
+
+    /**
+     * Utility method to safely parse String input into a valid GoalType enum.
+     */
+    public static GoalType fromDbString(String text) {
+        if (text == null) return null;
+        for (GoalType type : GoalType.values()) {
+            if (type.name().equalsIgnoreCase(text.trim())) {
+                return type;
+            }
+        }
+        return null;
+    }
 }

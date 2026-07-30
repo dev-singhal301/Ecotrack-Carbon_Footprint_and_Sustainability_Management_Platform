@@ -50,7 +50,6 @@ public class GoalService {
     // ── Create ──
     @Transactional
     public GoalResponse createGoal(Long userId, GoalRequest request) {
-        // Automatically calculate start and end dates based on duration input
         LocalDate startDate = LocalDate.now();
         LocalDate endDate = startDate.plusDays(request.getDurationDays());
 
@@ -61,7 +60,6 @@ public class GoalService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
 
-        // Find the absolute last entry recorded by this user right now to establish a baseline token anchor
         List<CarbonEntry> allEntries = carbonEntryRepository.findByUserId(userId);
         Long maxEntryId = allEntries.stream()
                 .map(CarbonEntry::getEntryId)
@@ -73,19 +71,16 @@ public class GoalService {
         goal.setGoalName(request.getGoalName());
         goal.setGoalType(parsedType.name());
         goal.setTargetValue(request.getTargetValue());
-        
-        // Save computed dates to database entities
         goal.setStartDate(startDate);
         goal.setEndDate(endDate);
         
-        goal.setRewardPoints(request.getRewardPoints() != null ? request.getRewardPoints() : 0);
-        goal.setXpReward(request.getRewardPoints() != null ? request.getRewardPoints() : 100);
+        int rewardPoints = request.getRewardPoints() != null ? request.getRewardPoints() : 50;
+        goal.setRewardPoints(rewardPoints);
+        goal.setXpReward(rewardPoints > 0 ? rewardPoints * 2 : 100);
         goal.setStatus("ACTIVE");
         
-        // Setup isolation boundary: tracking ignores anything logged up to this entry ID
         goal.setStartEntryId(maxEntryId);
 
-        // Safe fallback since baselinePeriodDays was removed from GoalRequest DTO
         int baselineDays = DEFAULT_BASELINE_DAYS;
         LocalDate baselineStart = startDate.minusDays(baselineDays);
         LocalDate baselineEnd = startDate.minusDays(1);
@@ -116,7 +111,6 @@ public class GoalService {
             throw new GoalAccessDeniedException("You do not have permission to update this goal");
         }
 
-        // recalculate based on updated duration input relative to initial or current execution
         LocalDate startDate = LocalDate.now();
         LocalDate endDate = startDate.plusDays(request.getDurationDays());
         
@@ -124,7 +118,6 @@ public class GoalService {
         
         validateNoOverlap(userId, parsedType.name(), startDate, endDate, goalId);
 
-        // Re-anchor the baseline marker if the goal configuration updates
         List<CarbonEntry> allEntries = carbonEntryRepository.findByUserId(userId);
         Long maxEntryId = allEntries.stream()
                 .map(CarbonEntry::getEntryId)
@@ -139,7 +132,7 @@ public class GoalService {
         goal.setStartEntryId(maxEntryId);
         if (request.getRewardPoints() != null) {
             goal.setRewardPoints(request.getRewardPoints());
-            goal.setXpReward(request.getRewardPoints());
+            goal.setXpReward(request.getRewardPoints() * 2);
         }
 
         Goal saved = goalRepository.save(goal);
@@ -163,23 +156,31 @@ public class GoalService {
             throw new IllegalStateException("Goal is already completed");
         }
 
-        // 1. Calculate and award XP and Reward Points
-        int xpToAward = (goal.getXpReward() != null) ? goal.getXpReward() : 
-                        (goal.getRewardPoints() != null ? goal.getRewardPoints() : 0);
-        int pointsToAward = (goal.getRewardPoints() != null) ? goal.getRewardPoints() : 0;
+        // 1. Calculate XP and Reward Points
+        int xpToAward = (goal.getXpReward() != null) ? goal.getXpReward() : 100;
+        int pointsToAward = (goal.getRewardPoints() != null) ? goal.getRewardPoints() : 50;
 
-        int currentXp = (user.getCurrentXp() != null) ? user.getCurrentXp() : 0;
-        int currentPoints = (user.getRewardPoints() != null) ? user.getRewardPoints() : 0;
+        int currentXp = user.getCurrentXp();
+        int currentPoints = user.getRewardPoints();
 
-        user.setCurrentXp(currentXp + xpToAward);
+        int newXp = currentXp + xpToAward;
+        user.setCurrentXp(newXp);
         user.setRewardPoints(currentPoints + pointsToAward);
+
+        // 2. Dynamic Level-Up Check using User fields
+        while (newXp >= user.getNextLevelXpTarget()) {
+            user.setUserLevel(user.getUserLevel() + 1);
+            user.setNextLevelXpTarget(user.getNextLevelXpTarget() + 50);
+            updateUserRank(user);
+        }
+
         userRepository.save(user);
 
-        // 2. Mark goal status as COMPLETED
+        // 3. Mark goal status as COMPLETED
         goal.setStatus("COMPLETED");
         goalRepository.save(goal);
 
-        // 3. Update associated progress record if present
+        // 4. Update associated progress record
         goalProgressRepository.findByGoalGoalId(goalId).ifPresent(progress -> {
             progress.setCompleted(true);
             progress.setCompletedDate(LocalDate.now());
@@ -203,12 +204,14 @@ public class GoalService {
     }
 
     // ── Read ──
+    @Transactional
     public List<GoalResponse> getGoalsForUser(Long userId) {
         List<Goal> goals = goalRepository.findByUserId(userId);
         goals.forEach(this::checkAndHandleExpiration);
         return goals.stream().map(this::mapToResponse).collect(Collectors.toList());
     }
 
+    @Transactional
     public List<GoalResponse> getGoalsForUserByStatus(Long userId, String status) {
         if ("ACTIVE".equalsIgnoreCase(status) || "EXPIRED".equalsIgnoreCase(status)) {
             List<Goal> allUserGoals = goalRepository.findByUserId(userId);
@@ -224,6 +227,7 @@ public class GoalService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
     public GoalResponse getGoalById(Long userId, Long goalId) {
         Goal goal = goalRepository.findById(goalId)
                 .orElseThrow(() -> new IllegalArgumentException("Goal not found: " + goalId));
@@ -246,8 +250,6 @@ public class GoalService {
             throw new GoalAccessDeniedException("You do not have permission to view this goal");
         }
 
-        checkAndHandleExpiration(goal);
-
         GoalProgress progress = goalProgressRepository.findByGoalGoalId(goalId)
                 .orElseThrow(() -> new IllegalArgumentException("No progress record for goal: " + goalId));
 
@@ -256,7 +258,6 @@ public class GoalService {
 
         LocalDate periodEnd = LocalDate.now().isBefore(goal.getEndDate()) ? LocalDate.now() : goal.getEndDate();
 
-        // 1. Fetch raw timeframe entries (Keeps global tracking dashboard metrics safe)
         List<CarbonEntry> timeFrameEntries = (category != null)
                 ? carbonEntryRepository.findByUserIdAndCategoryAndActivityDateBetween(userId, category,
                         goal.getStartDate(), periodEnd)
@@ -264,7 +265,6 @@ public class GoalService {
 
         Long startingAnchorId = goal.getStartEntryId() != null ? goal.getStartEntryId() : 0L;
 
-        // 2. Isolate values: Only sum up metrics that were created AFTER the goal initialization token
         BigDecimal currentValue = timeFrameEntries.stream()
                 .filter(entry -> entry.getEntryId() > startingAnchorId)
                 .map(CarbonEntry::getCarbonEmission)
@@ -274,7 +274,6 @@ public class GoalService {
         BigDecimal completionPercentage = BigDecimal.ZERO;
         boolean completed = false;
 
-        // Percentage tracking reflects how much of the target allowance has been consumed
         if (goal.getTargetValue().compareTo(BigDecimal.ZERO) > 0) {
             completionPercentage = currentValue.divide(goal.getTargetValue(), 4, RoundingMode.HALF_UP)
                     .multiply(BigDecimal.valueOf(100));
@@ -286,16 +285,15 @@ public class GoalService {
         progress.setCurrentValue(currentValue);
         progress.setCompletionPercentage(completionPercentage);
         
-        // ── AUTOMATED TRIGGER EXECUTION: Handle Ceiling Limit Evaluation ──
+        // ── AUTOMATED TRIGGER EXECUTION ──
         if ("ACTIVE".equals(goal.getStatus())) {
-            // Breached if the tracking consumption goes above the absolute budget allowance cap
+            // Breached budget cap
             if (currentValue.compareTo(goal.getTargetValue()) > 0) {
                 goal.setStatus("EXPIRED");
                 completed = false;
             } 
-            // Successfully completed if deadline passes cleanly while staying inside limits
+            // Successfully held under budget allowance through the end date
             else if (LocalDate.now().isAfter(goal.getEndDate())) {
-                // Trigger goal completion reward flow automatically
                 completeGoal(userId, goalId);
                 return buildProgressResponse(goal, progress);
             }
@@ -313,10 +311,30 @@ public class GoalService {
     // ── Expiration Engine Helper ──
     private void checkAndHandleExpiration(Goal goal) {
         if ("ACTIVE".equals(goal.getStatus()) && LocalDate.now().isAfter(goal.getEndDate())) {
-            // Trigger automatic completion & XP awarding if end date passed without breaching target budget
-            try {
-                completeGoal(goal.getUser().getId(), goal.getGoalId());
-            } catch (Exception e) {
+            GoalType type = parseGoalType(goal.getGoalType());
+            CarbonCategory category = AGGREGATE_ALL_CATEGORIES.contains(type) ? null : mapGoalTypeToCategory(type);
+            Long startingAnchorId = goal.getStartEntryId() != null ? goal.getStartEntryId() : 0L;
+
+            List<CarbonEntry> entries = (category != null)
+                    ? carbonEntryRepository.findByUserIdAndCategoryAndActivityDateBetween(
+                            goal.getUser().getId(), category, goal.getStartDate(), goal.getEndDate())
+                    : carbonEntryRepository.findByUserIdAndActivityDateBetween(
+                            goal.getUser().getId(), goal.getStartDate(), goal.getEndDate());
+
+            BigDecimal totalEmitted = entries.stream()
+                    .filter(e -> e.getEntryId() > startingAnchorId)
+                    .map(CarbonEntry::getCarbonEmission)
+                    .filter(Objects::nonNull)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            if (totalEmitted.compareTo(goal.getTargetValue()) <= 0) {
+                try {
+                    completeGoal(goal.getUser().getId(), goal.getGoalId());
+                } catch (Exception e) {
+                    goal.setStatus("EXPIRED");
+                    goalRepository.save(goal);
+                }
+            } else {
                 goal.setStatus("EXPIRED");
                 goalRepository.save(goal);
             }
@@ -329,18 +347,31 @@ public class GoalService {
                 .filter(g -> !g.getGoalId().equals(excludeGoalId))
                 .filter(g -> g.getGoalType().equalsIgnoreCase(goalType))
                 .peek(g -> {
-                    // Force a progress check calculation to catch any stealth breaches before running structural constraint checks
                     try {
                         this.calculateProgress(userId, g.getGoalId());
                     } catch (Exception ignored) {}
                 })
-                .filter(g -> g.getStatus().equalsIgnoreCase("ACTIVE")) // Verify it is still active post-evaluation
+                .filter(g -> g.getStatus().equalsIgnoreCase("ACTIVE"))
                 .filter(g -> !(end.isBefore(g.getStartDate()) || start.isAfter(g.getEndDate())))
                 .toList();
 
         if (!conflictingGoals.isEmpty()) {
             throw new IllegalArgumentException("You already have an active " + goalType + 
                     " goal set up within this timeframe (" + conflictingGoals.get(0).getStartDate() + " to " + conflictingGoals.get(0).getEndDate() + ").");
+        }
+    }
+
+    // ── Rank Helper ──
+    private void updateUserRank(User user) {
+        int level = user.getUserLevel();
+        if (level >= 20) {
+            user.setUserRank("Eco Master");
+        } else if (level >= 10) {
+            user.setUserRank("Eco Guardian");
+        } else if (level >= 5) {
+            user.setUserRank("Eco Warrior");
+        } else {
+            user.setUserRank("Eco Starter");
         }
     }
 

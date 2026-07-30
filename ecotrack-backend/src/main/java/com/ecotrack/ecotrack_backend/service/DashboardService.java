@@ -2,6 +2,7 @@ package com.ecotrack.ecotrack_backend.service;
 
 import com.ecotrack.ecotrack_backend.dto.CategoryImpactResponse;
 import com.ecotrack.ecotrack_backend.dto.DashboardSummaryResponse;
+import com.ecotrack.ecotrack_backend.dto.GoalProgressResponse;
 import com.ecotrack.ecotrack_backend.dto.GoalSnapshotResponse;
 import com.ecotrack.ecotrack_backend.entity.Goal;
 import com.ecotrack.ecotrack_backend.entity.GoalProgress;
@@ -11,6 +12,7 @@ import com.ecotrack.ecotrack_backend.repository.GoalRepository;
 import com.ecotrack.ecotrack_backend.repository.UserRepository;
 import com.ecotrack.ecotrack_backend.util.GamificationUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -40,6 +42,7 @@ public class DashboardService {
     /**
      * Builds and returns the unified DashboardSummaryResponse DTO.
      */
+    @Transactional
     public DashboardSummaryResponse getDashboardSummary(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));
@@ -50,14 +53,14 @@ public class DashboardService {
         summary.setUsername(user.getName());
         summary.setUserLevel(GamificationUtils.getLevel(user));
         summary.setUserRank(GamificationUtils.getRankTitle(user));
-        summary.setCurrentXp(user.getCurrentXp());
+        summary.setCurrentXp(user.getCurrentXp() != null ? user.getCurrentXp() : 0);
         summary.setNextLevelXpTarget(GamificationUtils.getNextLevelXpTarget(user));
 
         // ── Section 2: Core KPI Metric Cards ──
         summary.setTotalCarbonFootprint(carbonFootprintService.getTotalCarbonFootprint(userId));
         summary.setCarbonSaved(carbonFootprintService.getCarbonSavedVsBaseline(userId));
         summary.setSavingsPercentage(carbonFootprintService.getSavingsPercentage(userId));
-        summary.setTotalRewardPoints(user.getRewardPoints());
+        summary.setTotalRewardPoints(user.getRewardPoints() != null ? user.getRewardPoints() : 0);
 
         // ── Section 3: Category Emission Impact ──
         List<CategoryImpactResponse> categoryImpacts = carbonFootprintService.getCategoryImpactList(userId);
@@ -78,29 +81,43 @@ public class DashboardService {
         List<GoalSnapshotResponse> snapshots = new ArrayList<>();
 
         for (Goal goal : activeGoals) {
+            GoalProgressResponse progressResp = null;
+
             // Re-calculate live progress for active goal
             try {
-                goalService.calculateProgress(userId, goal.getGoalId());
+                progressResp = goalService.calculateProgress(userId, goal.getGoalId());
             } catch (Exception ignored) {
-                // Keep fallback calculations if calculation triggers transient issues
+                // Fallback handling if live calculation fails transiently
             }
 
-            GoalProgress progress = goalProgressRepository.findByGoalGoalId(goal.getGoalId())
-                    .orElse(null);
+            // Verify goal status hasn't transitioned to EXPIRED or COMPLETED during recalculation
+            Goal updatedGoal = goalRepository.findById(goal.getGoalId()).orElse(goal);
+            if (!"ACTIVE".equalsIgnoreCase(updatedGoal.getStatus())) {
+                continue;
+            }
 
-            BigDecimal currentValue = progress != null && progress.getCurrentValue() != null
-                    ? progress.getCurrentValue() : BigDecimal.ZERO;
-            BigDecimal completionPercentage = progress != null && progress.getCompletionPercentage() != null
-                    ? progress.getCompletionPercentage() : BigDecimal.ZERO;
+            BigDecimal currentValue = BigDecimal.ZERO;
+            BigDecimal completionPercentage = BigDecimal.ZERO;
+
+            if (progressResp != null) {
+                currentValue = progressResp.getCurrentValue() != null ? progressResp.getCurrentValue() : BigDecimal.ZERO;
+                completionPercentage = progressResp.getCompletionPercentage() != null ? progressResp.getCompletionPercentage() : BigDecimal.ZERO;
+            } else {
+                GoalProgress progress = goalProgressRepository.findByGoalGoalId(goal.getGoalId()).orElse(null);
+                if (progress != null) {
+                    currentValue = progress.getCurrentValue() != null ? progress.getCurrentValue() : BigDecimal.ZERO;
+                    completionPercentage = progress.getCompletionPercentage() != null ? progress.getCompletionPercentage() : BigDecimal.ZERO;
+                }
+            }
 
             snapshots.add(new GoalSnapshotResponse(
-                    goal.getGoalId(),
-                    goal.getGoalName(),
-                    goal.getGoalType(),
-                    goal.getTargetValue(),
+                    updatedGoal.getGoalId(),
+                    updatedGoal.getGoalName(),
+                    updatedGoal.getGoalType(),
+                    updatedGoal.getTargetValue(),
                     currentValue,
                     completionPercentage,
-                    goal.getRewardPoints()
+                    updatedGoal.getRewardPoints()
             ));
         }
 

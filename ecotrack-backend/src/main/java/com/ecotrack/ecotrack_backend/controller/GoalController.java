@@ -84,7 +84,17 @@ public class GoalController {
         return ResponseEntity.ok(goalService.calculateProgress(userId, goalId));
     }
 
-    // ── Exception handlers ──
+    // ── Gamification: Explicit Goal Completion & Reward Trigger ──
+    @PostMapping("/{goalId}/complete")
+    public ResponseEntity<Map<String, String>> completeGoal(
+            @PathVariable Long goalId,
+            @AuthenticationPrincipal UserDetails principal) {
+        Long userId = extractUserId(principal);
+        goalService.completeGoal(userId, goalId);
+        return ResponseEntity.ok(Map.of("message", "Goal completed successfully! XP and reward points awarded."));
+    }
+
+    // ── Exception Handlers ──
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, String>> handleValidation(MethodArgumentNotValidException ex) {
@@ -98,6 +108,11 @@ public class GoalController {
     @ExceptionHandler(GoalAccessDeniedException.class)
     public ResponseEntity<Map<String, String>> handleAccessDenied(GoalAccessDeniedException ex) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", ex.getMessage()));
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<Map<String, String>> handleIllegalState(IllegalStateException ex) {
+        return ResponseEntity.badRequest().body(Map.of("message", ex.getMessage()));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
