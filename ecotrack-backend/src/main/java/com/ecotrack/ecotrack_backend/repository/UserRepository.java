@@ -48,4 +48,14 @@ public interface UserRepository extends JpaRepository<User, Long> {
     // Added: needed by AuthService.resetPassword() to look up the user
     // a given reset token belongs to.
     Optional<User> findByResetPasswordToken(String resetPasswordToken);
+
+    // --- Admin Dashboard summary queries ---
+    // Kept as narrow, purpose-built count queries rather than pulling full
+    // User lists into memory just to count them.
+
+    long countByEnabled(boolean enabled);
+
+    long countByRole_Name(String roleName);
+
+    long countByCreatedAtAfter(java.time.LocalDateTime after);
 }

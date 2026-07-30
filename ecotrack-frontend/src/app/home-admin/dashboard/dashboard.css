@@ -1,0 +1,103 @@
+.admin-dashboard {
+  padding: 32px 40px;
+  height: 100%;
+  overflow-y: auto;
+  box-sizing: border-box;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.page-header h1 {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #1c2b33;
+}
+
+.page-header .subtitle {
+  margin: 4px 0 28px;
+  color: #6b7c87;
+  font-size: 0.95rem;
+}
+
+.state-message {
+  padding: 20px;
+  border-radius: 12px;
+  background-color: #f4f6f7;
+  color: #4a6072;
+  font-weight: 500;
+}
+
+.state-message.error {
+  background-color: #fdecec;
+  color: #b91c1c;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.retry-btn {
+  border: none;
+  background-color: #b91c1c;
+  color: #fff;
+  padding: 6px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.stat-grid.hidden {
+  display: none;
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 20px;
+}
+
+.stat-card {
+  background-color: #f8f9fa;
+  border: 1px solid #e5e9eb;
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stat-card i {
+  font-size: 1.3rem;
+  color: #4a6072;
+}
+
+.stat-value {
+  font-size: 1.9rem;
+  font-weight: 800;
+  color: #1c2b33;
+}
+
+.stat-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #6b7c87;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.upcoming-note {
+  margin-top: 24px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  background-color: #eef2f5;
+  color: #4a6072;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+@media (max-width: 640px) {
+  .admin-dashboard {
+    padding: 24px 20px;
+  }
+}

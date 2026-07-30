@@ -1,1 +1,51 @@
-<p>home-admin works!</p>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
+
+<header class="mobile-top-bar">
+  <div class="mobile-logo">
+    <h1>Ecotrack <span class="admin-tag">Admin</span></h1>
+  </div>
+  <button class="menu-toggle-btn" (click)="toggleSidebar()" aria-label="Toggle navigation">
+    <i class="fa-solid fa-bars"></i>
+  </button>
+</header>
+
+<div class="home-container">
+
+  <aside class="sidebar" [class.open]="isSidebarOpen">
+
+    <div class="logo">
+      <h1>Ecotrack</h1>
+      <span class="admin-tag">Admin Portal</span>
+    </div>
+
+    <nav class="nav-menu">
+
+      <a routerLink="dashboard" routerLinkActive="active" (click)="closeSidebar()">
+        <i class="fa-solid fa-gauge-high"></i>
+        <span>Dashboard</span>
+      </a>
+
+      <!-- Users and Challenges nav items are added once those sections
+           are actually built — no dead links in the meantime. -->
+
+      <a routerLink="/home" class="back-to-app">
+        <i class="fa-solid fa-arrow-left"></i>
+        <span>Back to App</span>
+      </a>
+
+      <a href="#" (click)="onLogout($event)">
+        <i class="fa-solid fa-arrow-right-from-bracket"></i>
+        <span>Logout</span>
+      </a>
+
+    </nav>
+
+  </aside>
+
+  <div class="sidebar-overlay" *ngIf="isSidebarOpen" (click)="closeSidebar()"></div>
+
+  <main class="content">
+    <router-outlet (activate)="onSubViewActivated($event)"></router-outlet>
+  </main>
+
+</div>

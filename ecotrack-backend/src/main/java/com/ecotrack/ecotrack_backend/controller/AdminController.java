@@ -1,5 +1,7 @@
 package com.ecotrack.ecotrack_backend.controller;
 
+import com.ecotrack.ecotrack_backend.dto.AdminDashboardSummaryResponse;
+import com.ecotrack.ecotrack_backend.service.AdminService;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -9,25 +11,26 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.Map;
 
 /**
- * Placeholder for the Admin Portal's backend. At this stage this controller
- * exists ONLY to validate that role-based authorization actually works —
- * i.e. that an authenticated ROLE_ADMIN account can reach an admin-only
- * endpoint, while an authenticated ROLE_USER account and unauthenticated
- * requests are both rejected.
+ * Admin Portal backend. Every endpoint here requires ROLE_ADMIN — enforced
+ * via @PreAuthorize, on top of SecurityConfig already requiring *any*
+ * authenticated user for everything under /api/admin/**.
  *
- * The real endpoints (GET /api/admin/users, DELETE /api/admin/users/{id},
- * POST /api/admin/challenges, etc.) are added later as part of the
- * Admin Portal & Community Challenge Engine work — deliberately not built
- * yet, per this stage's scope.
+ * User management (GET/DELETE /api/admin/users) and challenge management
+ * (POST/PUT/DELETE /api/admin/challenges) are separate, later pieces of
+ * work — not built here yet, per the current task's scope.
  */
 @RestController
 @RequestMapping("/api/admin")
 public class AdminController {
 
-    // Method-level check is the actual authorization boundary here.
-    // The class-level security filter chain (SecurityConfig) already requires
-    // *any* authenticated user for everything under /api/admin/**; this
-    // @PreAuthorize is what narrows it down to ROLE_ADMIN specifically.
+    private final AdminService adminService;
+
+    public AdminController(AdminService adminService) {
+        this.adminService = adminService;
+    }
+
+    // Kept from the original role-verification step — cheap way to confirm
+    // "is this token an admin token at all" independent of any real data.
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/ping")
     public Map<String, String> ping(Authentication authentication) {
@@ -35,5 +38,11 @@ public class AdminController {
                 "message", "Admin access granted",
                 "authenticatedAs", authentication.getName()
         );
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/dashboard-summary")
+    public AdminDashboardSummaryResponse dashboardSummary() {
+        return adminService.getDashboardSummary();
     }
 }

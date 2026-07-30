@@ -1,1 +1,58 @@
-<p>dashboard works!</p>
+<div class="admin-dashboard">
+
+  <header class="page-header">
+    <h1>Admin Dashboard</h1>
+    <p class="subtitle">Platform overview</p>
+  </header>
+
+  <div *ngIf="isLoading()" class="state-message">
+    Loading dashboard…
+  </div>
+
+  <div *ngIf="dataError() && !isLoading()" class="state-message error">
+    {{ dataError() }}
+    <button class="retry-btn" (click)="loadSummary()">Retry</button>
+  </div>
+
+  <div *ngIf="summary() as s" class="stat-grid" [class.hidden]="isLoading()">
+
+    <div class="stat-card">
+      <i class="fa-solid fa-users"></i>
+      <div class="stat-value">{{ s.totalUsers }}</div>
+      <div class="stat-label">Total Users</div>
+    </div>
+
+    <div class="stat-card">
+      <i class="fa-solid fa-user-check"></i>
+      <div class="stat-value">{{ s.activeUsers }}</div>
+      <div class="stat-label">Active Users</div>
+    </div>
+
+    <div class="stat-card">
+      <i class="fa-solid fa-user-slash"></i>
+      <div class="stat-value">{{ s.disabledUsers }}</div>
+      <div class="stat-label">Disabled Users</div>
+    </div>
+
+    <div class="stat-card">
+      <i class="fa-solid fa-user-shield"></i>
+      <div class="stat-value">{{ s.totalAdmins }}</div>
+      <div class="stat-label">Admins</div>
+    </div>
+
+    <div class="stat-card">
+      <i class="fa-solid fa-user-plus"></i>
+      <div class="stat-value">{{ s.newUsersThisWeek }}</div>
+      <div class="stat-label">New This Week</div>
+    </div>
+
+  </div>
+
+  <!-- Challenge & participation stats land here once the Challenge
+       entity/service work exists — intentionally not faked in the meantime. -->
+  <div class="upcoming-note" *ngIf="summary() && !isLoading()">
+    <i class="fa-solid fa-circle-info"></i>
+    Challenge and participation statistics will appear here once Challenge Management is built.
+  </div>
+
+</div>
