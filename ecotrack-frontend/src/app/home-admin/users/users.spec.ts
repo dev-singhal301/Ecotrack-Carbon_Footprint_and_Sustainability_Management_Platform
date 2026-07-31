@@ -1,4 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 
 import { Users } from './users';
 
@@ -9,6 +11,9 @@ describe('Users', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [Users],
+      // Users -> AdminService -> HttpClient. Without these, TestBed throws
+      // a NullInjectorError before the component can even be created.
+      providers: [provideHttpClient(), provideHttpClientTesting()],
     }).compileComponents();
 
     fixture = TestBed.createComponent(Users);
