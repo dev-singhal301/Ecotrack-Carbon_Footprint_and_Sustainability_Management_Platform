@@ -25,8 +25,13 @@
         <span>Dashboard</span>
       </a>
 
-      <!-- Users and Challenges nav items are added once those sections
-           are actually built — no dead links in the meantime. -->
+      <a routerLink="users" routerLinkActive="active" (click)="closeSidebar()">
+        <i class="fa-solid fa-users"></i>
+        <span>Users</span>
+      </a>
+
+      <!-- Challenges nav item is added once that section is actually
+           built — no dead links in the meantime. -->
 
       <a routerLink="/home" class="back-to-app">
         <i class="fa-solid fa-arrow-left"></i>

@@ -25,7 +25,7 @@ export class HomeAdmin {
   constructor(
     private router: Router,
     private auth: Auth
-  ) { }
+  ) {}
 
   toggleSidebar(): void {
     this.isSidebarOpen = !this.isSidebarOpen;
@@ -35,9 +35,13 @@ export class HomeAdmin {
     this.isSidebarOpen = false;
   }
 
+  // Same pattern as Home: give the freshly-activated child a chance to
+  // load its own data (e.g. admin Dashboard's loadSummary(), Users' loadUsers()).
   onSubViewActivated(componentRef: any): void {
     if (componentRef && typeof componentRef.loadSummary === 'function') {
       componentRef.loadSummary();
+    } else if (componentRef && typeof componentRef.loadUsers === 'function') {
+      componentRef.loadUsers();
     }
   }
 

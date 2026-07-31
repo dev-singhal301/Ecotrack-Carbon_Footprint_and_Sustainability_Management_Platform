@@ -1,1 +1,71 @@
-<p>users works!</p>
+<div class="admin-users">
+
+  <header class="page-header">
+    <h1>User Management</h1>
+    <p class="subtitle">{{ users().length }} registered user{{ users().length === 1 ? '' : 's' }}</p>
+  </header>
+
+  <div *ngIf="isLoading()" class="state-message">
+    Loading users…
+  </div>
+
+  <div *ngIf="dataError() && !isLoading()" class="state-message error">
+    {{ dataError() }}
+    <button class="retry-btn" (click)="loadUsers()">Retry</button>
+  </div>
+
+  <div *ngIf="actionError()" class="state-message error">
+    {{ actionError() }}
+  </div>
+
+  <div *ngIf="!isLoading() && !dataError()" class="table-wrapper">
+    <table class="users-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Role</th>
+          <th>XP</th>
+          <th>Joined</th>
+          <th>Status</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let user of users()">
+          <td>{{ user.name }}</td>
+          <td>{{ user.email }}</td>
+          <td>
+            <span class="role-badge" [class.admin]="user.role === 'ROLE_ADMIN'">
+              {{ user.role === 'ROLE_ADMIN' ? 'Admin' : 'User' }}
+            </span>
+          </td>
+          <td>{{ user.currentXp }}</td>
+          <td>{{ user.createdAt | date:'mediumDate' }}</td>
+          <td>
+            <span class="status-badge" [class.disabled]="!user.enabled">
+              {{ user.enabled ? 'Active' : 'Disabled' }}
+            </span>
+          </td>
+          <td>
+            <button
+              class="deactivate-btn"
+              *ngIf="user.enabled"
+              [disabled]="pendingUserId() === user.id"
+              (click)="confirmDeactivate(user)">
+              {{ pendingUserId() === user.id ? 'Deactivating…' : 'Deactivate' }}
+            </button>
+            <button
+              class="reactivate-btn"
+              *ngIf="!user.enabled"
+              [disabled]="pendingUserId() === user.id"
+              (click)="confirmReactivate(user)">
+              {{ pendingUserId() === user.id ? 'Reactivating…' : 'Reactivate' }}
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>

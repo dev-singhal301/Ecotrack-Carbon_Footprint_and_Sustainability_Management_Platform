@@ -6,6 +6,7 @@ import { authGuard } from './auth/auth.guard';
 import { adminGuard } from './auth/admin-guard';
 import { HomeAdmin } from './home-admin/home-admin';
 import { Dashboard as AdminDashboard } from './home-admin/dashboard/dashboard';
+import { Users as AdminUsers } from './home-admin/users/users';
 
 // Import your newly generated dashboard sub-components
 import { DashboardComponent } from './home/dashboard/dashboard';
@@ -61,6 +62,7 @@ export const routes: Routes = [
         children: [
             { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
             { path: 'dashboard', component: AdminDashboard },
+            { path: 'users', component: AdminUsers },
         ]
     },
 
