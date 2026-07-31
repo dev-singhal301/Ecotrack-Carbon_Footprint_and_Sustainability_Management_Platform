@@ -22,7 +22,8 @@ import java.util.List;
 @Service
 public class CarbonEntryService {
 
-    private static final int LOG_ENTRY_XP = 10; // XP awarded per logged activity
+    private static final int LOG_ENTRY_XP = 10; // XP awarded on first daily activity
+    private static final int LEVEL_XP_STEP = 500; // XP required for each additional level
 
     private final CarbonEntryRepository carbonEntryRepository;
     private final EmissionFactorRepository emissionFactorRepository;
@@ -70,8 +71,15 @@ public class CarbonEntryService {
 
         CarbonEntry saved = carbonEntryRepository.save(entry);
 
-        // 1. Gamification: Award XP and check level-up
-        awardXpAndLevelUp(user, LOG_ENTRY_XP);
+        // 1. Anti-Spam Gamification Check: Award XP only if this is the first entry logged today
+        LocalDate today = LocalDate.now();
+        boolean isFirstLogToday = carbonEntryRepository
+                .findByUserIdAndActivityDateBetween(user.getId(), today, today)
+                .size() <= 1; // <= 1 because 'saved' entry was just persisted above
+
+        if (isFirstLogToday) {
+            awardXpAndLevelUp(user, LOG_ENTRY_XP);
+        }
 
         // 2. Refresh progress for active goals affected by this new entry
         triggerActiveGoalRecalculation(user.getId());
@@ -126,9 +134,10 @@ public class CarbonEntryService {
         int newXp = fetchedUser.getCurrentXp() + xpAmount;
         fetchedUser.setCurrentXp(newXp);
 
+        // Level up loop with 500 XP threshold scaling
         while (newXp >= fetchedUser.getNextLevelXpTarget()) {
             fetchedUser.setUserLevel(fetchedUser.getUserLevel() + 1);
-            fetchedUser.setNextLevelXpTarget(fetchedUser.getNextLevelXpTarget() + 50);
+            fetchedUser.setNextLevelXpTarget(fetchedUser.getNextLevelXpTarget() + LEVEL_XP_STEP);
             updateUserRank(fetchedUser);
         }
 

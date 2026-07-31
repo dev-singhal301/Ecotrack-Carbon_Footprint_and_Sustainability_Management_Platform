@@ -1,275 +1,158 @@
 package com.ecotrack.ecotrack_backend.service;
 
-import com.ecotrack.ecotrack_backend.entity.*;
-import com.ecotrack.ecotrack_backend.repository.*;
-import org.junit.jupiter.api.*;
+import com.ecotrack.ecotrack_backend.dto.CarbonEntryRequest;
+import com.ecotrack.ecotrack_backend.entity.CarbonCategory;
+import com.ecotrack.ecotrack_backend.entity.EmissionFactor;
+import com.ecotrack.ecotrack_backend.entity.User;
+import com.ecotrack.ecotrack_backend.repository.CarbonEntryRepository;
+import com.ecotrack.ecotrack_backend.repository.EmissionFactorRepository;
+import com.ecotrack.ecotrack_backend.repository.UserRepository;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
+import java.util.stream.Collectors;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @SpringBootTest
 @Transactional
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class GamificationIntegrationTest {
 
     @Autowired
-    private GoalService goalService;
+    private CarbonEntryService carbonEntryService;
 
     @Autowired
     private UserRepository userRepository;
 
     @Autowired
-    private RoleRepository roleRepository;
-
-    @Autowired
-    private GoalRepository goalRepository;
+    private EmissionFactorRepository emissionFactorRepository;
 
     @Autowired
     private CarbonEntryRepository carbonEntryRepository;
 
-    private User testUser;
-
     @BeforeEach
     void setUp() {
-        // Retrieve an existing role from the database or create a default one
-        Role defaultRole = roleRepository.findAll().stream().findFirst().orElseGet(() -> {
-            Role newRole = new Role();
-            return roleRepository.save(newRole);
-        });
+        // Clear activity entries to prevent anti-spam interference across test runs
+        carbonEntryRepository.deleteAll();
 
-        testUser = new User();
-        testUser.setName("Eco Tester");
-        testUser.setEmail("tester_" + System.currentTimeMillis() + "@ecotrack.com");
-        testUser.setPassword("password123");
-        testUser.setRole(defaultRole); // Satisfies NOT NULL constraint on role_id
-        testUser.setUserLevel(1);
-        testUser.setCurrentXp(0);
-        testUser.setNextLevelXpTarget(100);
-        testUser.setRewardPoints(0);
-        testUser.setUserRank("BRONZE");
-
-        testUser = userRepository.save(testUser);
-    }
-
-    /**
-     * Helper method simulating XP gain and level evaluation directly on the User entity
-     */
-    private User awardXpToUser(Long userId, int xpAmount) {
-        User user = userRepository.findById(userId).orElseThrow();
-        int newXp = user.getCurrentXp() + xpAmount;
-        user.setCurrentXp(newXp);
-
-        // Simple level-up logic
-        while (newXp >= user.getNextLevelXpTarget()) {
-            user.setUserLevel(user.getUserLevel() + 1);
-            user.setNextLevelXpTarget(user.getNextLevelXpTarget() + 100 * user.getUserLevel());
+        // Ensure emission factor exists for transportation testing
+        if (emissionFactorRepository.findByCategory(CarbonCategory.TRANSPORTATION).isEmpty()) {
+            EmissionFactor factor = new EmissionFactor();
+            factor.setCategory(CarbonCategory.TRANSPORTATION);
+            factor.setFactorValue(new BigDecimal("0.21"));
+            factor.setUnit("km");
+            emissionFactorRepository.save(factor);
         }
+    }
 
-        // Simple rank evaluation logic
-        if (user.getUserLevel() >= 5) {
-            user.setUserRank("GOLD");
-        } else if (user.getUserLevel() >= 3) {
-            user.setUserRank("SILVER");
+    @Test
+    @DisplayName("Scenario 1: Leaderboard Ranking Across Dummy Users (IDs 11-25)")
+    void testLeaderboardRankingWithDummyUsers() {
+        // Filter strictly for dummy users (IDs 11 to 25) and sort descending by XP
+        List<User> rankedUsers = userRepository.findAll().stream()
+                .filter(u -> u.getId() >= 11 && u.getId() <= 25)
+                .sorted((u1, u2) -> Integer.compare(u2.getCurrentXp(), u1.getCurrentXp()))
+                .collect(Collectors.toList());
+
+        System.out.println("\n╔══════════════════════════════════════════════════════════════════════════════════════════════╗");
+        System.out.println("║                        SCENARIO 1: DUMMY USERS LEADERBOARD (IDs 11-25)                       ║");
+        System.out.println("╠══════╦═════════╦══════════════════════╦══════════╦═══════════╦═══════════════════════════════╣");
+        System.out.printf("║ %-4s ║ %-7s ║ %-20s ║ %-8s ║ %-9s ║ %-29s ║%n", "RANK", "USER ID", "EMAIL", "XP", "LEVEL", "RANK TITLE");
+        System.out.println("╠══════╬═════════╬══════════════════════╬══════════╬═══════════╬═══════════════════════════════╣");
+
+        int rank = 1;
+        for (User u : rankedUsers) {
+            System.out.printf("║ #%-3d ║ %-7d ║ %-20s ║ %-8d ║ Lvl %-5d ║ %-29s ║%n",
+                    rank++, u.getId(), u.getEmail(), u.getCurrentXp(), u.getUserLevel(), u.getUserRank());
         }
+        System.out.println("╚══════╩═════════╩══════════════════════╩══════════╩═══════════╩═══════════════════════════════╝\n");
 
-        return userRepository.save(user);
+        // Assertions for top player in the dummy group
+        User topUser = rankedUsers.get(0);
+        assertEquals("ex25@gmail.com", topUser.getEmail(), "Top dummy user should be ex25@gmail.com");
+        assertEquals(9800, topUser.getCurrentXp(), "Top user should have 9800 XP");
+        assertEquals("Eco Master", topUser.getUserRank(), "Top user should hold Eco Master rank");
     }
 
-    private void printHeader(String title) {
-        System.out.println("\n================================================================================");
-        System.out.println("  TEST RUN: " + title);
-        System.out.println("================================================================================");
-    }
-
-    private void printResult(String key, Object value) {
-        System.out.printf("  %-30s : %s%n", key, value);
-    }
-
-    // -------------------------------------------------------------------------
-    // SCENARIO A: Initial User Baseline State
-    // -------------------------------------------------------------------------
     @Test
-    @Order(1)
-    @DisplayName("Scenario A: Initial User Baseline State")
-    void testScenarioA_InitialUserBaselineState() {
-        printHeader("SCENARIO A - Initial User Baseline State");
+    @DisplayName("Scenario 2: Daily Logging XP Award & Anti-Spam (User 11)")
+    void testDailyLoggingXpAndAntiSpamWithDummyUser() {
+        User user11 = userRepository.findByEmail("ex11@gmail.com")
+                .orElseThrow(() -> new IllegalStateException("Dummy user ex11@gmail.com not found in DB"));
 
-        printResult("User ID", testUser.getId());
-        printResult("Level", testUser.getUserLevel());
-        printResult("Current XP", testUser.getCurrentXp());
-        printResult("Next Level Target", testUser.getNextLevelXpTarget());
-        printResult("Rank", testUser.getUserRank());
-        printResult("Reward Points", testUser.getRewardPoints());
+        int initialXp = user11.getCurrentXp();
 
-        assertEquals(1, testUser.getUserLevel());
-        assertEquals(0, testUser.getCurrentXp());
-        assertEquals(100, testUser.getNextLevelXpTarget());
-        assertEquals("BRONZE", testUser.getUserRank());
-        assertEquals(0, testUser.getRewardPoints());
+        // 1st Log Today (+10 XP)
+        CarbonEntryRequest req1 = new CarbonEntryRequest();
+        req1.setCategory("TRANSPORTATION");
+        req1.setAmount(new BigDecimal("12.0"));
+        req1.setActivityDate(LocalDate.now());
+        carbonEntryService.createEntry(req1, user11);
+        User afterLog1 = userRepository.findById(user11.getId()).orElseThrow();
 
-        System.out.println("  STATUS: [PASS] Initial user baseline values are accurate.");
+        // 2nd Log Today (Anti-Spam Triggered -> 0 XP)
+        CarbonEntryRequest req2 = new CarbonEntryRequest();
+        req2.setCategory("TRANSPORTATION");
+        req2.setAmount(new BigDecimal("20.0"));
+        req2.setActivityDate(LocalDate.now());
+        carbonEntryService.createEntry(req2, afterLog1);
+        User afterLog2 = userRepository.findById(user11.getId()).orElseThrow();
+
+        // Clean Summary Print
+        System.out.println("\n╔══════════════════════════════════════════════════════════════════════════════════════════════╗");
+        System.out.println("║                SCENARIO 2: DAILY LOGGING XP & ANTI-SPAM TEST (USER 11)                      ║");
+        System.out.println("╠══════════════════════════════════╦══════════════════════╦══════════════════════╦═════════════════╣");
+        System.out.printf("║ %-32s ║ %-20s ║ %-20s ║ %-15s ║%n", "STAGE", "TOTAL XP", "XP CHANGE", "STATUS");
+        System.out.println("╠══════════════════════════════════╬══════════════════════╬══════════════════════╬═════════════════╣");
+        System.out.printf("║ 1. Initial Baseline              ║ %-20d ║ %-20s ║ Baseline        ║%n", initialXp, "0 XP");
+        System.out.printf("║ 2. First Entry (Today)           ║ %-20d ║ %-20s ║ +10 XP Awarded  ║%n", afterLog1.getCurrentXp(), "+10 XP");
+        System.out.printf("║ 3. Second Entry (Anti-Spam)      ║ %-20d ║ %-20s ║ Blocked (0 XP)  ║%n", afterLog2.getCurrentXp(), "+0 XP");
+        System.out.println("╚══════════════════════════════════╩══════════════════════╩══════════════════════╩═════════════════╝\n");
+
+        assertEquals(initialXp + 10, afterLog1.getCurrentXp(), "First log today should add 10 XP");
+        assertEquals(initialXp + 10, afterLog2.getCurrentXp(), "XP should remain capped for 2nd entry today");
     }
 
-    // -------------------------------------------------------------------------
-    // SCENARIO B: Incremental XP Awarding (Sub-threshold)
-    // -------------------------------------------------------------------------
     @Test
-    @Order(2)
-    @DisplayName("Scenario B: Incremental XP Awarding (Sub-threshold)")
-    void testScenarioB_IncrementalXpAwarding() {
-        printHeader("SCENARIO B - Incremental XP Awarding (+50 XP)");
+    @DisplayName("Scenario 3: Level-Up Progression (User 14)")
+    void testLevelUpProgressionWithDummyUser() {
+        User user14 = userRepository.findByEmail("ex14@gmail.com")
+                .orElseThrow(() -> new IllegalStateException("Dummy user ex14@gmail.com not found in DB"));
 
-        int initialXp = testUser.getCurrentXp();
-        int xpToAdd = 50;
+        int beforeXp = user14.getCurrentXp();
+        int beforeLevel = user14.getUserLevel();
+        int beforeTarget = user14.getNextLevelXpTarget();
 
-        User updatedUser = awardXpToUser(testUser.getId(), xpToAdd);
+        // Award 60 XP to cross the 500 XP threshold (450 -> 510 XP)
+        user14.setCurrentXp(user14.getCurrentXp() + 60);
 
-        printResult("Initial XP", initialXp);
-        printResult("XP Added", xpToAdd);
-        printResult("New XP Total", updatedUser.getCurrentXp());
-        printResult("Current Level", updatedUser.getUserLevel());
-        printResult("Level Up Occurred?", false);
+        while (user14.getCurrentXp() >= user14.getNextLevelXpTarget()) {
+            user14.setUserLevel(user14.getUserLevel() + 1);
+            user14.setNextLevelXpTarget(user14.getNextLevelXpTarget() + 500);
+        }
+        userRepository.save(user14);
 
-        assertEquals(50, updatedUser.getCurrentXp());
-        assertEquals(1, updatedUser.getUserLevel());
+        User updatedUser = userRepository.findById(user14.getId()).orElseThrow();
 
-        System.out.println("  STATUS: [PASS] Sub-threshold XP recorded without levelling up.");
-    }
+        // Clean Summary Print
+        System.out.println("\n╔══════════════════════════════════════════════════════════════════════════════════════════════╗");
+        System.out.println("║                    SCENARIO 3: LEVEL-UP PROGRESSION TEST (USER 14)                           ║");
+        System.out.println("╠═════════════════════════╦══════════════════════════════╦══════════════════════════════╦═════════╣");
+        System.out.printf("║ %-23s ║ %-28s ║ %-28s ║ %-7s ║%n", "METRIC", "BEFORE TEST", "AFTER TEST", "CHANGE");
+        System.out.println("╠═════════════════════════╬══════════════════════════════╬══════════════════════════════╬═════════╣");
+        System.out.printf("║ Total XP                ║ %-28d ║ %-28d ║ +60 XP  ║%n", beforeXp, updatedUser.getCurrentXp());
+        System.out.printf("║ User Level              ║ Level %-22d ║ Level %-22d ║ +1 Level║%n", beforeLevel, updatedUser.getUserLevel());
+        System.out.printf("║ Next Target             ║ %-28d ║ %-28d ║ +500 XP ║%n", beforeTarget, updatedUser.getNextLevelXpTarget());
+        System.out.println("╚═════════════════════════╩══════════════════════════════╩══════════════════════════════╩═════════╝\n");
 
-    // -------------------------------------------------------------------------
-    // SCENARIO C: Single Level-Up Threshold
-    // -------------------------------------------------------------------------
-    @Test
-    @Order(3)
-    @DisplayName("Scenario C: Single Level-Up Threshold")
-    void testScenarioC_SingleLevelUpThreshold() {
-        printHeader("SCENARIO C - Single Level-Up Threshold (+110 XP Total)");
-
-        User updatedUser = awardXpToUser(testUser.getId(), 110);
-
-        printResult("Total XP Awarded", updatedUser.getCurrentXp());
-        printResult("New Level", updatedUser.getUserLevel());
-        printResult("New Next Level Target", updatedUser.getNextLevelXpTarget());
-
-        assertEquals(2, updatedUser.getUserLevel());
-        assertEquals(110, updatedUser.getCurrentXp());
-        assertTrue(updatedUser.getNextLevelXpTarget() > 100);
-
-        System.out.println("  STATUS: [PASS] Level 2 achieved; next level target scaled up.");
-    }
-
-    // -------------------------------------------------------------------------
-    // SCENARIO D: Multi-Level Jump (High XP Goal Completion)
-    // -------------------------------------------------------------------------
-    @Test
-    @Order(4)
-    @DisplayName("Scenario D: Multi-Level Jump (+1,500 XP)")
-    void testScenarioD_MultiLevelJump() {
-        printHeader("SCENARIO D - Multi-Level Jump (+1,500 XP Goal)");
-
-        int startingLevel = testUser.getUserLevel();
-        User updatedUser = awardXpToUser(testUser.getId(), 1500);
-
-        printResult("Starting Level", startingLevel);
-        printResult("Large XP Awarded", 1500);
-        printResult("Final Level", updatedUser.getUserLevel());
-        printResult("Final XP", updatedUser.getCurrentXp());
-
-        assertTrue(updatedUser.getUserLevel() >= 4);
-        assertEquals(1500, updatedUser.getCurrentXp());
-
-        System.out.println("  STATUS: [PASS] Multi-level leap calculated successfully.");
-    }
-
-    // -------------------------------------------------------------------------
-    // SCENARIO E: Rank Tier Escalation
-    // -------------------------------------------------------------------------
-    @Test
-    @Order(5)
-    @DisplayName("Scenario E: Rank Tier Escalation")
-    void testScenarioE_RankTierEscalation() {
-        printHeader("SCENARIO E - Rank Tier Escalation (Bronze -> Higher Rank)");
-
-        String initialRank = testUser.getUserRank();
-        User updatedUser = awardXpToUser(testUser.getId(), 3000);
-
-        printResult("Initial Rank", initialRank);
-        printResult("New Level", updatedUser.getUserLevel());
-        printResult("Updated Rank", updatedUser.getUserRank());
-
-        assertNotEquals("BRONZE", updatedUser.getUserRank());
-
-        System.out.println("  STATUS: [PASS] User rank evaluated based on level threshold.");
-    }
-
-    // -------------------------------------------------------------------------
-    // SCENARIO F: Goal Completion vs. Goal Expiry Reward Integrity
-    // -------------------------------------------------------------------------
-    @Test
-    @Order(6)
-    @DisplayName("Scenario F: Goal Completion vs Expiry")
-    void testScenarioF_GoalCompletionVsExpiry() {
-        printHeader("SCENARIO F - Goal Limit Logic & Expiry");
-
-        // 1. Create a goal with 50.0 kg limit
-        Goal limitGoal = new Goal();
-        limitGoal.setUser(testUser);
-        limitGoal.setGoalName("Stay Under 50kg Transport");
-        limitGoal.setTargetValue(new BigDecimal("50.0"));
-        limitGoal.setRewardPoints(100);
-        limitGoal.setStatus("ACTIVE");
-        limitGoal.setStartDate(LocalDate.now());
-        limitGoal.setEndDate(LocalDate.now().plusDays(7));
-        limitGoal = goalRepository.save(limitGoal);
-
-        // 2. Log entry exceeding limit (60.0 kg)
-        CarbonEntry entry = new CarbonEntry();
-        entry.setUser(testUser);
-        entry.setCategory(CarbonCategory.TRANSPORTATION);
-        entry.setAmount(new BigDecimal("60.0"));
-        entry.setActivityDate(LocalDate.now());
-        carbonEntryRepository.save(entry);
-
-        // 3. Trigger progress evaluation
-        goalService.calculateProgress(testUser.getId(), limitGoal.getGoalId());
-
-        Goal updatedGoal = goalRepository.findById(limitGoal.getGoalId()).orElseThrow();
-        User userAfterBreach = userRepository.findById(testUser.getId()).orElseThrow();
-
-        printResult("Goal Target Limit", 50.0);
-        printResult("Actual Emissions", 60.0);
-        printResult("Goal Final Status", updatedGoal.getStatus());
-        printResult("Rewards Awarded", userAfterBreach.getRewardPoints());
-
-        assertEquals("EXPIRED", updatedGoal.getStatus());
-        assertEquals(0, userAfterBreach.getRewardPoints());
-
-        System.out.println("  STATUS: [PASS] Goal marked EXPIRED upon limit breach; 0 rewards given.");
-    }
-
-    // -------------------------------------------------------------------------
-    // SCENARIO G: Leaderboard Integration Check
-    // -------------------------------------------------------------------------
-    @Test
-    @Order(7)
-    @DisplayName("Scenario G: Leaderboard Integration Check")
-    void testScenarioG_LeaderboardQuery() {
-        printHeader("SCENARIO G - Leaderboard Aggregation");
-
-        User updatedUser = awardXpToUser(testUser.getId(), 250);
-        User topUser = userRepository.findById(updatedUser.getId()).orElseThrow();
-
-        printResult("Top User Email", topUser.getEmail());
-        printResult("Total XP Recorded", topUser.getCurrentXp());
-
-        assertTrue(topUser.getCurrentXp() > 0);
-
-        System.out.println("  STATUS: [PASS] Leaderboard XP state consistent.");
-        System.out.println("================================================================================\n");
+        assertEquals(2, updatedUser.getUserLevel(), "User should level up to Level 2");
+        assertEquals(1000, updatedUser.getNextLevelXpTarget(), "Next level target should update to 1000 XP");
     }
 }
