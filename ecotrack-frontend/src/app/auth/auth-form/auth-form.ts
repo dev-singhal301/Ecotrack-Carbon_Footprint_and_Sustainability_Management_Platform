@@ -1,6 +1,6 @@
-import { Component, computed, signal, AfterViewInit, ElementRef, ViewChild } from '@angular/core';
+import { Component, computed, signal, AfterViewInit, OnInit, ElementRef, ViewChild } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { notOnlyWhitespace } from '../validators';
 import { Auth } from '../auth';
 
@@ -25,7 +25,7 @@ const GOOGLE_CLIENT_ID = '1060715159333-01t5hgjdc1ke4ltra4e4edn3562vnjot.apps.go
   templateUrl: './auth-form.html',
   styleUrl: './auth-form.css',
 })
-export class AuthForm implements AfterViewInit {
+export class AuthForm implements AfterViewInit, OnInit {
   @ViewChild('googleBtn') googleBtnRef!: ElementRef;
   isLoginMode = signal(true);
   isForgotPasswordMode = signal(false); // Third dynamic state state link
@@ -53,7 +53,7 @@ export class AuthForm implements AfterViewInit {
     return this.isLoginMode() ? 'LOGIN' : 'GET STARTED';
   });
 
-  constructor(private fb: FormBuilder, private auth: Auth, private router: Router) {
+  constructor(private fb: FormBuilder, private auth: Auth, private router: Router, private route: ActivatedRoute) {
     this.authForm = this.fb.group({
       name: [''],
       // Enforce strict syntax formatting via Regex to completely filter out incomplete inputs
@@ -65,6 +65,19 @@ export class AuthForm implements AfterViewInit {
       password: ['', [Validators.required, Validators.minLength(6), notOnlyWhitespace]],
     });
     this.updateValidators();
+  }
+
+  ngOnInit(): void {
+    // The jwtInterceptor redirects here with this param when a session was
+    // force-ended mid-use (token became invalid, or the account was
+    // deactivated) — surface that reason instead of a silent empty form.
+    const sessionMessage = this.route.snapshot.queryParamMap.get('sessionMessage');
+    if (sessionMessage) {
+      this.errorMessage.set(sessionMessage);
+      // Strip the query param so a manual page refresh doesn't keep
+      // re-showing a stale message.
+      this.router.navigate([], { relativeTo: this.route, queryParams: {}, replaceUrl: true });
+    }
   }
 
   ngAfterViewInit(): void {

@@ -44,6 +44,21 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 String email = jwtUtil.extractEmail(token);
                 UserDetails userDetails = userDetailsService.loadUserByUsername(email);
 
+                if (!userDetails.isEnabled()) {
+                    // JWTs are stateless — a token issued before an admin
+                    // deactivated this account otherwise stays valid until
+                    // its natural 1hr expiry, so every request would keep
+                    // succeeding in the meantime. Cut the session here
+                    // instead, with a clear reason instead of a silent 403.
+                    SecurityContextHolder.clearContext();
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.setContentType("application/json");
+                    response.getWriter().write(
+                            "{\"message\":\"Your account has been suspended. Please contact an administrator.\"}"
+                    );
+                    return;
+                }
+
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(userDetails,
                         null, userDetails.getAuthorities());
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));

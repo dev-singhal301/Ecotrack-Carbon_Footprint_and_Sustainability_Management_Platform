@@ -12,6 +12,7 @@ import com.ecotrack.ecotrack_backend.service.EmailService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -108,6 +109,15 @@ public class AuthController {
     @ExceptionHandler(IllegalStateException.class)
     public ResponseEntity<Map<String, String>> handleIllegalState(IllegalStateException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(messageBody(ex.getMessage()));
+    }
+
+    // DisabledException is a subtype of AuthenticationException — this
+    // handler is more specific, so Spring resolves it ahead of the generic
+    // one below for exactly this case, without needing any reordering.
+    @ExceptionHandler(DisabledException.class)
+    public ResponseEntity<Map<String, String>> handleDisabledException(DisabledException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(messageBody("Your account has been suspended. Please contact an administrator."));
     }
 
     @ExceptionHandler(AuthenticationException.class)
