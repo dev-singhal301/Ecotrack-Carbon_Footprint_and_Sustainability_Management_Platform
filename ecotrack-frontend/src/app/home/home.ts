@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
-import { AuthService } from '../auth.service';
+import { Auth } from '../auth/auth';
 
 @Component({
   selector: 'app-home',
@@ -16,8 +16,12 @@ export class Home {
 
   constructor(
     private router: Router,
-    private authService: AuthService
+    private auth: Auth
   ) {}
+
+  isAdmin(): boolean {
+    return this.auth.isAdmin();
+  }
 
   toggleSidebar(): void {
     this.isSidebarOpen = !this.isSidebarOpen;
@@ -44,8 +48,13 @@ export class Home {
   onLogout(event: Event): void {
     event.preventDefault();
     this.closeSidebar();
-    // Use AuthService logout to properly clean 'ecotrack_jwt_token' & 'ecotrack_user_email'
-    this.authService.logout();
+    // Was previously calling the legacy AuthService.logout(), which clears
+    // 'ecotrack_jwt_token'/'ecotrack_user_email' — keys nothing else in the
+    // app reads. That meant clicking Logout never actually cleared the real
+    // session token ('ecotrack_auth_token'), just redirected the UI while
+    // the token silently stayed valid in localStorage. Auth.logout() clears
+    // the actual keys the app reads from.
+    this.auth.logout();
     this.router.navigate(['/auth']);
   }
 }

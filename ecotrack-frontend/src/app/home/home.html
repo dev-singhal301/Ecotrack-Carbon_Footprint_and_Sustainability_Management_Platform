@@ -64,6 +64,11 @@
         <span>Settings</span>
       </a>
 
+      <a *ngIf="isAdmin()" routerLink="/home-admin" (click)="closeSidebar()">
+        <i class="fa-solid fa-user-shield"></i>
+        <span>Admin Portal</span>
+      </a>
+
       <a href="#" (click)="onLogout($event)">
         <i class="fa-solid fa-arrow-right-from-bracket"></i>
         <span>Logout</span>
