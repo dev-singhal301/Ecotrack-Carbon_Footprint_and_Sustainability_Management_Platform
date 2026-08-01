@@ -12,7 +12,6 @@ import com.ecotrack.ecotrack_backend.exception.InvalidCategoryException;
 import com.ecotrack.ecotrack_backend.repository.CarbonEntryRepository;
 import com.ecotrack.ecotrack_backend.repository.EmissionFactorRepository;
 import com.ecotrack.ecotrack_backend.repository.GoalRepository;
-import com.ecotrack.ecotrack_backend.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,24 +22,23 @@ import java.util.List;
 public class CarbonEntryService {
 
     private static final int LOG_ENTRY_XP = 10; // XP awarded on first daily activity
-    private static final int LEVEL_XP_STEP = 500; // XP required for each additional level
 
     private final CarbonEntryRepository carbonEntryRepository;
     private final EmissionFactorRepository emissionFactorRepository;
-    private final UserRepository userRepository;
     private final GoalRepository goalRepository;
     private final GoalService goalService;
+    private final LeaderboardService leaderboardService; // Inject LeaderboardService
 
     public CarbonEntryService(CarbonEntryRepository carbonEntryRepository,
                               EmissionFactorRepository emissionFactorRepository,
-                              UserRepository userRepository,
                               GoalRepository goalRepository,
-                              GoalService goalService) {
+                              GoalService goalService,
+                              LeaderboardService leaderboardService) {
         this.carbonEntryRepository = carbonEntryRepository;
         this.emissionFactorRepository = emissionFactorRepository;
-        this.userRepository = userRepository;
         this.goalRepository = goalRepository;
         this.goalService = goalService;
+        this.leaderboardService = leaderboardService;
     }
 
     private CarbonCategory parseCategory(String rawCategory) {
@@ -78,7 +76,8 @@ public class CarbonEntryService {
                 .size() <= 1; // <= 1 because 'saved' entry was just persisted above
 
         if (isFirstLogToday) {
-            awardXpAndLevelUp(user, LOG_ENTRY_XP);
+            // Delegate to LeaderboardService: Creates XpTransaction AND updates user level + total XP
+            leaderboardService.awardXp(user.getId(), LOG_ENTRY_XP, "DAILY_LOG", saved.getEntryId());
         }
 
         // 2. Refresh progress for active goals affected by this new entry
@@ -126,36 +125,6 @@ public class CarbonEntryService {
     }
 
     // ── Gamification Helpers ──
-
-    private void awardXpAndLevelUp(User user, int xpAmount) {
-        User fetchedUser = userRepository.findById(user.getId())
-                .orElse(user);
-
-        int newXp = fetchedUser.getCurrentXp() + xpAmount;
-        fetchedUser.setCurrentXp(newXp);
-
-        // Level up loop with 500 XP threshold scaling
-        while (newXp >= fetchedUser.getNextLevelXpTarget()) {
-            fetchedUser.setUserLevel(fetchedUser.getUserLevel() + 1);
-            fetchedUser.setNextLevelXpTarget(fetchedUser.getNextLevelXpTarget() + LEVEL_XP_STEP);
-            updateUserRank(fetchedUser);
-        }
-
-        userRepository.save(fetchedUser);
-    }
-
-    private void updateUserRank(User user) {
-        int level = user.getUserLevel();
-        if (level >= 20) {
-            user.setUserRank("Eco Master");
-        } else if (level >= 10) {
-            user.setUserRank("Eco Guardian");
-        } else if (level >= 5) {
-            user.setUserRank("Eco Warrior");
-        } else {
-            user.setUserRank("Eco Starter");
-        }
-    }
 
     private void triggerActiveGoalRecalculation(Long userId) {
         List<Goal> activeGoals = goalRepository.findByUserIdAndStatus(userId, "ACTIVE");

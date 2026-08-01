@@ -16,7 +16,7 @@ import { GoalsComponent } from './home/goals/goals';
 import { ChallengesComponent } from './home/challenges/challenges';
 import { AiTips } from './home/ai-tips/ai-tips';
 import { Analytics } from './home/analytics/analytics';
-import { Leaderboard } from './home/leaderboard/leaderboard';
+import { LeaderboardComponent } from './home/leaderboard/leaderboard';
 import { Profile } from './home/profile/profile';
 import { Settings } from './home/settings/settings';
 import { SetPasswordPrompt } from './auth/set-password-prompt/set-password-prompt';
@@ -45,7 +45,7 @@ export const routes: Routes = [
             { path: 'challenges', component: ChallengesComponent },
             { path: 'ai-tips', component: AiTips },
             { path: 'analytics', component: Analytics },
-            { path: 'leaderboard', component: Leaderboard },
+            { path: 'leaderboard', component: LeaderboardComponent },
             { path: 'profile', component: Profile },
             { path: 'settings', component: Settings }
         ]

@@ -44,4 +44,45 @@ public interface XpTransactionRepository extends JpaRepository<XpTransaction, Lo
           AND created_at >= DATE_TRUNC('month', CURRENT_TIMESTAMP)
     """, nativeQuery = true)
     Long findCurrentMonthXpByUserId(@Param("userId") Long userId);
+
+    /**
+     * Aggregates monthly XP per user for the previous calendar month.
+     * Used for "Last Month's Champions" (top 3) or previous month podiums.
+     */
+    @Query(value = """
+        SELECT 
+            u.id AS userId,
+            u.name AS name,
+            u.user_rank AS userRank,
+            u.user_level AS userLevel,
+            CAST(COALESCE(SUM(x.xp_amount), 0) AS BIGINT) AS monthlyXp,
+            CAST(DENSE_RANK() OVER (ORDER BY COALESCE(SUM(x.xp_amount), 0) DESC) AS BIGINT) AS rank
+        FROM users u
+        INNER JOIN xp_transactions x 
+            ON u.id = x.user_id 
+            AND x.created_at >= DATE_TRUNC('month', CURRENT_TIMESTAMP - INTERVAL '1 month')
+            AND x.created_at < DATE_TRUNC('month', CURRENT_TIMESTAMP)
+        WHERE u.enabled = TRUE
+        GROUP BY u.id, u.name, u.user_rank, u.user_level
+        ORDER BY rank ASC, u.name ASC
+        LIMIT :limit
+    """, nativeQuery = true)
+    List<Object[]> findPreviousMonthLeaderboardRaw(@Param("limit") int limit);
+
+    /**
+     * Fetches a single user's aggregated XP per past month (e.g., [ "2026-07", 420 ]).
+     * Used for "Your Previous Ranks / History" card.
+     */
+    @Query(value = """
+        SELECT 
+            TO_CHAR(x.created_at, 'YYYY-MM') AS monthKey,
+            CAST(SUM(x.xp_amount) AS BIGINT) AS totalXp
+        FROM xp_transactions x
+        WHERE x.user_id = :userId
+          AND x.created_at < DATE_TRUNC('month', CURRENT_TIMESTAMP)
+        GROUP BY TO_CHAR(x.created_at, 'YYYY-MM')
+        ORDER BY monthKey DESC
+        LIMIT :limit
+    """, nativeQuery = true)
+    List<Object[]> findUserPastMonthlyHistory(@Param("userId") Long userId, @Param("limit") int limit);
 }

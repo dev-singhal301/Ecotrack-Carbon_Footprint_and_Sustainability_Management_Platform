@@ -1,1 +1,193 @@
-<p>leaderboard works!</p>
+<div class="leaderboard-container">
+
+  <!-- Header Section -->
+  <header class="leaderboard-header">
+    <div class="header-titles">
+      <h2>🌿 EcoTrack Leaderboard</h2>
+      <p class="season-subtitle">Season — {{ seasonMonthLabel }}</p>
+    </div>
+    <div class="countdown-badge">
+      <span class="timer-icon">⏳</span>
+      <span>{{ countdownText }}</span>
+    </div>
+  </header>
+
+  <!-- Error State -->
+  <div *ngIf="dataError" class="error-banner">
+    ⚠️ {{ dataError }}
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-spinner-container">
+    <div class="spinner"></div>
+    <p>Calculating live seasonal standings...</p>
+  </div>
+
+  <!-- Main Content Grid -->
+  <div *ngIf="!isLoading" class="leaderboard-grid">
+
+    <!-- ================================================================= -->
+    <!-- LEFT COLUMN: Podium + Rankings List                               -->
+    <!-- ================================================================= -->
+    <div class="left-section">
+
+      <!-- TOP 3 PODIUM -->
+      <div class="podium-card" *ngIf="top3Podium.length > 0">
+        <h3 class="section-title">🏆 Top Eco Champions</h3>
+
+        <div class="podium-display">
+          
+          <!-- 2nd Place (Left) -->
+          <div class="podium-spot second-place" *ngIf="secondPlace">
+            <div class="avatar-wrapper">
+              <span class="medal-badge silver">🥈</span>
+              <img [src]="getAvatarUrl(secondPlace.userId)" [alt]="secondPlace.name" class="podium-avatar">
+            </div>
+            <span class="podium-name">{{ secondPlace.name }}</span>
+            <span class="podium-title">{{ getRankTitle(secondPlace) }} • Lvl {{ secondPlace.userLevel }}</span>
+            <span class="podium-xp">{{ getUserXp(secondPlace) | number }} XP</span>
+            <div class="pedestal pedestal-2">2nd</div>
+          </div>
+
+          <!-- 1st Place (Center - Highest) -->
+          <div class="podium-spot first-place" *ngIf="firstPlace">
+            <div class="avatar-wrapper">
+              <span class="crown-badge">👑</span>
+              <img [src]="getAvatarUrl(firstPlace.userId)" [alt]="firstPlace.name" class="podium-avatar gold-ring">
+            </div>
+            <span class="podium-name">{{ firstPlace.name }}</span>
+            <span class="podium-title">{{ getRankTitle(firstPlace) }} • Lvl {{ firstPlace.userLevel }}</span>
+            <span class="podium-xp gold-text">{{ getUserXp(firstPlace) | number }} XP</span>
+            <div class="pedestal pedestal-1">1st</div>
+          </div>
+
+          <!-- 3rd Place (Right) -->
+          <div class="podium-spot third-place" *ngIf="thirdPlace">
+            <div class="avatar-wrapper">
+              <span class="medal-badge bronze">🥉</span>
+              <img [src]="getAvatarUrl(thirdPlace.userId)" [alt]="thirdPlace.name" class="podium-avatar">
+            </div>
+            <span class="podium-name">{{ thirdPlace.name }}</span>
+            <span class="podium-title">{{ getRankTitle(thirdPlace) }} • Lvl {{ thirdPlace.userLevel }}</span>
+            <span class="podium-xp">{{ getUserXp(thirdPlace) | number }} XP</span>
+            <div class="pedestal pedestal-3">3rd</div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- RANKINGS LIST (#4 Onwards) -->
+      <div class="rankings-card">
+        <h3 class="section-title">📊 Season Rankings</h3>
+
+        <div *ngIf="rankingsList.length === 0" class="empty-list">
+          <p>No additional participants ranked yet for this season.</p>
+        </div>
+
+        <div class="rankings-list" *ngIf="rankingsList.length > 0">
+          <div 
+            *ngFor="let user of rankingsList; let i = index" 
+            class="ranking-row"
+            [class.current-user-row]="isCurrentUserRow(user)">
+            
+            <!-- Sequential display rank starting from #4 -->
+            <div class="rank-number">#{{ i + 4 }}</div>
+
+            <img [src]="getAvatarUrl(user.userId)" [alt]="user.name" class="row-avatar">
+
+            <div class="user-details">
+              <span class="user-name">
+                {{ user.name }}
+                <span *ngIf="isCurrentUserRow(user)" class="you-badge">(YOU)</span>
+              </span>
+              <span class="user-subtext">{{ getRankTitle(user) }} • Lvl {{ user.userLevel }}</span>
+            </div>
+
+            <div class="xp-score">
+              <span class="xp-amount">{{ getUserXp(user) | number }}</span>
+              <span class="xp-unit">XP</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- RIGHT COLUMN: 3 Stacked Status Cards                             -->
+    <!-- ================================================================= -->
+    <div class="right-section">
+
+      <!-- CARD 1: Your Current Standing & Progress -->
+      <div class="side-card current-standing-card">
+        <h3 class="card-title">👤 Your Current Standing</h3>
+        
+        <div class="standing-header" *ngIf="currentUser">
+          <div class="standing-stat">
+            <span class="stat-label">Rank</span>
+            <span class="stat-value highlight">#{{ currentUser.rank || 'N/A' }}</span>
+          </div>
+          <div class="divider"></div>
+          <div class="standing-stat">
+            <span class="stat-label">Monthly XP</span>
+            <span class="stat-value">{{ getUserXp(currentUser) | number }} XP</span>
+          </div>
+        </div>
+
+        <!-- Level Target Progress Bar -->
+        <div class="level-progress-container" *ngIf="currentUser">
+          <div class="progress-labels">
+            <span>Level {{ currentUser.userLevel }} Progress</span>
+            <span>{{ getUserXp(currentUser) % 500 }} / 500 XP</span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill" [style.width.%]="levelProgressPercentage"></div>
+          </div>
+          <p class="progress-footnote">Earn 500 XP per level to increase your rank tier!</p>
+        </div>
+      </div>
+
+      <!-- CARD 2: Last Month's Champions -->
+      <div class="side-card champions-card">
+        <h3 class="card-title">🎖️ Last Month's Champions</h3>
+
+        <div *ngIf="lastMonthChampions.length === 0" class="empty-card-state">
+          <p>No champions recorded for last month.</p>
+        </div>
+
+        <div class="champions-list" *ngIf="lastMonthChampions.length > 0">
+          <div *ngFor="let champ of lastMonthChampions; let i = index" class="champion-row">
+            <span class="champ-place">
+              {{ i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉' }}
+            </span>
+            <img [src]="getAvatarUrl(champ.userId)" [alt]="champ.name" class="champ-avatar">
+            <div class="champ-info">
+              <span class="champ-name">{{ champ.name }}</span>
+              <span class="champ-title">{{ getRankTitle(champ) }}</span>
+            </div>
+            <span class="champ-xp">{{ getUserXp(champ) | number }} XP</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- CARD 3: Your Previous Ranks / History -->
+      <div class="side-card history-card">
+        <h3 class="card-title">📈 Your History</h3>
+
+        <div *ngIf="userHistory.length === 0" class="empty-card-state">
+          <p>No past monthly activity recorded yet.</p>
+        </div>
+
+        <div class="history-list" *ngIf="userHistory.length > 0">
+          <div *ngFor="let item of userHistory" class="history-row">
+            <span class="history-month">{{ formatMonthKey(item.monthKey) }}</span>
+            <span class="history-xp">{{ item.totalXp | number }} XP Earned</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+</div>

@@ -1,6 +1,7 @@
 package com.ecotrack.ecotrack_backend.controller;
 
 import com.ecotrack.ecotrack_backend.dto.LeaderboardUserDto;
+import com.ecotrack.ecotrack_backend.dto.UserPastHistoryDto;
 import com.ecotrack.ecotrack_backend.entity.User;
 import com.ecotrack.ecotrack_backend.repository.UserRepository;
 import com.ecotrack.ecotrack_backend.service.LeaderboardService;
@@ -44,6 +45,30 @@ public class LeaderboardController {
             @RequestParam(defaultValue = "50") int limit) {
         List<LeaderboardUserDto> leaderboard = leaderboardService.getMonthlyLeaderboard(limit);
         return ResponseEntity.ok(leaderboard);
+    }
+
+    /**
+     * GET /api/leaderboard/previous-month?limit=3
+     * Returns top users from the previous calendar month (used for "Last Month's Champions" card).
+     */
+    @GetMapping("/previous-month")
+    public ResponseEntity<List<LeaderboardUserDto>> getPreviousMonthLeaderboard(
+            @RequestParam(defaultValue = "3") int limit) {
+        List<LeaderboardUserDto> leaderboard = leaderboardService.getPreviousMonthLeaderboard(limit);
+        return ResponseEntity.ok(leaderboard);
+    }
+
+    /**
+     * GET /api/leaderboard/user-history?limit=6
+     * Returns the authenticated user's past monthly XP earnings history.
+     */
+    @GetMapping("/user-history")
+    public ResponseEntity<List<UserPastHistoryDto>> getUserHistory(
+            @AuthenticationPrincipal UserDetails principal,
+            @RequestParam(defaultValue = "6") int limit) {
+        Long userId = extractUserId(principal);
+        List<UserPastHistoryDto> history = leaderboardService.getUserPastHistory(userId, limit);
+        return ResponseEntity.ok(history);
     }
 
     /**
