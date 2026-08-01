@@ -3,6 +3,8 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { AdminDashboardSummary } from './dashboard/dashboard.model';
 import { AdminUser } from './users/users.model';
+import { Challenge } from '../../types/challenge';
+import { ChallengeAdminRequest } from './challenges/challenges.model';
 
 @Injectable({
   providedIn: 'root'
@@ -33,5 +35,27 @@ export class AdminService {
   // PATCH /api/admin/users/{id}/reactivate — flips enabled back to true.
   reactivateUser(id: number): Observable<{ message: string }> {
     return this.http.patch<{ message: string }>(`${this.baseUrl}/users/${id}/reactivate`, {});
+  }
+
+  // GET /api/admin/challenges
+  getChallenges(): Observable<Challenge[]> {
+    return this.http.get<Challenge[]>(`${this.baseUrl}/challenges`);
+  }
+
+  // POST /api/admin/challenges
+  createChallenge(payload: ChallengeAdminRequest): Observable<Challenge> {
+    return this.http.post<Challenge>(`${this.baseUrl}/challenges`, payload);
+  }
+
+  // PUT /api/admin/challenges/{id} — rejected with 409 once the challenge
+  // has started (edit lock — see ChallengeService.updateChallenge).
+  updateChallenge(id: number, payload: ChallengeAdminRequest): Observable<Challenge> {
+    return this.http.put<Challenge>(`${this.baseUrl}/challenges/${id}`, payload);
+  }
+
+  // DELETE /api/admin/challenges/{id} — soft cancel, not a real delete.
+  // Rejected with 409 if already cancelled or already ended.
+  cancelChallenge(id: number): Observable<{ message: string }> {
+    return this.http.delete<{ message: string }>(`${this.baseUrl}/challenges/${id}`);
   }
 }

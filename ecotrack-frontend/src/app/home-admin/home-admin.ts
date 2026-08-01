@@ -42,6 +42,8 @@ export class HomeAdmin {
       componentRef.loadSummary();
     } else if (componentRef && typeof componentRef.loadUsers === 'function') {
       componentRef.loadUsers();
+    } else if (componentRef && typeof componentRef.loadChallenges === 'function') {
+      componentRef.loadChallenges();
     }
   }
 

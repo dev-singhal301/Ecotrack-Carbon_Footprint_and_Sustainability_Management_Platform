@@ -30,8 +30,10 @@
         <span>Users</span>
       </a>
 
-      <!-- Challenges nav item is added once that section is actually
-           built — no dead links in the meantime. -->
+      <a routerLink="challenges" routerLinkActive="active" (click)="closeSidebar()">
+        <i class="fa-solid fa-trophy"></i>
+        <span>Challenges</span>
+      </a>
 
       <a routerLink="/home" class="back-to-app">
         <i class="fa-solid fa-arrow-left"></i>

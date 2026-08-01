@@ -1,1 +1,181 @@
-<p>challenges works!</p>
+<div class="admin-challenges">
+
+  <header class="page-header">
+    <div>
+      <h1>Challenge Management</h1>
+      <p class="subtitle">{{ challenges().length }} challenge{{ challenges().length === 1 ? '' : 's' }}</p>
+    </div>
+    <button class="create-btn" (click)="openCreateForm()">
+      <i class="fa-solid fa-plus"></i> Create Challenge
+    </button>
+  </header>
+
+  <div *ngIf="isLoading()" class="state-message">
+    Loading challenges…
+  </div>
+
+  <div *ngIf="dataError() && !isLoading()" class="state-message error">
+    {{ dataError() }}
+    <button class="retry-btn" (click)="loadChallenges()">Retry</button>
+  </div>
+
+  <div *ngIf="actionError()" class="state-message error">
+    {{ actionError() }}
+  </div>
+
+  <div *ngIf="!isLoading() && !dataError()" class="table-wrapper">
+    <table class="challenges-table">
+      <thead>
+        <tr>
+          <th>Title</th>
+          <th>Category</th>
+          <th>Type</th>
+          <th>Target</th>
+          <th>Start</th>
+          <th>End</th>
+          <th>Status</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let challenge of challenges()">
+          <td>{{ challenge.title }}</td>
+          <td>{{ categoryLabel(challenge.category) }}</td>
+          <td>{{ challenge.challengeType === 'CARBON_REDUCTION' ? 'Carbon' : 'Activity' }}</td>
+          <td>{{ challenge.targetValue }}{{ challenge.unit ? ' ' + challenge.unit : '' }}</td>
+          <td>{{ challenge.startDate | date:'mediumDate' }}</td>
+          <td>{{ challenge.endDate | date:'mediumDate' }}</td>
+          <td>
+            <span class="status-badge" [ngClass]="'status-' + (challenge.status || 'upcoming').toLowerCase()">
+              {{ challenge.status }}
+            </span>
+          </td>
+          <td class="actions-cell">
+            <button
+              class="edit-btn"
+              *ngIf="canEdit(challenge)"
+              (click)="openEditForm(challenge)">
+              Edit
+            </button>
+            <button
+              class="cancel-btn"
+              *ngIf="canCancel(challenge)"
+              [disabled]="pendingChallengeId() === challenge.challengeId"
+              (click)="confirmCancel(challenge)">
+              {{ pendingChallengeId() === challenge.challengeId ? 'Cancelling…' : 'Cancel' }}
+            </button>
+          </td>
+        </tr>
+        <tr *ngIf="challenges().length === 0">
+          <td colspan="8" class="empty-row">No challenges yet. Create one to get started.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Create / Edit form overlay -->
+  <div class="form-overlay" *ngIf="showForm()" (click)="closeForm()">
+    <div class="form-panel" (click)="$event.stopPropagation()">
+      <h2>{{ editingChallengeId() ? 'Edit Challenge' : 'Create Challenge' }}</h2>
+
+      <div *ngIf="formError()" class="state-message error">{{ formError() }}</div>
+
+      <form (ngSubmit)="submitForm()">
+        <label>
+          Title
+          <input type="text" [(ngModel)]="form.title" name="title" required />
+        </label>
+
+        <label>
+          Description
+          <textarea [(ngModel)]="form.description" name="description" rows="3"></textarea>
+        </label>
+
+        <div class="form-row">
+          <label>
+            Category
+            <select [(ngModel)]="form.category" name="category" required>
+              <option value="" disabled>Select category</option>
+              <option *ngFor="let c of categories" [value]="c">{{ categoryLabel(c) }}</option>
+            </select>
+          </label>
+
+          <label>
+            Challenge Type
+            <select [(ngModel)]="form.challengeType" name="challengeType" (ngModelChange)="onChallengeTypeChange()" required>
+              <option value="" disabled>Select type</option>
+              <option value="CARBON_REDUCTION">Carbon Reduction</option>
+              <option value="ACTIVITY_BASED">Activity Based</option>
+            </select>
+          </label>
+        </div>
+
+        <label *ngIf="form.challengeType === 'ACTIVITY_BASED'">
+          Tracking Type
+          <select [(ngModel)]="form.trackingType" name="trackingType" required>
+            <option value="" disabled>Select tracking type</option>
+            <option *ngFor="let t of trackingTypes" [value]="t.value">{{ t.label }}</option>
+          </select>
+        </label>
+
+        <div class="form-row">
+          <label>
+            Target Value {{ form.challengeType === 'CARBON_REDUCTION' ? '(%, max 100)' : '' }}
+            <input type="number" [(ngModel)]="form.targetValue" name="targetValue" min="0"
+                   [max]="form.challengeType === 'CARBON_REDUCTION' ? 100 : null" required />
+          </label>
+
+          <label>
+            Unit
+            <input type="text" [(ngModel)]="form.unit" name="unit"
+                   [disabled]="form.challengeType === 'CARBON_REDUCTION'"
+                   [placeholder]="form.challengeType === 'CARBON_REDUCTION' ? '%' : 'e.g. km, trees (optional)'" />
+          </label>
+        </div>
+
+        <div class="form-row">
+          <label>
+            Start Date
+            <input type="date" [(ngModel)]="form.startDate" name="startDate" [min]="minDate" required />
+          </label>
+
+          <label>
+            End Date
+            <input type="date" [(ngModel)]="form.endDate" name="endDate" [min]="endMinDate" required />
+          </label>
+        </div>
+
+        <label>
+          Reward XP
+          <input type="number" [(ngModel)]="form.rewardXp" name="rewardXp" min="0" />
+        </label>
+
+        <div class="form-row">
+          <label>
+            Card Header Image
+            <select [(ngModel)]="form.cardImageUrl" name="cardImageUrl">
+              <option value="">None</option>
+              <option *ngFor="let img of cardImages" [value]="img.url">{{ img.label }}</option>
+            </select>
+          </label>
+
+          <label>
+            Badge Image
+            <select [(ngModel)]="form.badgeImageUrl" name="badgeImageUrl">
+              <option value="">None</option>
+              <option *ngFor="let img of badgeImages" [value]="img.url">{{ img.label }}</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="cancel-form-btn" (click)="closeForm()">Cancel</button>
+          <button type="submit" class="submit-btn" [disabled]="isSubmitting()">
+            {{ isSubmitting() ? 'Saving…' : (editingChallengeId() ? 'Save Changes' : 'Create Challenge') }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+</div>

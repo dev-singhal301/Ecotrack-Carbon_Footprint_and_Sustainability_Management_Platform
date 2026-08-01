@@ -59,6 +59,7 @@ export const MILESTONE_BADGES: MilestoneBadgeOption[] = [
 // 5. STANDARD CATEGORY OPTIONS (MATCHES EMISSION FACTORS)
 // ====================================================================
 export const CHALLENGE_CATEGORIES = [
+  'OVERALL',
   'TRANSPORTATION',
   'ELECTRICITY',
   'FOOD',

@@ -8,8 +8,12 @@ export type TrackingType = 'COUNT' | 'DISTANCE' | 'DURATION' | 'BOOLEAN';
 
 /**
  * Categories supported by emission factors and challenge filtering.
+ * OVERALL is Challenge-specific (matches backend's ChallengeCategory, not
+ * the shared CarbonCategory) — it means "reduce total emissions across
+ * every category" rather than one specific one.
  */
 export type ChallengeCategory = 
+  | 'OVERALL'
   | 'TRANSPORTATION' 
   | 'ELECTRICITY' 
   | 'FOOD' 
