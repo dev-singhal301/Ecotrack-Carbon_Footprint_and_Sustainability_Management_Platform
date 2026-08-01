@@ -3,7 +3,7 @@ package com.ecotrack.ecotrack_backend.service;
 import com.ecotrack.ecotrack_backend.dto.ChallengeRequest;
 import com.ecotrack.ecotrack_backend.dto.ChallengeResponse;
 import com.ecotrack.ecotrack_backend.entity.Challenge;
-import com.ecotrack.ecotrack_backend.entity.CarbonCategory;
+import com.ecotrack.ecotrack_backend.entity.ChallengeCategory;
 import com.ecotrack.ecotrack_backend.entity.ChallengeType;
 import com.ecotrack.ecotrack_backend.entity.TrackingType;
 import com.ecotrack.ecotrack_backend.entity.User;
@@ -60,7 +60,7 @@ public class ChallengeService {
     public ChallengeResponse createChallenge(String adminEmail, ChallengeRequest request) {
         ChallengeType challengeType = validateAndParseType(request);
         TrackingType trackingType = validateAndParseTrackingType(request, challengeType);
-        CarbonCategory category = validateAndParseCategory(request);
+        ChallengeCategory category = validateAndParseCategory(request);
         validateTargetValue(request, challengeType);
         validateDates(request.getStartDate(), request.getEndDate());
 
@@ -110,7 +110,7 @@ public class ChallengeService {
 
         ChallengeType challengeType = validateAndParseType(request);
         TrackingType trackingType = validateAndParseTrackingType(request, challengeType);
-        CarbonCategory category = validateAndParseCategory(request);
+        ChallengeCategory category = validateAndParseCategory(request);
         validateTargetValue(request, challengeType);
         validateDates(request.getStartDate(), request.getEndDate());
 
@@ -171,18 +171,19 @@ public class ChallengeService {
         }
     }
 
-    // Category must match CarbonCategory exactly (case-sensitive) — this is
-    // what carbon_entries.category also uses, and the carbon-reduction
-    // baseline calculation (Challenge Module Design doc §6) filters
-    // carbon_entries by this exact string. A free-form category here would
-    // silently produce a zero baseline for any mismatched casing/typo once
-    // that join logic is built, with no error pointing back to the cause.
-    private CarbonCategory validateAndParseCategory(ChallengeRequest request) {
+    // Challenges have their own category set (ChallengeCategory), separate
+    // from the shared CarbonCategory that Goals/CarbonEntry/Recommendations
+    // use — it includes OVERALL (sum across every category) in addition to
+    // the six specific ones. Everything except OVERALL still shares the
+    // exact same spelling as CarbonCategory, so a future carbon-reduction
+    // baseline calculation (Design doc §6) can filter carbon_entries by
+    // this string directly for a specific-category challenge.
+    private ChallengeCategory validateAndParseCategory(ChallengeRequest request) {
         try {
-            return CarbonCategory.valueOf(request.getCategory());
+            return ChallengeCategory.valueOf(request.getCategory());
         } catch (IllegalArgumentException | NullPointerException ex) {
             throw new InvalidChallengeRequestException(
-                    "Category must be one of: TRANSPORTATION, ELECTRICITY, FOOD, WASTE, WATER, FUEL");
+                    "Category must be one of: OVERALL, TRANSPORTATION, ELECTRICITY, FOOD, WASTE, WATER, FUEL");
         }
     }
 
