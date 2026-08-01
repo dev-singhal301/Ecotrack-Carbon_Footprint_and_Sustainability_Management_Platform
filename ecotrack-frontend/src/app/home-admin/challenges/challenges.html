@@ -3,12 +3,44 @@
   <header class="page-header">
     <div>
       <h1>Challenge Management</h1>
-      <p class="subtitle">{{ challenges().length }} challenge{{ challenges().length === 1 ? '' : 's' }}</p>
+      <p class="subtitle">
+        {{ filteredChallenges().length }} of {{ challenges().length }} challenge{{ challenges().length === 1 ? '' : 's' }}
+      </p>
     </div>
     <button class="create-btn" (click)="openCreateForm()">
       <i class="fa-solid fa-plus"></i> Create Challenge
     </button>
   </header>
+
+  <div *ngIf="!isLoading() && !dataError()" class="filter-bar">
+    <input
+      type="text"
+      class="search-input"
+      placeholder="Search by title…"
+      [ngModel]="searchQuery()"
+      (ngModelChange)="searchQuery.set($event)" />
+
+    <select [ngModel]="categoryFilter()" (ngModelChange)="categoryFilter.set($event)">
+      <option value="ALL">All categories</option>
+      <option *ngFor="let c of categories" [value]="c">{{ categoryLabel(c) }}</option>
+    </select>
+
+    <select [ngModel]="typeFilter()" (ngModelChange)="typeFilter.set($event)">
+      <option value="ALL">All types</option>
+      <option value="CARBON_REDUCTION">Carbon Reduction</option>
+      <option value="ACTIVITY_BASED">Activity Based</option>
+    </select>
+
+    <select [ngModel]="statusFilter()" (ngModelChange)="statusFilter.set($event)">
+      <option value="ALL">All statuses</option>
+      <option value="UPCOMING">Upcoming</option>
+      <option value="ACTIVE">Active</option>
+      <option value="ENDED">Ended</option>
+      <option value="CANCELLED">Cancelled</option>
+    </select>
+
+    <button class="clear-filters-btn" (click)="resetFilters()">Clear filters</button>
+  </div>
 
   <div *ngIf="isLoading()" class="state-message">
     Loading challenges…
@@ -38,7 +70,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let challenge of challenges()">
+        <tr *ngFor="let challenge of filteredChallenges()">
           <td>{{ challenge.title }}</td>
           <td>{{ categoryLabel(challenge.category) }}</td>
           <td>{{ challenge.challengeType === 'CARBON_REDUCTION' ? 'Carbon' : 'Activity' }}</td>
@@ -66,8 +98,10 @@
             </button>
           </td>
         </tr>
-        <tr *ngIf="challenges().length === 0">
-          <td colspan="8" class="empty-row">No challenges yet. Create one to get started.</td>
+        <tr *ngIf="filteredChallenges().length === 0">
+          <td colspan="8" class="empty-row">
+            {{ challenges().length === 0 ? 'No challenges yet. Create one to get started.' : 'No challenges match these filters.' }}
+          </td>
         </tr>
       </tbody>
     </table>

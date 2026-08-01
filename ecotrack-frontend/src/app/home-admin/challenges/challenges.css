@@ -40,6 +40,50 @@
   gap: 8px;
 }
 
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 20px;
+  align-items: center;
+}
+
+.filter-bar select,
+.filter-bar .search-input {
+  padding: 8px 12px;
+  border: 1px solid #e5e9eb;
+  border-radius: 8px;
+  background-color: #f8f9fa;
+  color: #1c2b33;
+  font-size: 0.85rem;
+  font-family: inherit;
+}
+
+.filter-bar .search-input {
+  flex: 1 1 200px;
+  min-width: 160px;
+}
+
+.filter-bar select {
+  cursor: pointer;
+}
+
+.clear-filters-btn {
+  border: none;
+  background-color: transparent;
+  color: #6b7c87;
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-decoration: underline;
+}
+
+.clear-filters-btn:hover {
+  color: #1c2b33;
+}
+
 .state-message {
   padding: 20px;
   border-radius: 12px;

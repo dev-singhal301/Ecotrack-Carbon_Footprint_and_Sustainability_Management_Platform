@@ -19,6 +19,83 @@
   font-size: 0.95rem;
 }
 
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 20px;
+  align-items: center;
+}
+
+.filter-bar select,
+.filter-bar .search-input {
+  padding: 8px 12px;
+  border: 1px solid #e5e9eb;
+  border-radius: 8px;
+  background-color: #f8f9fa;
+  color: #1c2b33;
+  font-size: 0.85rem;
+  font-family: inherit;
+}
+
+.date-range-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #6b7c87;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.date-range-label input[type="date"] {
+  padding: 7px 10px;
+  border: 1px solid #e5e9eb;
+  border-radius: 8px;
+  background-color: #f8f9fa;
+  color: #1c2b33;
+  font-size: 0.85rem;
+  font-family: inherit;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.date-range-sep {
+  color: #b7c1c7;
+}
+
+.filter-bar .search-input {
+  flex: 1 1 200px;
+  min-width: 160px;
+}
+
+.filter-bar select {
+  cursor: pointer;
+}
+
+.clear-filters-btn {
+  border: none;
+  background-color: transparent;
+  color: #6b7c87;
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-decoration: underline;
+}
+
+.clear-filters-btn:hover {
+  color: #1c2b33;
+}
+
+.empty-row {
+  text-align: center;
+  padding: 24px !important;
+  color: #6b7c87;
+}
+
 .state-message {
   padding: 20px;
   border-radius: 12px;

@@ -2,8 +2,54 @@
 
   <header class="page-header">
     <h1>User Management</h1>
-    <p class="subtitle">{{ users().length }} registered user{{ users().length === 1 ? '' : 's' }}</p>
+    <p class="subtitle">
+      {{ filteredUsers().length }} of {{ users().length }} user{{ users().length === 1 ? '' : 's' }}
+    </p>
   </header>
+
+  <div *ngIf="!isLoading() && !dataError()" class="filter-bar">
+    <input
+      type="text"
+      class="search-input"
+      placeholder="Search by name…"
+      [ngModel]="searchQuery()"
+      (ngModelChange)="searchQuery.set($event)" />
+
+    <select [ngModel]="roleFilter()" (ngModelChange)="roleFilter.set($event)">
+      <option value="ALL">All roles</option>
+      <option value="ROLE_ADMIN">Admin</option>
+      <option value="ROLE_USER">User</option>
+    </select>
+
+    <select [ngModel]="statusFilter()" (ngModelChange)="statusFilter.set($event)">
+      <option value="ALL">All statuses</option>
+      <option value="ACTIVE">Active</option>
+      <option value="DISABLED">Disabled</option>
+    </select>
+
+    <label class="date-range-label">
+      Joined
+      <input
+        type="date"
+        [ngModel]="joinedFrom()"
+        (ngModelChange)="joinedFrom.set($event)"
+        [max]="joinedTo() || undefined" />
+      <span class="date-range-sep">–</span>
+      <input
+        type="date"
+        [ngModel]="joinedTo()"
+        (ngModelChange)="joinedTo.set($event)"
+        [min]="joinedFrom() || undefined" />
+    </label>
+
+    <select [ngModel]="xpSort()" (ngModelChange)="xpSort.set($event)">
+      <option value="NONE">XP: unsorted</option>
+      <option value="DESC">XP: high to low</option>
+      <option value="ASC">XP: low to high</option>
+    </select>
+
+    <button class="clear-filters-btn" (click)="resetFilters()">Clear filters</button>
+  </div>
 
   <div *ngIf="isLoading()" class="state-message">
     Loading users…
@@ -32,7 +78,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let user of users()">
+        <tr *ngFor="let user of filteredUsers()">
           <td>{{ user.name }}</td>
           <td>{{ user.email }}</td>
           <td>
@@ -63,6 +109,9 @@
               {{ pendingUserId() === user.id ? 'Reactivating…' : 'Reactivate' }}
             </button>
           </td>
+        </tr>
+        <tr *ngIf="filteredUsers().length === 0">
+          <td colspan="7" class="empty-row">No users match these filters.</td>
         </tr>
       </tbody>
     </table>

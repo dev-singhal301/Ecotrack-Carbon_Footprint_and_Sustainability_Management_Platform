@@ -1,10 +1,14 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminService } from '../admin.service';
-import { Challenge, ChallengeCategory, ChallengeType, TrackingType } from '../../../types/challenge';
+import { Challenge, ChallengeCategory, ChallengeType, TrackingType, DerivedChallengeStatus } from '../../../types/challenge';
 import { ChallengeAdminRequest } from './challenges.model';
 import { CHALLENGE_CATEGORIES, CARD_HEADER_IMAGES, CHALLENGE_BADGES } from '../../../constants/challenge-assets';
+
+export type CategoryFilter = ChallengeCategory | 'ALL';
+export type TypeFilter = ChallengeType | 'ALL';
+export type StatusFilter = DerivedChallengeStatus | 'ALL';
 
 interface ChallengeFormModel {
   title: string;
@@ -57,6 +61,45 @@ export class Challenges implements OnInit {
 
   // Tracks which row currently has a cancel request in flight.
   pendingChallengeId = signal<number | null>(null);
+
+  // ── Filters ── all client-side over the already-fetched list, same
+  // reasoning as Users' filteredUsers: GET /api/admin/challenges returns
+  // everything in one call, no pagination, so there's nothing to gain by
+  // round-tripping to the backend just to narrow down data already here.
+  searchQuery = signal('');
+  categoryFilter = signal<CategoryFilter>('ALL');
+  typeFilter = signal<TypeFilter>('ALL');
+  statusFilter = signal<StatusFilter>('ALL');
+
+  filteredChallenges = computed(() => {
+    const query = this.searchQuery().trim().toLowerCase();
+    const category = this.categoryFilter();
+    const type = this.typeFilter();
+    const status = this.statusFilter();
+
+    return this.challenges().filter(challenge => {
+      if (query && !challenge.title.toLowerCase().includes(query)) {
+        return false;
+      }
+      if (category !== 'ALL' && challenge.category !== category) {
+        return false;
+      }
+      if (type !== 'ALL' && challenge.challengeType !== type) {
+        return false;
+      }
+      if (status !== 'ALL' && challenge.status !== status) {
+        return false;
+      }
+      return true;
+    });
+  });
+
+  resetFilters(): void {
+    this.searchQuery.set('');
+    this.categoryFilter.set('ALL');
+    this.typeFilter.set('ALL');
+    this.statusFilter.set('ALL');
+  }
 
   showForm = signal(false);
   editingChallengeId = signal<number | null>(null);
