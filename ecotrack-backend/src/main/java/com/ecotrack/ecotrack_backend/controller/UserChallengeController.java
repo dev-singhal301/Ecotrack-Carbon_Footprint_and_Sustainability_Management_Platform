@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/challenges")
+@RequestMapping("/api/user-challenges")
 public class UserChallengeController {
 
     private final UserChallengeService userChallengeService;
@@ -19,12 +19,18 @@ public class UserChallengeController {
         this.userChallengeService = userChallengeService;
     }
 
+    /**
+     * Fetches all public challenges along with the authenticated user's participation status.
+     */
     @GetMapping
     public ResponseEntity<List<UserChallengeResponse>> getUserChallenges(@AuthenticationPrincipal UserDetails userDetails) {
         List<UserChallengeResponse> challenges = userChallengeService.getUserChallenges(userDetails.getUsername());
         return ResponseEntity.ok(challenges);
     }
 
+    /**
+     * Joins a challenge for the authenticated user.
+     */
     @PostMapping("/{challengeId}/join")
     public ResponseEntity<UserChallengeResponse> joinChallenge(
             @PathVariable Long challengeId,
@@ -33,6 +39,9 @@ public class UserChallengeController {
         return ResponseEntity.ok(response);
     }
 
+    /**
+     * Claims XP reward for a completed challenge.
+     */
     @PostMapping("/{challengeId}/claim")
     public ResponseEntity<UserChallengeResponse> claimReward(
             @PathVariable Long challengeId,

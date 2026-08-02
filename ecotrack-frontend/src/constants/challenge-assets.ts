@@ -1,26 +1,17 @@
 import { AssetOption, MilestoneBadgeOption } from '../types/challenge';
 
-// ====================================================================
-// 1. CARD HEADER BANNERS (10 PRESET IMAGES)
-// ====================================================================
 export const CARD_HEADER_IMAGES: AssetOption[] = Array.from({ length: 10 }, (_, index) => ({
   id: `card_${index + 1}`,
   label: `Card Header ${index + 1}`,
   url: `/images/ch_card_${index + 1}.avif`,
 }));
 
-// ====================================================================
-// 2. CHALLENGE BADGES (ADMIN SELECTION FOR CREATION FORM)
-// ====================================================================
 export const CHALLENGE_BADGES: AssetOption[] = Array.from({ length: 6 }, (_, index) => ({
   id: `ch_${index + 1}`,
   label: `Challenge Badge ${index + 1}`,
   url: `/badges/ch_${index + 1}.avif`,
 }));
 
-// ====================================================================
-// 3. LEADERBOARD PODIUM BADGES (TOP 3 SPOTS)
-// ====================================================================
 export const LEADERBOARD_BADGES = {
   gold: {
     id: 'lb_gold',
@@ -39,9 +30,6 @@ export const LEADERBOARD_BADGES = {
   },
 } as const;
 
-// ====================================================================
-// 4. MILESTONE / LEVEL PROGRESSION BADGES
-// ====================================================================
 export const MILESTONE_BADGES: MilestoneBadgeOption[] = [
   { id: 'earth_seedling', label: 'Earth Seedling', url: '/badges/ms_earth_seedling.avif', description: 'Level 1 Rank' },
   { id: 'green_scout', label: 'Green Scout', url: '/badges/ms_green_scout.avif', description: 'Level 2 Rank' },
@@ -55,9 +43,6 @@ export const MILESTONE_BADGES: MilestoneBadgeOption[] = [
   { id: 'eco_legend', label: 'Eco Legend', url: '/badges/ms_eco_legend.avif', description: 'Level 10 Rank' },
 ];
 
-// ====================================================================
-// 5. STANDARD CATEGORY OPTIONS (MATCHES EMISSION FACTORS)
-// ====================================================================
 export const CHALLENGE_CATEGORIES = [
   'OVERALL',
   'TRANSPORTATION',

@@ -23,10 +23,7 @@ import java.util.List;
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity // required for @PreAuthorize("hasRole('ADMIN')") to have any effect — the one
-                       // piece from the earlier attempt that's a real security requirement, not
-                       // cosmetic. Kept separate from the exceptionHandling/custom-handler attempt
-                       // that broke things, since this line alone never touched request handling.
+@EnableMethodSecurity
 public class SecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;
@@ -74,9 +71,15 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/google",
-                                "/api/auth/forgot-password", "/api/auth/reset-password")
-                        .permitAll()
+                        .requestMatchers(
+                                "/api/auth/register",
+                                "/api/auth/login",
+                                "/api/auth/google",
+                                "/api/auth/forgot-password",
+                                "/api/auth/reset-password",
+                                "/api/challenges/**",
+                                "/api/user-challenges/**"
+                        ).permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
