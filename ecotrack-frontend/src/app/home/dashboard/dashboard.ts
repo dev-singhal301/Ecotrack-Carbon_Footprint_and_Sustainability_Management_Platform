@@ -153,7 +153,7 @@ export class Dashboard implements OnInit {
   // --- Goal Filtering Alignment Fix ---
   get filteredActiveGoals(): GoalSnapshot[] {
     if (!this.summary?.activeGoals) return [];
-    // Active goals are pre-filtered by the backend. 
+    // Active goals are pre-filtered by the backend.
     // Return summary.activeGoals directly so the dashboard accurately reflects active meters.
     return this.summary.activeGoals;
   }
@@ -162,7 +162,7 @@ export class Dashboard implements OnInit {
   get overallBudgetUsedPercent(): number {
     const goals = this.filteredActiveGoals;
     if (!goals.length) return 0;
-    
+
     const totalPercentage = goals.reduce((acc, goal) => {
       const pct = goal.targetValue > 0 ? (goal.currentValue / goal.targetValue) * 100 : 0;
       return acc + pct;
@@ -314,6 +314,10 @@ export class Dashboard implements OnInit {
 
   navigateToGoals(): void {
     this.router.navigate(['/home/goals']);
+  }
+
+  goToEcoBot(): void {
+    this.router.navigate(['/home/ai-tips']);
   }
 
   getCategoryLabel(category: string): string {

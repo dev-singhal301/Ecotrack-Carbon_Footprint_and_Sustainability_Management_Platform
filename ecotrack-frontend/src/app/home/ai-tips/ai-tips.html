@@ -1,1 +1,83 @@
-<p>ai-tips works!</p>
+<div class="ecobot-container">
+
+  <div class="ecobot-header">
+    <button class="btn-back" (click)="goToDashboard()">&larr; Dashboard</button>
+    <div class="ecobot-header-title">
+      <span class="ecobot-header-icon">🤖</span>
+      <h2>EcoBot</h2>
+    </div>
+    <p class="ecobot-header-subtext">Your personalized sustainability assistant</p>
+  </div>
+
+  <div class="ecobot-panel-buttons">
+    <button
+      class="panel-btn"
+      [class.panel-btn-active]="activePanel === 'recommendations'"
+      (click)="selectPanel('recommendations')">
+      <span class="panel-btn-icon">📊</span>
+      <span class="panel-btn-label">Personalized Recommendations</span>
+    </button>
+
+    <button
+      class="panel-btn"
+      [class.panel-btn-active]="activePanel === 'goals'"
+      (click)="selectPanel('goals')">
+      <span class="panel-btn-icon">🎯</span>
+      <span class="panel-btn-label">Goal Insights</span>
+    </button>
+
+    <button
+      class="panel-btn"
+      [class.panel-btn-active]="activePanel === 'facts'"
+      (click)="selectPanel('facts')">
+      <span class="panel-btn-icon">🌍</span>
+      <span class="panel-btn-label">Carbon Facts</span>
+    </button>
+  </div>
+
+  <div class="ecobot-panel-content" *ngIf="activePanel">
+
+    <!-- Personalized Recommendations panel -->
+    <div *ngIf="activePanel === 'recommendations'">
+
+      <div *ngIf="recLoading" class="rec-loading">Loading your recommendations...</div>
+
+      <div *ngIf="recError" class="rec-error">{{ recError }}</div>
+
+      <div *ngIf="recommendations && !recLoading" class="rec-list">
+        <div class="rec-card" *ngFor="let cat of revealedCategories">
+          <div class="rec-card-header">
+            <span class="rec-card-category">{{ getCategoryLabel(cat.category) }}</span>
+            <span class="rec-card-percentage">{{ cat.percentage }}% of your footprint</span>
+          </div>
+
+          <ng-container *ngIf="getTipFor(cat.category) as tip; else noTip">
+            <p class="rec-card-tip">{{ tip.suggestionText }}</p>
+            <span class="rec-card-impact">Potential impact: {{ tip.impactEstimate }} kg CO&#8322;</span>
+          </ng-container>
+          <ng-template #noTip>
+            <p class="rec-card-no-tip">No specific tip for this category right now — it's a smaller contributor.</p>
+          </ng-template>
+        </div>
+
+        <button
+          class="btn-explore"
+          *ngIf="hasMoreToExplore"
+          (click)="exploreNext()">
+          Explore {{ nextCategoryLabel }} &darr;
+        </button>
+      </div>
+
+    </div>
+
+    <div class="panel-placeholder" *ngIf="activePanel === 'goals'">
+      Goal Insights panel — reads Dev's <code>GoalResponse</code>/progress API (stretch item).
+    </div>
+
+    <div class="panel-placeholder" *ngIf="activePanel === 'facts'">
+      Carbon Facts panel — random trivia via <code>GET /api/facts/random</code> (stretch item).
+    </div>
+
+  </div>
+
+</div>
