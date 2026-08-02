@@ -60,17 +60,25 @@ public class ChallengeResponse {
     }
 
     private static String deriveStatus(Challenge challenge) {
-        if (challenge.isCancelled()) {
-            return "CANCELLED";
-        }
-        LocalDate today = LocalDate.now();
-        if (today.isBefore(challenge.getStartDate())) {
-            return "UPCOMING";
-        }
-        if (today.isAfter(challenge.getEndDate())) {
-            return "ENDED";
-        }
-        return "ACTIVE";
+       if (challenge.isCancelled()) {
+           return "CANCELLED";
+       }
+
+       LocalDate now = LocalDate.now();
+       LocalDate startDate = challenge.getStartDate();
+       LocalDate endDate = challenge.getEndDate();
+
+       if (startDate == null || endDate == null) {
+           return "UPCOMING"; // Default fallback if dates are unassigned
+       }
+
+       if (now.isBefore(startDate)) {
+           return "UPCOMING";
+       } else if (now.isAfter(endDate)) {
+           return "EXPIRED";
+       } else {
+           return "ACTIVE";
+       }
     }
 
     public Long getChallengeId() { return challengeId; }
