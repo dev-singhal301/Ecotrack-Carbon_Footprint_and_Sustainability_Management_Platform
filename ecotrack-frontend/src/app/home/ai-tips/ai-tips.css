@@ -223,3 +223,103 @@
   background: var(--eco-green-light);
   color: var(--eco-white);
 }
+
+.empty-state-goals {
+  padding: 20px 0;
+  font-style: italic;
+  color: var(--eco-text-muted);
+  text-align: center;
+}
+
+.goal-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.goal-card {
+  background: var(--eco-white);
+  border: 1px solid var(--eco-input-border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.goal-card-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+  cursor: pointer;
+}
+
+.goal-card-row:hover {
+  background: var(--eco-input-field-bg);
+}
+
+.goal-card-main {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.goal-card-name {
+  font-family: var(--eco-font-heading);
+  font-weight: 800;
+  font-size: 0.92rem;
+  color: var(--eco-heading-color);
+}
+
+.goal-card-baseline {
+  font-size: 0.82rem;
+  color: var(--eco-text-muted);
+}
+
+.goal-card-side {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.goal-card-percent {
+  font-family: var(--eco-font-heading);
+  font-weight: 800;
+  font-size: 0.9rem;
+  color: var(--eco-green);
+}
+
+.goal-card-chevron {
+  transition: transform 0.15s ease;
+  color: var(--eco-text-muted);
+}
+
+.goal-card-chevron.expanded {
+  transform: rotate(180deg);
+}
+
+.goal-card-detail {
+  padding: 0 16px 14px;
+  border-top: 1px dashed var(--eco-input-border);
+  padding-top: 12px;
+}
+
+.goal-detail-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+  font-size: 0.85rem;
+}
+
+.goal-detail-label {
+  color: var(--eco-text-muted);
+  font-weight: 600;
+}
+
+.goal-detail-value {
+  color: var(--eco-slate-700);
+  font-weight: 700;
+}
+
+.goal-detail-complete {
+  color: var(--eco-green);
+  font-weight: 800;
+}

@@ -39,9 +39,7 @@
 
     <!-- Personalized Recommendations panel -->
     <div *ngIf="activePanel === 'recommendations'">
-
       <div *ngIf="recLoading" class="rec-loading">Loading your recommendations...</div>
-
       <div *ngIf="recError" class="rec-error">{{ recError }}</div>
 
       <div *ngIf="recommendations && !recLoading" class="rec-list">
@@ -60,18 +58,73 @@
           </ng-template>
         </div>
 
-        <button
-          class="btn-explore"
-          *ngIf="hasMoreToExplore"
-          (click)="exploreNext()">
+        <button class="btn-explore" *ngIf="hasMoreToExplore" (click)="exploreNext()">
           Explore {{ nextCategoryLabel }} &darr;
         </button>
       </div>
-
     </div>
 
-    <div class="panel-placeholder" *ngIf="activePanel === 'goals'">
-      Goal Insights panel — reads Dev's <code>GoalResponse</code>/progress API (stretch item).
+    <!-- Goal Insights panel -->
+    <div *ngIf="activePanel === 'goals'">
+      <div *ngIf="goalsLoading" class="rec-loading">Loading your goals...</div>
+      <div *ngIf="goalsError" class="rec-error">{{ goalsError }}</div>
+
+      <div *ngIf="!goalsLoading && !goalsError && goalsWithProgress.length === 0" class="empty-state-goals">
+        No active goals yet. Head to the Goals tab to set one!
+      </div>
+
+      <div class="goal-list" *ngIf="!goalsLoading && goalsWithProgress.length > 0">
+        <div class="goal-card" *ngFor="let entry of goalsWithProgress">
+
+          <!-- Compact row -->
+          <div class="goal-card-row" (click)="toggleGoalExpand(entry.goal.goalId)">
+            <div class="goal-card-main">
+              <span class="goal-card-name">{{ entry.goal.goalName }}</span>
+              <span class="goal-card-baseline" *ngIf="entry.progress">
+                Started at {{ entry.progress.baselineValue }} {{ getUnitFor(entry.goal.goalType) }}
+                &rarr; now at {{ entry.progress.currentValue }} {{ getUnitFor(entry.goal.goalType) }}
+              </span>
+              <span class="goal-card-baseline" *ngIf="!entry.progress">
+                Progress unavailable right now
+              </span>
+            </div>
+            <div class="goal-card-side">
+              <span class="goal-card-percent" *ngIf="entry.progress">
+                {{ entry.progress.completionPercentage | number:'1.0-0' }}%
+              </span>
+              <span class="goal-card-chevron" [class.expanded]="isGoalExpanded(entry.goal.goalId)">&#9662;</span>
+            </div>
+          </div>
+
+          <!-- Expanded detail -->
+          <div class="goal-card-detail" *ngIf="isGoalExpanded(entry.goal.goalId) && entry.progress">
+            <div class="goal-detail-row">
+              <span class="goal-detail-label">Category</span>
+              <span class="goal-detail-value">{{ getCategoryLabel(entry.goal.goalType) }}</span>
+            </div>
+            <div class="goal-detail-row">
+              <span class="goal-detail-label">Target</span>
+              <span class="goal-detail-value">{{ entry.goal.targetValue }} {{ getUnitFor(entry.goal.goalType) }}</span>
+            </div>
+            <div class="goal-detail-row">
+              <span class="goal-detail-label">Reward</span>
+              <span class="goal-detail-value">{{ entry.goal.rewardPoints }} pts</span>
+            </div>
+            <div class="goal-detail-row">
+              <span class="goal-detail-label">Ends</span>
+              <span class="goal-detail-value">{{ entry.goal.endDate }}</span>
+            </div>
+            <div class="goal-detail-row">
+              <span class="goal-detail-label">Last updated</span>
+              <span class="goal-detail-value">{{ entry.progress.lastUpdated }}</span>
+            </div>
+            <div class="goal-detail-row" *ngIf="entry.progress.completed">
+              <span class="goal-detail-complete">✅ Goal completed!</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
     </div>
 
     <div class="panel-placeholder" *ngIf="activePanel === 'facts'">
