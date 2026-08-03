@@ -243,6 +243,44 @@ describe('AiTips', () => {
     });
   });
 
+  describe('Carbon Facts panel', () => {
+    it('should call GET /api/facts/random exactly once when first opened', () => {
+      component.selectPanel('facts');
+
+      const req = httpMock.expectOne('http://localhost:8080/api/facts/random');
+      expect(req.request.method).toBe('GET');
+      req.flush({ fact: 'Test fact about trees.' });
+
+      expect(component.currentFact).toBe('Test fact about trees.');
+      expect(component.factLoading).toBeFalsy();
+    });
+
+    it('should not re-fetch on close/reopen, but should re-fetch on manual refresh', () => {
+      component.selectPanel('facts');
+      httpMock.expectOne('http://localhost:8080/api/facts/random').flush({ fact: 'First fact.' });
+
+      component.selectPanel('facts'); // close
+      component.selectPanel('facts'); // reopen
+      httpMock.expectNone('http://localhost:8080/api/facts/random');
+
+      component.refreshFact();
+      const req = httpMock.expectOne('http://localhost:8080/api/facts/random');
+      req.flush({ fact: 'Second fact.' });
+
+      expect(component.currentFact).toBe('Second fact.');
+    });
+
+    it('should set factError if the request fails', () => {
+      component.selectPanel('facts');
+      httpMock
+        .expectOne('http://localhost:8080/api/facts/random')
+        .flush({ message: 'Server error' }, { status: 500, statusText: 'Server Error' });
+
+      expect(component.factLoading).toBeFalsy();
+      expect(component.factError).toBe('Server error');
+    });
+  });
+
   it('should navigate to /home/dashboard when goToDashboard is called', () => {
     const navigateSpy = vi.spyOn(router, 'navigate');
     component.goToDashboard();

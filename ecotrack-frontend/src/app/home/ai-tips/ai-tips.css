@@ -24,12 +24,16 @@
 
   display: block;
   font-family: var(--eco-font-body);
+  height: 100%;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .ecobot-container {
   padding: 24px;
   background: var(--eco-bg-light);
   box-sizing: border-box;
+  min-height: 100%;
 }
 
 .ecobot-header {
@@ -322,4 +326,47 @@
 .goal-detail-complete {
   color: var(--eco-green);
   font-weight: 800;
+}
+
+.fact-card {
+  background: var(--eco-white);
+  border: 1px solid var(--eco-input-border);
+  border-radius: 12px;
+  padding: 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.fact-icon {
+  font-size: 1.8rem;
+}
+
+.fact-text {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--eco-slate-700);
+  font-weight: 600;
+  line-height: 1.5;
+  max-width: 480px;
+}
+
+.btn-refresh-fact {
+  background: var(--eco-positive-bg);
+  color: var(--eco-positive-text);
+  border: none;
+  padding: 8px 18px;
+  border-radius: 999px;
+  font-family: var(--eco-font-heading);
+  font-weight: 800;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.btn-refresh-fact:hover {
+  background: var(--eco-green-light);
+  color: var(--eco-white);
 }

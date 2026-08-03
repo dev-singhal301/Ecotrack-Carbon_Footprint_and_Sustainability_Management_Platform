@@ -127,8 +127,15 @@
       </div>
     </div>
 
-    <div class="panel-placeholder" *ngIf="activePanel === 'facts'">
-      Carbon Facts panel — random trivia via <code>GET /api/facts/random</code> (stretch item).
+    <div *ngIf="activePanel === 'facts'">
+      <div *ngIf="factLoading" class="rec-loading">Loading a fact...</div>
+      <div *ngIf="factError" class="rec-error">{{ factError }}</div>
+
+      <div class="fact-card" *ngIf="currentFact && !factLoading">
+        <span class="fact-icon">🌱</span>
+        <p class="fact-text">{{ currentFact }}</p>
+        <button class="btn-refresh-fact" (click)="refreshFact()">🔄 Refresh</button>
+      </div>
     </div>
 
   </div>
