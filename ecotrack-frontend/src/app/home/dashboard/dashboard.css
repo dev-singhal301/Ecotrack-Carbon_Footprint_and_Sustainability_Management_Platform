@@ -75,71 +75,72 @@
 }
 
 /* ---------------- 0. EcoBot Bar ---------------- */
-.ecobot-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  cursor: pointer;
-  padding: 14px 20px;
-}
 
-.ecobot-bar:hover {
-  border-color: var(--eco-green-light);
-  box-shadow: 0 2px 10px rgba(45, 106, 79, 0.1);
-}
+/*.ecobot-bar {*/
+/*  display: flex;*/
+/*  align-items: center;*/
+/*  justify-content: space-between;*/
+/*  cursor: pointer;*/
+/*  padding: 14px 20px;*/
+/*}*/
 
-.ecobot-left {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
+/*.ecobot-bar:hover {*/
+/*  border-color: var(--eco-green-light);*/
+/*  box-shadow: 0 2px 10px rgba(45, 106, 79, 0.1);*/
+/*}*/
 
-.ecobot-icon {
-  font-size: 1.5rem;
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--eco-positive-bg);
-  border-radius: 10px;
-  flex-shrink: 0;
-}
+/*.ecobot-left {*/
+/*  display: flex;*/
+/*  align-items: center;*/
+/*  gap: 14px;*/
+/*}*/
 
-.ecobot-text {
-  display: flex;
-  flex-direction: column;
-}
+/*.ecobot-icon {*/
+/*  font-size: 1.5rem;*/
+/*  width: 40px;*/
+/*  height: 40px;*/
+/*  display: flex;*/
+/*  align-items: center;*/
+/*  justify-content: center;*/
+/*  background: var(--eco-positive-bg);*/
+/*  border-radius: 10px;*/
+/*  flex-shrink: 0;*/
+/*}*/
 
-.ecobot-title {
-  font-family: var(--eco-font-heading);
-  font-weight: 800;
-  font-size: 1rem;
-  color: var(--eco-heading-color);
-}
+/*.ecobot-text {*/
+/*  display: flex;*/
+/*  flex-direction: column;*/
+/*}*/
 
-.ecobot-subtitle {
-  font-size: 0.82rem;
-  color: var(--eco-text-muted);
-  font-weight: 500;
-}
+/*.ecobot-title {*/
+/*  font-family: var(--eco-font-heading);*/
+/*  font-weight: 800;*/
+/*  font-size: 1rem;*/
+/*  color: var(--eco-heading-color);*/
+/*}*/
 
-.ecobot-chevron {
-  font-size: 1.1rem;
-  font-weight: 800;
-  color: var(--eco-green);
-  transition: transform 0.15s ease;
-}
+/*.ecobot-subtitle {*/
+/*  font-size: 0.82rem;*/
+/*  color: var(--eco-text-muted);*/
+/*  font-weight: 500;*/
+/*}*/
 
-.ecobot-bar:hover .ecobot-chevron {
-  transform: translateX(3px);
-}
+/*.ecobot-chevron {*/
+/*  font-size: 1.1rem;*/
+/*  font-weight: 800;*/
+/*  color: var(--eco-green);*/
+/*  transition: transform 0.15s ease;*/
+/*}*/
 
-@media (max-width: 1024px) {
-  .ecobot-subtitle {
-    display: none;
-  }
-}
+/*.ecobot-bar:hover .ecobot-chevron {*/
+/*  transform: translateX(3px);*/
+/*}*/
+
+/*@media (max-width: 1024px) {*/
+/*  .ecobot-subtitle {*/
+/*    display: none;*/
+/*  }*/
+/*} */
 
 /* ---------------- 1. Welcome Banner ---------------- */
 .welcome-banner {
