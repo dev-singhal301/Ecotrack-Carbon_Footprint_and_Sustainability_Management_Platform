@@ -1,5 +1,14 @@
 /* Layout Container */
+:host {
+  display: block;
+  height: 100%;
+}
+
 .challenges-container {
+  height: 100%;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  box-sizing: border-box;
   max-width: 1200px;
   margin: 0 auto;
   padding: 24px;

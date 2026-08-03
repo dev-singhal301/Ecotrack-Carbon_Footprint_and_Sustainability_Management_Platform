@@ -1,9 +1,25 @@
-.admin-challenges {
-  padding: 32px 40px;
+:host {
+  display: block;
   height: 100%;
-  overflow-y: auto;
+}
+
+.admin-challenges {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   box-sizing: border-box;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  padding: 24px 40px;
+  font-family: var(--admin-font);
+  color: var(--admin-ink);
+}
+
+/* Header, filter bar, and pagination stay pinned — only the table body
+   scrolls, and only if it truly has to. Same reasoning as Users. */
+.page-header,
+.filter-bar,
+.pagination-bar {
+  flex-shrink: 0;
 }
 
 .page-header {
@@ -17,46 +33,76 @@
   margin: 0;
   font-size: 1.6rem;
   font-weight: 800;
-  color: #1c2b33;
+  color: var(--admin-ink);
 }
 
 .page-header .subtitle {
   margin: 4px 0 0;
-  color: #6b7c87;
+  color: var(--admin-muted);
   font-size: 0.95rem;
 }
 
 .create-btn {
   border: none;
-  background-color: #1c2b33;
+  background-color: var(--admin-ink);
   color: #fff;
   padding: 10px 18px;
-  border-radius: 10px;
+  border-radius: var(--admin-radius-s);
   cursor: pointer;
   font-weight: 700;
   font-size: 0.9rem;
   display: flex;
   align-items: center;
   gap: 8px;
+  transition: background-color 0.15s ease, transform 0.1s ease;
 }
 
+.create-btn:hover {
+  background-color: #0f1a20;
+}
+
+.create-btn:active {
+  transform: translateY(1px);
+}
+
+/* ── Filter bar ── matches Users' bordered container so both admin
+   pages read as the same control, not two separately-styled toolbars. */
 .filter-bar {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
   margin-bottom: 20px;
   align-items: center;
+  background-color: var(--admin-surface);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-m);
+  padding: 14px 16px;
 }
 
 .filter-bar select,
 .filter-bar .search-input {
-  padding: 8px 12px;
-  border: 1px solid #e5e9eb;
-  border-radius: 8px;
-  background-color: #f8f9fa;
-  color: #1c2b33;
+  height: var(--admin-control-h);
+  box-sizing: border-box;
+  padding: 0 12px;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-s);
+  background-color: #ffffff;
+  color: var(--admin-ink);
   font-size: 0.85rem;
   font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.filter-bar select:hover,
+.filter-bar .search-input:hover {
+  border-color: #c7ced2;
+}
+
+.filter-bar select:focus-visible,
+.filter-bar .search-input:focus-visible {
+  border-color: var(--admin-accent);
+  box-shadow: 0 0 0 3px var(--admin-accent-soft);
 }
 
 .filter-bar .search-input {
@@ -71,31 +117,33 @@
 .clear-filters-btn {
   border: none;
   background-color: transparent;
-  color: #6b7c87;
+  color: var(--admin-muted);
   padding: 8px 10px;
-  border-radius: 8px;
+  border-radius: var(--admin-radius-s);
   cursor: pointer;
   font-weight: 600;
   font-size: 0.85rem;
   text-decoration: underline;
+  margin-left: auto;
+  transition: color 0.15s ease;
 }
 
 .clear-filters-btn:hover {
-  color: #1c2b33;
+  color: var(--admin-ink);
 }
 
 .state-message {
   padding: 20px;
-  border-radius: 12px;
-  background-color: #f4f6f7;
-  color: #4a6072;
+  border-radius: var(--admin-radius-m);
+  background-color: var(--admin-surface);
+  color: var(--admin-ink-soft);
   font-weight: 500;
   margin-bottom: 20px;
 }
 
 .state-message.error {
-  background-color: #fdecec;
-  color: #b91c1c;
+  background-color: var(--admin-danger-bg);
+  color: var(--admin-danger);
   display: flex;
   align-items: center;
   gap: 16px;
@@ -103,19 +151,30 @@
 
 .retry-btn {
   border: none;
-  background-color: #b91c1c;
+  background-color: var(--admin-danger);
   color: #fff;
   padding: 6px 14px;
-  border-radius: 8px;
+  border-radius: var(--admin-radius-s);
   cursor: pointer;
   font-weight: 600;
+  transition: opacity 0.15s ease;
 }
 
+.retry-btn:hover {
+  opacity: 0.88;
+}
+
+/* ── Table card ── flex:1 fills the space between the filter bar and
+   pagination bar regardless of how many rows are on the current page —
+   see Users' table-wrapper for the full reasoning. */
 .table-wrapper {
-  background-color: #f8f9fa;
-  border: 1px solid #e5e9eb;
-  border-radius: 16px;
-  overflow-x: auto;
+  flex: 1 1 auto;
+  min-height: 0;
+  background-color: #ffffff;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-l);
+  overflow: auto;
+  box-shadow: var(--admin-shadow-card);
 }
 
 .challenges-table {
@@ -127,20 +186,29 @@
 .challenges-table th {
   text-align: left;
   padding: 14px 20px;
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
-  color: #6b7c87;
-  border-bottom: 1px solid #e5e9eb;
+  letter-spacing: 0.04em;
+  color: var(--admin-muted-2);
+  background-color: var(--admin-surface);
+  border-bottom: 1px solid var(--admin-border);
   white-space: nowrap;
 }
 
 .challenges-table td {
   padding: 14px 20px;
-  color: #1c2b33;
-  border-bottom: 1px solid #edf0f1;
+  color: var(--admin-ink);
+  border-bottom: 1px solid var(--admin-border-soft);
   white-space: nowrap;
+}
+
+.challenges-table tbody tr {
+  transition: background-color 0.12s ease;
+}
+
+.challenges-table tbody tr:hover {
+  background-color: var(--admin-surface);
 }
 
 .challenges-table tbody tr:last-child td {
@@ -149,65 +217,112 @@
 
 .empty-row {
   text-align: center;
-  color: #6b7c87;
-  padding: 32px 20px !important;
+  color: var(--admin-muted);
+  padding: 40px 20px !important;
   white-space: normal !important;
 }
 
+/* ── Status badges ── dot + tinted pill, same construction as the
+   status/role badges on the Users page. */
 .status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   padding: 4px 10px;
   border-radius: 999px;
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   font-weight: 700;
-  background-color: #eef2f5;
-  color: #4a6072;
+  background-color: var(--admin-surface-alt);
+  color: var(--admin-ink-soft);
+}
+
+.status-badge .status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--admin-ink-soft);
 }
 
 .status-badge.status-upcoming {
-  background-color: #eaf0fb;
-  color: #2851a3;
+  background-color: var(--admin-info-bg);
+  color: var(--admin-info);
+}
+
+.status-badge.status-upcoming .status-dot {
+  background-color: var(--admin-info);
 }
 
 .status-badge.status-active {
-  background-color: #e6f4ea;
-  color: #1e7a3d;
+  background-color: var(--admin-success-bg);
+  color: var(--admin-success);
+}
+
+.status-badge.status-active .status-dot {
+  background-color: var(--admin-success-dot);
 }
 
 .status-badge.status-ended {
-  background-color: #eef2f5;
-  color: #6b7c87;
+  background-color: var(--admin-surface-alt);
+  color: var(--admin-muted);
+}
+
+.status-badge.status-ended .status-dot {
+  background-color: var(--admin-muted);
 }
 
 .status-badge.status-cancelled {
-  background-color: #fdecec;
-  color: #b91c1c;
+  background-color: var(--admin-danger-bg);
+  color: var(--admin-danger);
 }
 
+.status-badge.status-cancelled .status-dot {
+  background-color: var(--admin-danger);
+}
+
+/* ── Row actions ── pill buttons, matching Users' deactivate/reactivate. */
+/* Fixed two-column grid, not a flex row — with *ngIf removing the Edit
+   button on ACTIVE-status rows, a flex row left-packs whatever's left,
+   so Cancel sits flush-left on some rows and shifted right on others
+   (wherever Edit happened to be). Explicit grid-column placement below
+   keeps Cancel in column 2 always, whether or not column 1 has anything
+   in it. */
 .actions-cell {
-  display: flex;
+  display: grid;
+  grid-template-columns: 62px 70px;
   gap: 8px;
+  align-items: center;
+}
+
+.edit-btn,
+.cancel-btn {
+  border: none;
+  padding: 6px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.78rem;
+  text-align: center;
+  transition: background-color 0.15s ease;
 }
 
 .edit-btn {
-  border: none;
-  background-color: #eaf0fb;
-  color: #2851a3;
-  padding: 6px 14px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 0.85rem;
+  grid-column: 1;
+  background-color: var(--admin-accent-soft);
+  color: var(--admin-accent);
+}
+
+.edit-btn:hover {
+  background-color: #e0dcfb;
 }
 
 .cancel-btn {
-  border: none;
-  background-color: #fdecec;
-  color: #b91c1c;
-  padding: 6px 14px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 0.85rem;
+  grid-column: 2;
+  background-color: var(--admin-danger-bg);
+  color: var(--admin-danger);
+}
+
+.cancel-btn:hover:not(:disabled) {
+  background-color: #fbd5d5;
 }
 
 .cancel-btn:disabled {
@@ -221,17 +336,24 @@
   position: fixed;
   inset: 0;
   background-color: rgba(28, 43, 51, 0.45);
+  backdrop-filter: blur(2px);
   display: flex;
   align-items: flex-start;
   justify-content: center;
   padding: 40px 20px;
   overflow-y: auto;
   z-index: 200;
+  animation: overlayFadeIn 0.15s ease-out;
+}
+
+@keyframes overlayFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .form-panel {
   background-color: #fff;
-  border-radius: 20px;
+  border-radius: var(--admin-radius-xl);
   padding: 32px;
   width: 100%;
   max-width: 640px;
@@ -242,7 +364,7 @@
   margin: 0 0 20px;
   font-size: 1.3rem;
   font-weight: 800;
-  color: #1c2b33;
+  color: var(--admin-ink);
 }
 
 .form-panel form {
@@ -257,7 +379,7 @@
   gap: 6px;
   font-size: 0.85rem;
   font-weight: 600;
-  color: #4a6072;
+  color: var(--admin-ink-soft);
   flex: 1;
 }
 
@@ -267,10 +389,31 @@
   font-family: inherit;
   font-size: 0.9rem;
   padding: 10px 12px;
-  border-radius: 8px;
+  border-radius: var(--admin-radius-s);
   border: 1px solid #d7dde1;
-  color: #1c2b33;
+  color: var(--admin-ink);
   background-color: #fff;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.form-panel input:hover,
+.form-panel select:hover,
+.form-panel textarea:hover {
+  border-color: #c7ced2;
+}
+
+.form-panel input:focus-visible,
+.form-panel select:focus-visible,
+.form-panel textarea:focus-visible {
+  border-color: var(--admin-accent);
+  box-shadow: 0 0 0 3px var(--admin-accent-soft);
+}
+
+.form-panel input:disabled {
+  background-color: var(--admin-surface);
+  color: var(--admin-muted);
+  cursor: not-allowed;
 }
 
 .form-panel textarea {
@@ -296,28 +439,95 @@
 
 .cancel-form-btn {
   border: none;
-  background-color: #eef2f5;
-  color: #4a6072;
+  background-color: var(--admin-surface-alt);
+  color: var(--admin-ink-soft);
   padding: 10px 18px;
-  border-radius: 10px;
+  border-radius: var(--admin-radius-s);
   cursor: pointer;
   font-weight: 700;
   font-size: 0.9rem;
+  transition: background-color 0.15s ease;
+}
+
+.cancel-form-btn:hover {
+  background-color: #e2e8ec;
 }
 
 .submit-btn {
   border: none;
-  background-color: #1c2b33;
+  background-color: var(--admin-ink);
   color: #fff;
   padding: 10px 18px;
-  border-radius: 10px;
+  border-radius: var(--admin-radius-s);
   cursor: pointer;
   font-weight: 700;
   font-size: 0.9rem;
+  transition: background-color 0.15s ease;
+}
+
+.submit-btn:hover:not(:disabled) {
+  background-color: #0f1a20;
 }
 
 .submit-btn:disabled {
   opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ── Pagination ── */
+.pagination-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 16px;
+}
+
+.pagination-info {
+  font-size: 0.82rem;
+  color: var(--admin-muted);
+  font-weight: 600;
+}
+
+.pagination-controls {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.page-btn {
+  border: 1px solid var(--admin-border);
+  background-color: #ffffff;
+  color: var(--admin-ink-soft);
+  padding: 6px 12px;
+  border-radius: var(--admin-radius-s);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.82rem;
+  min-width: 34px;
+  transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease;
+}
+
+.page-btn:hover:not(:disabled):not(.active) {
+  border-color: var(--admin-accent);
+  color: var(--admin-accent);
+}
+
+.page-btn.active {
+  background-color: var(--admin-accent);
+  border-color: var(--admin-accent);
+  color: #ffffff;
+}
+
+.page-btn.active:hover {
+  background-color: var(--admin-accent-hover);
+  border-color: var(--admin-accent-hover);
+  color: #ffffff;
+}
+
+.page-btn:disabled {
+  opacity: 0.45;
   cursor: not-allowed;
 }
 

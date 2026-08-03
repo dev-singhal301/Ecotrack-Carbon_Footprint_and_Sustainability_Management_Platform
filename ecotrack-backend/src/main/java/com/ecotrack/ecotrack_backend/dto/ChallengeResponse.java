@@ -75,7 +75,7 @@ public class ChallengeResponse {
        if (now.isBefore(startDate)) {
            return "UPCOMING";
        } else if (now.isAfter(endDate)) {
-           return "EXPIRED";
+           return "ENDED";
        } else {
            return "ACTIVE";
        }

@@ -104,7 +104,13 @@
   font-weight: 500;
 }
 
-/* Main Content Container (White Inner Box) */
+/* Main Content Container (White Inner Box)
+   Also the single source of truth for the admin portal's design tokens.
+   CSS custom properties inherit through the DOM regardless of Angular's
+   view encapsulation (only selectors are scoped, not property values),
+   so every child route rendered inside <router-outlet> — Dashboard,
+   Users, Challenges, Analytics — reads these same var(--admin-*) values.
+   Add a section here before adding a one-off color to a child page. */
 .content {
   flex: 1;
   background-color: #ffffff;
@@ -113,6 +119,50 @@
   overflow: hidden;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.04);
   position: relative;
+
+  --admin-font: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+
+  /* Text */
+  --admin-ink: #1c2b33;
+  --admin-ink-soft: #4a6072;
+  --admin-muted: #6b7c87;
+  --admin-muted-2: #94a3b8;
+
+  /* Surfaces & borders */
+  --admin-surface: #f8f9fa;
+  --admin-surface-alt: #eef2f5;
+  --admin-border: #e5e9eb;
+  --admin-border-soft: #edf0f1;
+  --admin-shadow-card: 0 4px 10px -2px rgba(28, 43, 51, 0.06);
+
+  /* Interactive accent (buttons, focus rings, active states) */
+  --admin-accent: #4f46e5;
+  --admin-accent-hover: #4338ca;
+  --admin-accent-soft: #eef2ff;
+
+  /* Status */
+  --admin-info: #2851a3;
+  --admin-info-bg: #eaf0fb;
+  --admin-success: #1e7a3d;
+  --admin-success-bg: #e6f4ea;
+  --admin-success-dot: #16a34a;
+  --admin-danger: #b91c1c;
+  --admin-danger-bg: #fdecec;
+  --admin-warning: #a16207;
+  --admin-warning-bg: #fef3c7;
+
+  /* Radii */
+  --admin-radius-s: 8px;
+  --admin-radius-m: 12px;
+  --admin-radius-l: 16px;
+  --admin-radius-xl: 20px;
+
+  /* Shared height for filter-bar controls (search input, selects, date
+     inputs) — browsers give native <input type="date"> a taller intrinsic
+     box than a plain text input/select, which is what made the Users
+     filter bar look misaligned. Forcing every control to this height
+     fixes that regardless of control type. */
+  --admin-control-h: 38px;
 }
 
 /* ----------------------------------

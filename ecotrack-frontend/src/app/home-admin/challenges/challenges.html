@@ -70,7 +70,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let challenge of filteredChallenges()">
+        <tr *ngFor="let challenge of pagedChallenges()">
           <td>{{ challenge.title }}</td>
           <td>{{ categoryLabel(challenge.category) }}</td>
           <td>{{ challenge.challengeType === 'CARBON_REDUCTION' ? 'Carbon' : 'Activity' }}</td>
@@ -79,6 +79,7 @@
           <td>{{ challenge.endDate | date:'mediumDate' }}</td>
           <td>
             <span class="status-badge" [ngClass]="'status-' + (challenge.status || 'upcoming').toLowerCase()">
+              <span class="status-dot"></span>
               {{ challenge.status }}
             </span>
           </td>
@@ -105,6 +106,33 @@
         </tr>
       </tbody>
     </table>
+  </div>
+
+  <div *ngIf="!isLoading() && !dataError() && filteredChallenges().length > 0" class="pagination-bar">
+    <span class="pagination-info">
+      Page {{ safeCurrentPage() }} of {{ totalPages() }}
+    </span>
+    <div class="pagination-controls">
+      <button
+        class="page-btn"
+        [disabled]="safeCurrentPage() === 1"
+        (click)="prevPage()">
+        ‹ Prev
+      </button>
+      <button
+        *ngFor="let page of pageNumbers()"
+        class="page-btn"
+        [class.active]="safeCurrentPage() === page"
+        (click)="goToPage(page)">
+        {{ page }}
+      </button>
+      <button
+        class="page-btn"
+        [disabled]="safeCurrentPage() === totalPages()"
+        (click)="nextPage()">
+        Next ›
+      </button>
+    </div>
   </div>
 
   <!-- Create / Edit form overlay -->

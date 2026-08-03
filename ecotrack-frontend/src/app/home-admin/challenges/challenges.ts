@@ -99,6 +99,42 @@ export class Challenges implements OnInit {
     this.categoryFilter.set('ALL');
     this.typeFilter.set('ALL');
     this.statusFilter.set('ALL');
+    this.currentPage.set(1);
+  }
+
+  // ── Pagination ── same 10-per-page pattern as the Users table: paging
+  // happens client-side over filteredChallenges, since GET /api/admin/
+  // challenges already returns everything in one call.
+  private readonly pageSize = 10;
+  currentPage = signal(1);
+
+  totalPages = computed(() =>
+    Math.max(1, Math.ceil(this.filteredChallenges().length / this.pageSize))
+  );
+
+  safeCurrentPage = computed(() =>
+    Math.min(this.currentPage(), this.totalPages())
+  );
+
+  pageNumbers = computed(() =>
+    Array.from({ length: this.totalPages() }, (_, i) => i + 1)
+  );
+
+  pagedChallenges = computed(() => {
+    const start = (this.safeCurrentPage() - 1) * this.pageSize;
+    return this.filteredChallenges().slice(start, start + this.pageSize);
+  });
+
+  goToPage(page: number): void {
+    this.currentPage.set(Math.min(Math.max(1, page), this.totalPages()));
+  }
+
+  prevPage(): void {
+    this.goToPage(this.safeCurrentPage() - 1);
+  }
+
+  nextPage(): void {
+    this.goToPage(this.safeCurrentPage() + 1);
   }
 
   showForm = signal(false);

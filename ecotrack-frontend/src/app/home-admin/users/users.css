@@ -1,68 +1,79 @@
-.admin-users {
-  padding: 32px 40px;
+:host {
+  display: block;
   height: 100%;
-  overflow-y: auto;
-  box-sizing: border-box;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
+.admin-users {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-sizing: border-box;
+  padding: 24px 40px;
+  font-family: var(--admin-font);
+  color: var(--admin-ink);
+}
+
+/* Header, filter bar, and pagination stay pinned — only the table body
+   scrolls, and only if it truly has to (see .table-wrapper below).
+   Pagination controls should never be able to scroll out of view. */
+.page-header,
+.filter-bar,
+.pagination-bar {
+  flex-shrink: 0;
+}
+
+/* ── Header ── */
 .page-header h1 {
   margin: 0;
   font-size: 1.6rem;
   font-weight: 800;
-  color: #1c2b33;
+  color: var(--admin-ink);
 }
 
 .page-header .subtitle {
-  margin: 4px 0 28px;
-  color: #6b7c87;
+  margin: 4px 0 12px;
+  color: var(--admin-muted);
   font-size: 0.95rem;
 }
 
+/* ── Filter bar ── */
 .filter-bar {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 12px;
   margin-bottom: 20px;
   align-items: center;
+  background-color: var(--admin-surface);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-m);
+  padding: 12px 16px;
 }
 
 .filter-bar select,
 .filter-bar .search-input {
-  padding: 8px 12px;
-  border: 1px solid #e5e9eb;
-  border-radius: 8px;
-  background-color: #f8f9fa;
-  color: #1c2b33;
+  height: var(--admin-control-h);
+  box-sizing: border-box;
+  padding: 0 12px;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-s);
+  background-color: #ffffff;
+  color: var(--admin-ink);
   font-size: 0.85rem;
   font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.date-range-label {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: #6b7c87;
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
+.filter-bar select:hover,
+.filter-bar .search-input:hover {
+  border-color: #c7ced2;
 }
 
-.date-range-label input[type="date"] {
-  padding: 7px 10px;
-  border: 1px solid #e5e9eb;
-  border-radius: 8px;
-  background-color: #f8f9fa;
-  color: #1c2b33;
-  font-size: 0.85rem;
-  font-family: inherit;
-  text-transform: none;
-  letter-spacing: normal;
-}
-
-.date-range-sep {
-  color: #b7c1c7;
+.filter-bar select:focus-visible,
+.filter-bar .search-input:focus-visible {
+  border-color: var(--admin-accent);
+  box-shadow: 0 0 0 3px var(--admin-accent-soft);
 }
 
 .filter-bar .search-input {
@@ -74,40 +85,84 @@
   cursor: pointer;
 }
 
+/* ── Date range ── one bordered control at the same height as every
+   other filter, not two separately-boxed <input type="date">s with a
+   bare label floating in between (that mismatch was the main thing
+   making this filter bar read as "off"). */
+.date-range-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: var(--admin-control-h);
+  box-sizing: border-box;
+  padding: 0 10px 0 12px;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-s);
+  background-color: #ffffff;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.date-range-label:focus-within {
+  border-color: var(--admin-accent);
+  box-shadow: 0 0 0 3px var(--admin-accent-soft);
+}
+
+.date-range-label .field-caption {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--admin-muted-2);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.date-range-label input[type="date"] {
+  height: 100%;
+  width: 118px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--admin-ink);
+  font-size: 0.85rem;
+  font-family: inherit;
+  outline: none;
+}
+
+.date-range-sep {
+  color: var(--admin-muted-2);
+}
+
 .clear-filters-btn {
   border: none;
   background-color: transparent;
-  color: #6b7c87;
+  color: var(--admin-muted);
   padding: 8px 10px;
-  border-radius: 8px;
+  border-radius: var(--admin-radius-s);
   cursor: pointer;
-  font-weight: 600;
+  font-weight: 700;
   font-size: 0.85rem;
   text-decoration: underline;
+  margin-left: auto;
+  transition: color 0.15s ease;
 }
 
 .clear-filters-btn:hover {
-  color: #1c2b33;
+  color: var(--admin-ink);
 }
 
-.empty-row {
-  text-align: center;
-  padding: 24px !important;
-  color: #6b7c87;
-}
-
+/* ── Loading / error states ── */
 .state-message {
   padding: 20px;
-  border-radius: 12px;
-  background-color: #f4f6f7;
-  color: #4a6072;
+  border-radius: var(--admin-radius-m);
+  background-color: var(--admin-surface);
+  color: var(--admin-ink-soft);
   font-weight: 500;
   margin-bottom: 20px;
 }
 
 .state-message.error {
-  background-color: #fdecec;
-  color: #b91c1c;
+  background-color: var(--admin-danger-bg);
+  color: var(--admin-danger);
   display: flex;
   align-items: center;
   gap: 16px;
@@ -115,19 +170,32 @@
 
 .retry-btn {
   border: none;
-  background-color: #b91c1c;
+  background-color: var(--admin-danger);
   color: #fff;
   padding: 6px 14px;
-  border-radius: 8px;
+  border-radius: var(--admin-radius-s);
   cursor: pointer;
   font-weight: 600;
+  transition: opacity 0.15s ease;
 }
 
+.retry-btn:hover {
+  opacity: 0.88;
+}
+
+/* ── Table card ── flex:1 so this card always fills the space between
+   the filter bar and pagination, whether the page has 10 rows or 2 —
+   that's what keeps .pagination-bar pinned to a fixed spot instead of
+   riding up under a short table. min-height:0 is required for a flex
+   child to be allowed to scroll internally rather than overflowing. */
 .table-wrapper {
-  background-color: #f8f9fa;
-  border: 1px solid #e5e9eb;
-  border-radius: 16px;
-  overflow-x: auto;
+  flex: 1 1 auto;
+  min-height: 0;
+  background-color: #ffffff;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-l);
+  overflow: auto;
+  box-shadow: var(--admin-shadow-card);
 }
 
 .users-table {
@@ -139,81 +207,222 @@
 .users-table th {
   text-align: left;
   padding: 14px 20px;
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
-  color: #6b7c87;
-  border-bottom: 1px solid #e5e9eb;
+  letter-spacing: 0.04em;
+  color: var(--admin-muted-2);
+  background-color: var(--admin-surface);
+  border-bottom: 1px solid var(--admin-border);
 }
 
 .users-table td {
-  padding: 14px 20px;
-  color: #1c2b33;
-  border-bottom: 1px solid #edf0f1;
+  padding: 10px 20px;
+  color: var(--admin-ink);
+  border-bottom: 1px solid var(--admin-border-soft);
+}
+
+.users-table tbody tr {
+  transition: background-color 0.12s ease;
 }
 
 .users-table tbody tr:last-child td {
   border-bottom: none;
 }
 
+.users-table tbody tr:hover {
+  background-color: var(--admin-surface);
+}
+
+/* ── User cell (avatar + name) ── */
+.user-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  border-radius: 50%;
+  background-color: var(--admin-accent);
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.avatar.avatar-admin {
+  background-color: var(--admin-warning);
+}
+
+.user-name {
+  font-weight: 600;
+}
+
+.email-cell {
+  color: var(--admin-muted);
+}
+
+.joined-cell {
+  color: var(--admin-muted);
+}
+
+.xp-value {
+  font-weight: 700;
+  color: var(--admin-ink);
+}
+
+/* ── Badges ── */
 .role-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   padding: 4px 10px;
   border-radius: 999px;
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   font-weight: 700;
-  background-color: #eef2f5;
-  color: #4a6072;
+  background-color: var(--admin-surface-alt);
+  color: var(--admin-ink-soft);
+}
+
+.role-badge i {
+  font-size: 0.7rem;
 }
 
 .role-badge.admin {
-  background-color: #e6f4ea;
-  color: #1e7a3d;
+  background-color: var(--admin-warning-bg);
+  color: var(--admin-warning);
 }
 
 .status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   padding: 4px 10px;
   border-radius: 999px;
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   font-weight: 700;
-  background-color: #e6f4ea;
-  color: #1e7a3d;
+  background-color: var(--admin-success-bg);
+  color: var(--admin-success);
+}
+
+.status-badge .status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--admin-success-dot);
 }
 
 .status-badge.disabled {
-  background-color: #fdecec;
-  color: #b91c1c;
+  background-color: var(--admin-danger-bg);
+  color: var(--admin-danger);
+}
+
+.status-badge.disabled .status-dot {
+  background-color: var(--admin-danger);
+}
+
+/* ── Action buttons ── */
+.deactivate-btn,
+.reactivate-btn {
+  border: none;
+  padding: 6px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.78rem;
+  transition: background-color 0.15s ease;
 }
 
 .deactivate-btn {
-  border: none;
-  background-color: #fdecec;
-  color: #b91c1c;
-  padding: 6px 14px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 0.85rem;
+  background-color: var(--admin-danger-bg);
+  color: var(--admin-danger);
 }
 
-.deactivate-btn:disabled {
+.deactivate-btn:hover:not(:disabled) {
+  background-color: #fbd5d5;
+}
+
+.reactivate-btn {
+  background-color: var(--admin-success-bg);
+  color: var(--admin-success);
+}
+
+.reactivate-btn:hover:not(:disabled) {
+  background-color: #cfead9;
+}
+
+.deactivate-btn:disabled,
+.reactivate-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
-.reactivate-btn {
-  border: none;
-  background-color: #e6f4ea;
-  color: #1e7a3d;
-  padding: 6px 14px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 0.85rem;
+.empty-row {
+  text-align: center;
+  padding: 40px !important;
+  color: var(--admin-muted);
 }
 
-.reactivate-btn:disabled {
-  opacity: 0.6;
+/* ── Pagination ── */
+.pagination-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 16px;
+}
+
+.pagination-info {
+  font-size: 0.82rem;
+  color: var(--admin-muted);
+  font-weight: 600;
+}
+
+.pagination-controls {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.page-btn {
+  border: 1px solid var(--admin-border);
+  background-color: #ffffff;
+  color: var(--admin-ink-soft);
+  padding: 6px 12px;
+  border-radius: var(--admin-radius-s);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.82rem;
+  min-width: 34px;
+  transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease;
+}
+
+.page-btn:hover:not(:disabled):not(.active) {
+  border-color: var(--admin-accent);
+  color: var(--admin-accent);
+}
+
+.page-btn.active {
+  background-color: var(--admin-accent);
+  border-color: var(--admin-accent);
+  color: #ffffff;
+}
+
+.page-btn.active:hover {
+  background-color: var(--admin-accent-hover);
+  border-color: var(--admin-accent-hover);
+  color: #ffffff;
+}
+
+.page-btn:disabled {
+  opacity: 0.45;
   cursor: not-allowed;
 }
 
