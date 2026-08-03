@@ -1,23 +1,6 @@
 import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { HttpClient, HttpParams } from '@angular/common/http';
-
-export interface LeaderboardUser {
-  userId: number;
-  name: string;
-  userRank: string;
-  userLevel: number;
-  monthlyXp: number;
-  totalXp?: number;
-  xpGained?: number;
-  rank: number;
-}
-
-export interface UserHistoryItem {
-  monthKey: string;
-  totalXp: number;
-  xpGained?: number;
-}
+import { LeaderboardService, LeaderboardUser, UserHistoryItem } from './leaderboard.service';
 
 @Component({
   selector: 'app-leaderboard',
@@ -27,8 +10,6 @@ export interface UserHistoryItem {
   styleUrls: ['./leaderboard.css']
 })
 export class Leaderboard implements OnInit, OnDestroy {
-
-  private readonly baseUrl = 'http://localhost:8080/api/leaderboard';
 
   // Left Section Data
   top3Podium: LeaderboardUser[] = [];
@@ -46,7 +27,7 @@ export class Leaderboard implements OnInit, OnDestroy {
   private timerInterval?: any;
 
   constructor(
-    private http: HttpClient,
+    private leaderboardService: LeaderboardService,
     private cdr: ChangeDetectorRef
   ) {}
 
@@ -83,55 +64,52 @@ export class Leaderboard implements OnInit, OnDestroy {
   }
 
   loadCurrentMonthlyLeaderboard(): void {
-    const params = new HttpParams().set('limit', '50');
-    this.http.get<LeaderboardUser[]>(`${this.baseUrl}/monthly`, { params }).subscribe({
+    this.leaderboardService.getMonthlyLeaderboard(50).subscribe({
       next: (data) => {
         const fullList = (data || []).map(u => this.sanitizeUser(u));
         // Take top 3 for Podium, rest for rankings list
         this.top3Podium = fullList.slice(0, 3);
         this.rankingsList = fullList.slice(3);
         this.isLoading = false;
-        this.cdr.detectChanges();
+        this.cdr.markForCheck();
       },
       error: (err) => {
         console.error('Failed to load monthly leaderboard:', err);
         this.dataError = 'Could not load leaderboard data.';
         this.isLoading = false;
-        this.cdr.detectChanges();
+        this.cdr.markForCheck();
       }
     });
   }
 
   loadCurrentUserRank(): void {
-    this.http.get<LeaderboardUser>(`${this.baseUrl}/user-rank`).subscribe({
+    this.leaderboardService.getCurrentUserRank().subscribe({
       next: (data) => {
         this.currentUser = data ? this.sanitizeUser(data) : null;
-        this.cdr.detectChanges();
+        this.cdr.markForCheck();
       },
       error: (err) => console.error('Failed to load current user rank:', err)
     });
   }
 
   loadLastMonthChampions(): void {
-    const params = new HttpParams().set('limit', '3');
-    this.http.get<LeaderboardUser[]>(`${this.baseUrl}/previous-month`, { params }).subscribe({
+    this.leaderboardService.getLastMonthChampions(3).subscribe({
       next: (data) => {
         this.lastMonthChampions = (data || []).map(u => this.sanitizeUser(u));
-        this.cdr.detectChanges();
+        this.cdr.markForCheck();
       },
       error: (err) => console.error('Failed to load last month champions:', err)
     });
   }
 
   loadUserHistory(): void {
-    const params = new HttpParams().set('limit', '6');
-    this.http.get<UserHistoryItem[]>(`${this.baseUrl}/user-history`, { params }).subscribe({
+    this.leaderboardService.getUserHistory(6).subscribe({
       next: (data) => {
         this.userHistory = (data || []).map(item => ({
           ...item,
           totalXp: item.totalXp ?? item.xpGained ?? 0
         }));
-        this.cdr.detectChanges();
+        this.cdr.markForCheck();
       },
       error: (err) => console.error('Failed to load user history:', err)
     });

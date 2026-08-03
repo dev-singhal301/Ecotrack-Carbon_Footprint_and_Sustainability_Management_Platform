@@ -24,13 +24,19 @@ public class DashboardSummaryResponse {
     // --- Section 4: Active Goal Meters ---
     private List<GoalSnapshotResponse> activeGoals;
 
+    // --- Section 5: Challenge Snapshots & Metrics ---
+    private Integer activeChallengesCount;
+    private Integer completedChallengesCount;
+    private List<UserChallengeResponse> activeChallenges;
+
     // Constructors
     public DashboardSummaryResponse() {}
 
     public DashboardSummaryResponse(String username, Integer userLevel, String userRank, Integer currentXp, Integer nextLevelXpTarget,
                                     BigDecimal totalCarbonFootprint, BigDecimal carbonSaved, Double savingsPercentage,
                                     Integer totalRewardPoints, List<CategoryImpactResponse> categoryImpacts,
-                                    List<GoalSnapshotResponse> activeGoals) {
+                                    List<GoalSnapshotResponse> activeGoals, Integer activeChallengesCount,
+                                    Integer completedChallengesCount, List<UserChallengeResponse> activeChallenges) {
         this.username = username;
         this.userLevel = userLevel;
         this.userRank = userRank;
@@ -42,6 +48,9 @@ public class DashboardSummaryResponse {
         this.totalRewardPoints = totalRewardPoints;
         this.categoryImpacts = categoryImpacts;
         this.activeGoals = activeGoals;
+        this.activeChallengesCount = activeChallengesCount;
+        this.completedChallengesCount = completedChallengesCount;
+        this.activeChallenges = activeChallenges;
     }
 
     // Getters and Setters
@@ -77,4 +86,13 @@ public class DashboardSummaryResponse {
 
     public List<GoalSnapshotResponse> getActiveGoals() { return activeGoals; }
     public void setActiveGoals(List<GoalSnapshotResponse> activeGoals) { this.activeGoals = activeGoals; }
+
+    public Integer getActiveChallengesCount() { return activeChallengesCount; }
+    public void setActiveChallengesCount(Integer activeChallengesCount) { this.activeChallengesCount = activeChallengesCount; }
+
+    public Integer getCompletedChallengesCount() { return completedChallengesCount; }
+    public void setCompletedChallengesCount(Integer completedChallengesCount) { this.completedChallengesCount = completedChallengesCount; }
+
+    public List<UserChallengeResponse> getActiveChallenges() { return activeChallenges; }
+    public void setActiveChallenges(List<UserChallengeResponse> activeChallenges) { this.activeChallenges = activeChallenges; }
 }

@@ -1,8 +1,13 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ChallengeService, UserChallengeResponseDto } from './challenges.service';
-import { ChallengeTab, ChallengeCategory } from '../../../types/challenge';
+import { 
+  ChallengeService, 
+  UserChallengeResponseDto, 
+  ChallengeCategory 
+} from './challenges.service';
+
+export type ChallengeTab = 'ALL' | 'ACTIVE' | 'UPCOMING' | 'JOINED' | 'COMPLETED';
 
 @Component({
   selector: 'app-challenges',
@@ -30,10 +35,14 @@ export class ChallengesComponent implements OnInit {
     'FUEL'
   ];
 
-  // Combined Data List from Backend
+  // Data List
   challengeItems: UserChallengeResponseDto[] = [];
+  isLoading = false;
 
-  constructor(private challengeService: ChallengeService) {}
+  constructor(
+    private challengeService: ChallengeService,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit(): void {
     this.loadData();
@@ -48,14 +57,37 @@ export class ChallengesComponent implements OnInit {
 
     this.challengeService.joinChallenge(item.challenge.challengeId).subscribe({
       next: (updated) => {
-        const index = this.challengeItems.findIndex(i => i.challenge.challengeId === item.challenge.challengeId);
+        const index = this.challengeItems.findIndex(
+          i => i.challenge.challengeId === item.challenge.challengeId
+        );
         if (index !== -1) {
           this.challengeItems[index] = updated;
+          this.cdr.markForCheck();
         }
       },
       error: (err) => {
         console.error('Error joining challenge:', err);
         alert(err.error?.message || 'Failed to join challenge.');
+      }
+    });
+  }
+
+  claimReward(item: UserChallengeResponseDto): void {
+    if (item.userStatus !== 'COMPLETED') return;
+
+    this.challengeService.claimReward(item.challenge.challengeId).subscribe({
+      next: (updated) => {
+        const index = this.challengeItems.findIndex(
+          i => i.challenge.challengeId === item.challenge.challengeId
+        );
+        if (index !== -1) {
+          this.challengeItems[index] = updated;
+          this.cdr.markForCheck();
+        }
+      },
+      error: (err) => {
+        console.error('Error claiming reward:', err);
+        alert(err.error?.message || 'Failed to claim reward.');
       }
     });
   }
@@ -90,12 +122,17 @@ export class ChallengesComponent implements OnInit {
   }
 
   private loadData(): void {
+    this.isLoading = true;
     this.challengeService.getUserChallenges().subscribe({
       next: (data) => {
         this.challengeItems = data;
+        this.isLoading = false;
+        this.cdr.markForCheck();
       },
       error: (err) => {
         console.error('Error fetching challenges:', err);
+        this.isLoading = false;
+        this.cdr.markForCheck();
       }
     });
   }

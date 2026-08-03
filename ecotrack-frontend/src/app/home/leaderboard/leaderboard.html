@@ -26,9 +26,7 @@
   <!-- Main Content Grid -->
   <div *ngIf="!isLoading" class="leaderboard-grid">
 
-    <!-- ================================================================= -->
-    <!-- LEFT COLUMN: Podium + Rankings List                               -->
-    <!-- ================================================================= -->
+    <!-- LEFT COLUMN: Podium + Rankings List -->
     <div class="left-section">
 
       <!-- TOP 3 PODIUM -->
@@ -49,7 +47,7 @@
             <div class="pedestal pedestal-2">2nd</div>
           </div>
 
-          <!-- 1st Place (Center - Highest) -->
+          <!-- 1st Place (Center) -->
           <div class="podium-spot first-place" *ngIf="firstPlace">
             <div class="avatar-wrapper">
               <span class="crown-badge">👑</span>
@@ -90,7 +88,6 @@
             class="ranking-row"
             [class.current-user-row]="isCurrentUserRow(user)">
             
-            <!-- Sequential display rank starting from #4 -->
             <div class="rank-number">#{{ i + 4 }}</div>
 
             <img [src]="getAvatarUrl(user.userId)" [alt]="user.name" class="row-avatar">
@@ -113,9 +110,7 @@
 
     </div>
 
-    <!-- ================================================================= -->
-    <!-- RIGHT COLUMN: 3 Stacked Status Cards                             -->
-    <!-- ================================================================= -->
+    <!-- RIGHT COLUMN: 3 Stacked Status Cards -->
     <div class="right-section">
 
       <!-- CARD 1: Your Current Standing & Progress -->
@@ -134,7 +129,6 @@
           </div>
         </div>
 
-        <!-- Level Target Progress Bar -->
         <div class="level-progress-container" *ngIf="currentUser">
           <div class="progress-labels">
             <span>Level {{ currentUser.userLevel }} Progress</span>

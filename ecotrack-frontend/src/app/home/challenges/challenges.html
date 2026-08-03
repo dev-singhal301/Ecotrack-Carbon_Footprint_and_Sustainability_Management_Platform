@@ -62,7 +62,7 @@
             Target: <span class="target-value">{{ item.challenge.targetValue }} {{ item.challenge.unit }}</span>
           </div>
 
-          <!-- Progress Bar for Joined / In Progress Users -->
+          <!-- Progress Bar for Joined / In Progress / Completed Users -->
           <div *ngIf="item.userStatus === 'JOINED' || item.userStatus === 'IN_PROGRESS' || item.userStatus === 'COMPLETED'" class="progress-container">
             <div class="progress-header">
               <span class="progress-label">Progress</span>

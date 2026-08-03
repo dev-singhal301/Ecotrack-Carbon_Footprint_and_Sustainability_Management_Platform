@@ -4,6 +4,7 @@ import com.ecotrack.ecotrack_backend.dto.CategoryImpactResponse;
 import com.ecotrack.ecotrack_backend.dto.DashboardSummaryResponse;
 import com.ecotrack.ecotrack_backend.dto.GoalProgressResponse;
 import com.ecotrack.ecotrack_backend.dto.GoalSnapshotResponse;
+import com.ecotrack.ecotrack_backend.dto.UserChallengeResponse;
 import com.ecotrack.ecotrack_backend.entity.Goal;
 import com.ecotrack.ecotrack_backend.entity.GoalProgress;
 import com.ecotrack.ecotrack_backend.entity.User;
@@ -26,17 +27,20 @@ public class DashboardService {
     private final GoalRepository goalRepository;
     private final GoalProgressRepository goalProgressRepository;
     private final GoalService goalService;
+    private final UserChallengeService userChallengeService;
 
     public DashboardService(UserRepository userRepository,
                             CarbonFootprintService carbonFootprintService,
                             GoalRepository goalRepository,
                             GoalProgressRepository goalProgressRepository,
-                            GoalService goalService) {
+                            GoalService goalService,
+                            UserChallengeService userChallengeService) {
         this.userRepository = userRepository;
         this.carbonFootprintService = carbonFootprintService;
         this.goalRepository = goalRepository;
         this.goalProgressRepository = goalProgressRepository;
         this.goalService = goalService;
+        this.userChallengeService = userChallengeService;
     }
 
     /**
@@ -70,6 +74,21 @@ public class DashboardService {
         List<GoalSnapshotResponse> activeGoalSnapshots = getActiveGoalSnapshots(userId);
         summary.setActiveGoals(activeGoalSnapshots);
 
+        // ── Section 5: Challenge Snapshots & Metrics ──
+        List<UserChallengeResponse> allUserChallenges = userChallengeService.getUserChallenges(user.getEmail());
+
+        List<UserChallengeResponse> activeChallenges = allUserChallenges.stream()
+                .filter(c -> "IN_PROGRESS".equalsIgnoreCase(c.getUserStatus()))
+                .toList();
+
+        long completedCount = allUserChallenges.stream()
+                .filter(c -> "COMPLETED".equalsIgnoreCase(c.getUserStatus()))
+                .count();
+
+        summary.setActiveChallengesCount(activeChallenges.size());
+        summary.setCompletedChallengesCount((int) completedCount);
+        summary.setActiveChallenges(activeChallenges);
+
         return summary;
     }
 
@@ -83,14 +102,12 @@ public class DashboardService {
         for (Goal goal : activeGoals) {
             GoalProgressResponse progressResp = null;
 
-            // Re-calculate live progress for active goal
             try {
                 progressResp = goalService.calculateProgress(userId, goal.getGoalId());
             } catch (Exception ignored) {
                 // Fallback handling if live calculation fails transiently
             }
 
-            // Verify goal status hasn't transitioned to EXPIRED or COMPLETED during recalculation
             Goal updatedGoal = goalRepository.findById(goal.getGoalId()).orElse(goal);
             if (!"ACTIVE".equalsIgnoreCase(updatedGoal.getStatus())) {
                 continue;

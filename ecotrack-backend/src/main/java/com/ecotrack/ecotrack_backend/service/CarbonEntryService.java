@@ -6,6 +6,7 @@ import com.ecotrack.ecotrack_backend.entity.CarbonCategory;
 import com.ecotrack.ecotrack_backend.entity.CarbonEntry;
 import com.ecotrack.ecotrack_backend.entity.EmissionFactor;
 import com.ecotrack.ecotrack_backend.entity.Goal;
+import com.ecotrack.ecotrack_backend.entity.TrackingType;
 import com.ecotrack.ecotrack_backend.entity.User;
 import com.ecotrack.ecotrack_backend.exception.CarbonEntryNotFoundException;
 import com.ecotrack.ecotrack_backend.exception.InvalidCategoryException;
@@ -15,6 +16,7 @@ import com.ecotrack.ecotrack_backend.repository.GoalRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -27,18 +29,21 @@ public class CarbonEntryService {
     private final EmissionFactorRepository emissionFactorRepository;
     private final GoalRepository goalRepository;
     private final GoalService goalService;
-    private final LeaderboardService leaderboardService; // Inject LeaderboardService
+    private final LeaderboardService leaderboardService;
+    private final UserChallengeService userChallengeService;
 
     public CarbonEntryService(CarbonEntryRepository carbonEntryRepository,
                               EmissionFactorRepository emissionFactorRepository,
                               GoalRepository goalRepository,
                               GoalService goalService,
-                              LeaderboardService leaderboardService) {
+                              LeaderboardService leaderboardService,
+                              UserChallengeService userChallengeService) {
         this.carbonEntryRepository = carbonEntryRepository;
         this.emissionFactorRepository = emissionFactorRepository;
         this.goalRepository = goalRepository;
         this.goalService = goalService;
         this.leaderboardService = leaderboardService;
+        this.userChallengeService = userChallengeService;
     }
 
     private CarbonCategory parseCategory(String rawCategory) {
@@ -83,6 +88,9 @@ public class CarbonEntryService {
         // 2. Refresh progress for active goals affected by this new entry
         triggerActiveGoalRecalculation(user.getId());
 
+        // 3. Automatically update progress for active user challenges matching category & tracking type
+        triggerActiveChallengeProgress(user.getId(), category.name(), factor.getUnit(), request.getAmount());
+
         return toResponse(saved);
     }
 
@@ -124,7 +132,7 @@ public class CarbonEntryService {
         triggerActiveGoalRecalculation(userId);
     }
 
-    // ── Gamification Helpers ──
+    // ── Gamification & Challenge Helpers ──
 
     private void triggerActiveGoalRecalculation(Long userId) {
         List<Goal> activeGoals = goalRepository.findByUserIdAndStatus(userId, "ACTIVE");
@@ -135,6 +143,23 @@ public class CarbonEntryService {
                 // Silently ignore individual goal evaluation errors to prevent blocking entry creation
             }
         }
+    }
+
+    private void triggerActiveChallengeProgress(Long userId, String category, String unit, BigDecimal amount) {
+        try {
+            TrackingType trackingType = determineTrackingType(unit);
+            userChallengeService.processActivityUpdate(userId, category, trackingType, amount);
+        } catch (Exception ignored) {
+            // Silently ignore challenge evaluation errors to prevent blocking entry creation
+        }
+    }
+
+    private TrackingType determineTrackingType(String unit) {
+        if (unit == null) return TrackingType.COUNT;
+        String u = unit.toLowerCase();
+        if (u.contains("km") || u.contains("mile") || u.contains("m")) return TrackingType.DISTANCE;
+        if (u.contains("hour") || u.contains("hr") || u.contains("min")) return TrackingType.DURATION;
+        return TrackingType.COUNT;
     }
 
     private CarbonEntryResponse toResponse(CarbonEntry entry) {
