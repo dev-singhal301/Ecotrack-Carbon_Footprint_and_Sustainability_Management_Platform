@@ -10,18 +10,6 @@
 
   <ng-container *ngIf="!isLoading">
 
-    <!-- 0. EcoBot Bar (AI Recommendation Engine entry point)
-    <div class="dashboard-card ecobot-bar" (click)="goToEcoBot()">
-      <div class="ecobot-left">
-        <span class="ecobot-icon">🤖</span>
-        <div class="ecobot-text">
-          <span class="ecobot-title">EcoBot</span>
-          <span class="ecobot-subtitle">Tips, goal insights &amp; carbon facts, personalized for you</span>
-        </div>
-      </div>
-      <span class="ecobot-chevron">&rarr;</span>
-    </div> -->
-
     <!-- 1. Welcome Banner -->
     <div class="dashboard-card welcome-banner">
       <div class="welcome-left">
@@ -46,6 +34,11 @@
 
       <div class="welcome-right">
         <button class="btn-log-entry" (click)="goToTracking()">+ Log New Entry</button>
+        <button class="btn-ecobot-compact" (click)="goToEcoBot()">
+          <span class="ecobot-compact-icon">🌱</span>
+          <span class="ecobot-compact-label">Ask EcoBot</span>
+          <span class="ecobot-compact-badge">New</span>
+        </button>
       </div>
     </div>
 
