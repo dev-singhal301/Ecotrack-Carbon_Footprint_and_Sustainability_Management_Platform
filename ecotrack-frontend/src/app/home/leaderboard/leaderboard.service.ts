@@ -17,6 +17,7 @@ export interface LeaderboardUser {
 export interface UserHistoryItem {
   monthKey: string;
   totalXp: number;
+  rank?: number;
   xpGained?: number;
 }
 
@@ -28,24 +29,24 @@ export class LeaderboardService {
 
   constructor(private http: HttpClient) {}
 
-  /** Fetch current monthly standings */
+  /** Fetch current monthly season standings */
   getMonthlyLeaderboard(limit = 50): Observable<LeaderboardUser[]> {
     const params = new HttpParams().set('limit', limit.toString());
     return this.http.get<LeaderboardUser[]>(`${this.baseUrl}/monthly`, { params });
   }
 
-  /** Fetch current user's seasonal rank */
+  /** Fetch current user's seasonal standing and rank */
   getCurrentUserRank(): Observable<LeaderboardUser> {
     return this.http.get<LeaderboardUser>(`${this.baseUrl}/user-rank`);
   }
 
-  /** Fetch top champions from the previous month */
+  /** Fetch top 3 champions from the previous month */
   getLastMonthChampions(limit = 3): Observable<LeaderboardUser[]> {
     const params = new HttpParams().set('limit', limit.toString());
     return this.http.get<LeaderboardUser[]>(`${this.baseUrl}/previous-month`, { params });
   }
 
-  /** Fetch current user's monthly XP history */
+  /** Fetch current user's past monthly XP & rank history */
   getUserHistory(limit = 6): Observable<UserHistoryItem[]> {
     const params = new HttpParams().set('limit', limit.toString());
     return this.http.get<UserHistoryItem[]>(`${this.baseUrl}/user-history`, { params });
