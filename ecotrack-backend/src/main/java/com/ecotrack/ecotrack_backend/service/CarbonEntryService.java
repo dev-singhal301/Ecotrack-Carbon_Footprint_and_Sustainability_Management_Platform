@@ -29,20 +29,20 @@ public class CarbonEntryService {
     private final EmissionFactorRepository emissionFactorRepository;
     private final GoalRepository goalRepository;
     private final GoalService goalService;
-    private final LeaderboardService leaderboardService;
+    private final UserXpService userXpService;
     private final UserChallengeService userChallengeService;
 
     public CarbonEntryService(CarbonEntryRepository carbonEntryRepository,
-                              EmissionFactorRepository emissionFactorRepository,
-                              GoalRepository goalRepository,
-                              GoalService goalService,
-                              LeaderboardService leaderboardService,
-                              UserChallengeService userChallengeService) {
+                               EmissionFactorRepository emissionFactorRepository,
+                               GoalRepository goalRepository,
+                               GoalService goalService,
+                               UserXpService userXpService,
+                               UserChallengeService userChallengeService) {
         this.carbonEntryRepository = carbonEntryRepository;
         this.emissionFactorRepository = emissionFactorRepository;
         this.goalRepository = goalRepository;
         this.goalService = goalService;
-        this.leaderboardService = leaderboardService;
+        this.userXpService = userXpService;
         this.userChallengeService = userChallengeService;
     }
 
@@ -81,8 +81,8 @@ public class CarbonEntryService {
                 .size() <= 1; // <= 1 because 'saved' entry was just persisted above
 
         if (isFirstLogToday) {
-            // Delegate to LeaderboardService: Creates XpTransaction AND updates user level + total XP
-            leaderboardService.awardXp(user.getId(), LOG_ENTRY_XP, "DAILY_LOG", saved.getEntryId());
+            // Delegate to UserXpService: Creates XpTransaction AND updates user level + total XP
+            userXpService.awardXpAndPoints(user.getId(), LOG_ENTRY_XP, 0, "DAILY_LOG", saved.getEntryId());
         }
 
         // 2. Refresh progress for active goals affected by this new entry

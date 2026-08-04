@@ -10,6 +10,7 @@ import com.ecotrack.ecotrack_backend.entity.User;
 import com.ecotrack.ecotrack_backend.repository.CarbonEntryRepository;
 import com.ecotrack.ecotrack_backend.repository.CarbonFootprintRepository;
 import com.ecotrack.ecotrack_backend.repository.UserRepository;
+import com.ecotrack.ecotrack_backend.util.GamificationUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -53,7 +54,7 @@ public class CarbonFootprintService {
 
     /**
      * Section 2: Carbon Saved vs Baseline (comparing current 30-day rolling window to previous 30-day window).
-     * Returns savings as a positive number if emissions went down.
+     * Delegates math to GamificationUtils.
      */
     @Transactional(readOnly = true)
     public BigDecimal getCarbonSavedVsBaseline(Long userId) {
@@ -65,16 +66,12 @@ public class CarbonFootprintService {
         BigDecimal currentTotal = sumTotal(userId, currentStart, today);
         BigDecimal previousTotal = sumTotal(userId, previousStart, previousEnd);
 
-        if (previousTotal.compareTo(BigDecimal.ZERO) == 0) {
-            return BigDecimal.ZERO;
-        }
-
-        BigDecimal savings = previousTotal.subtract(currentTotal);
-        return savings.compareTo(BigDecimal.ZERO) > 0 ? savings : BigDecimal.ZERO;
+        return GamificationUtils.calculateCarbonSaved(currentTotal, previousTotal);
     }
 
     /**
      * Section 2: Percentage reduction badge (e.g., 12.5% drop).
+     * Delegates math to GamificationUtils.
      */
     @Transactional(readOnly = true)
     public Double getSavingsPercentage(Long userId) {
@@ -86,15 +83,7 @@ public class CarbonFootprintService {
         BigDecimal currentTotal = sumTotal(userId, currentStart, today);
         BigDecimal previousTotal = sumTotal(userId, previousStart, previousEnd);
 
-        if (previousTotal.compareTo(BigDecimal.ZERO) <= 0) {
-            return 0.0;
-        }
-
-        BigDecimal diff = previousTotal.subtract(currentTotal);
-        BigDecimal percentage = diff.divide(previousTotal, 4, RoundingMode.HALF_UP)
-                                     .multiply(BigDecimal.valueOf(100));
-
-        return percentage.doubleValue();
+        return GamificationUtils.calculateSavingsPercentage(currentTotal, previousTotal);
     }
 
     /**
@@ -115,8 +104,8 @@ public class CarbonFootprintService {
             double percentageShare = 0.0;
             if (grandTotal.compareTo(BigDecimal.ZERO) > 0 && emissions != null) {
                 percentageShare = emissions.divide(grandTotal, 4, RoundingMode.HALF_UP)
-                                           .multiply(BigDecimal.valueOf(100))
-                                           .doubleValue();
+                                            .multiply(BigDecimal.valueOf(100))
+                                            .doubleValue();
             }
 
             responseList.add(new CategoryImpactResponse(

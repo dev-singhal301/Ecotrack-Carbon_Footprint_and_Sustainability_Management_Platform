@@ -20,6 +20,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/carbon-entries")
+@CrossOrigin(origins = "*")
 public class CarbonEntryController {
 
     private final CarbonEntryService carbonEntryService;
@@ -30,10 +31,6 @@ public class CarbonEntryController {
         this.userRepository = userRepository;
     }
 
-    // ASSUMPTION — verify against your actual SecurityConfig/JwtAuthFilter:
-    // this assumes the JWT principal name is the user's email, same as login.
-    // If your AuthController extracts the current user differently, swap this
-    // method to match that exact pattern instead.
     private User getCurrentUser(Authentication authentication) {
         String email = authentication.getName();
         return userRepository.findByEmail(email)
@@ -72,7 +69,7 @@ public class CarbonEntryController {
         return ResponseEntity.noContent().build();
     }
 
-    // --- Exception handling, mirroring AuthController's { "message": "..." } pattern ---
+    // ── Exception Handlers ──
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, String>> handleValidation(MethodArgumentNotValidException ex) {

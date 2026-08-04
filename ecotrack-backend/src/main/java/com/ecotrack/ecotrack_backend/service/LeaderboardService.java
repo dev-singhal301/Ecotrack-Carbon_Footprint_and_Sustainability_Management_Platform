@@ -3,7 +3,6 @@ package com.ecotrack.ecotrack_backend.service;
 import com.ecotrack.ecotrack_backend.dto.LeaderboardUserDto;
 import com.ecotrack.ecotrack_backend.dto.UserPastHistoryDto;
 import com.ecotrack.ecotrack_backend.entity.User;
-import com.ecotrack.ecotrack_backend.entity.XpTransaction;
 import com.ecotrack.ecotrack_backend.repository.UserRepository;
 import com.ecotrack.ecotrack_backend.repository.XpTransactionRepository;
 import org.springframework.data.domain.PageRequest;
@@ -16,15 +15,16 @@ import java.util.List;
 @Service
 public class LeaderboardService {
 
-    private static final int LEVEL_XP_STEP = 500;
-
     private final XpTransactionRepository xpTransactionRepository;
     private final UserRepository userRepository;
+    private final UserXpService userXpService;
 
     public LeaderboardService(XpTransactionRepository xpTransactionRepository,
-                              UserRepository userRepository) {
+                              UserRepository userRepository,
+                              UserXpService userXpService) {
         this.xpTransactionRepository = xpTransactionRepository;
         this.userRepository = userRepository;
+        this.userXpService = userXpService;
     }
 
     /**
@@ -136,47 +136,10 @@ public class LeaderboardService {
     }
 
     /**
-     * Universal helper method to record XP when a user completes an activity, goal, or challenge.
-     * Updates:
-     * 1. Creates XpTransaction (for Monthly Leaderboard sync)
-     * 2. Updates User total currentXp (for Dashboard & All-Time Leaderboard)
-     * 3. Calculates Level Ups & Rank Title progression
+     * Delegated wrapper for awarding XP to maintain backward compatibility with any legacy callers.
      */
     @Transactional
     public void awardXp(Long userId, Integer xpAmount, String sourceType, Long sourceId) {
-        if (xpAmount == null || xpAmount <= 0) return;
-
-        // 1. Record transaction for Monthly Leaderboard aggregation
-        XpTransaction transaction = new XpTransaction(userId, xpAmount, sourceType, sourceId);
-        xpTransactionRepository.save(transaction);
-
-        // 2. Fetch user and update total current XP
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + userId));
-
-        int newXp = user.getCurrentXp() + xpAmount;
-        user.setCurrentXp(newXp);
-
-        // 3. Level-up loop with 500 XP threshold scaling
-        while (newXp >= user.getNextLevelXpTarget()) {
-            user.setUserLevel(user.getUserLevel() + 1);
-            user.setNextLevelXpTarget(user.getNextLevelXpTarget() + LEVEL_XP_STEP);
-            updateUserRank(user);
-        }
-
-        userRepository.save(user);
-    }
-
-    private void updateUserRank(User user) {
-        int level = user.getUserLevel();
-        if (level >= 20) {
-            user.setUserRank("Eco Master");
-        } else if (level >= 10) {
-            user.setUserRank("Eco Guardian");
-        } else if (level >= 5) {
-            user.setUserRank("Eco Warrior");
-        } else {
-            user.setUserRank("Eco Starter");
-        }
+        userXpService.awardXpAndPoints(userId, xpAmount, 0, sourceType, sourceId);
     }
 }

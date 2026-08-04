@@ -23,17 +23,17 @@ public class UserChallengeService {
     private final ChallengeRepository challengeRepository;
     private final UserChallengeRepository userChallengeRepository;
     private final UserRepository userRepository;
-    private final LeaderboardService leaderboardService;
+    private final UserXpService userXpService;
 
     public UserChallengeService(
             ChallengeRepository challengeRepository,
             UserChallengeRepository userChallengeRepository,
             UserRepository userRepository,
-            LeaderboardService leaderboardService) {
+            UserXpService userXpService) {
         this.challengeRepository = challengeRepository;
         this.userChallengeRepository = userChallengeRepository;
         this.userRepository = userRepository;
-        this.leaderboardService = leaderboardService;
+        this.userXpService = userXpService;
     }
 
     public List<UserChallengeResponse> getUserChallenges(String userEmail) {
@@ -106,9 +106,9 @@ public class UserChallengeService {
         userChallenge.setCompletedAt(LocalDateTime.now());
         UserChallenge saved = userChallengeRepository.save(userChallenge);
 
-        // Award XP and process Level Ups & Rank Title Updates via LeaderboardService
+        // Award XP and Reward Points via UserXpService
         int xpReward = userChallenge.getChallenge().getRewardXp() != null ? userChallenge.getChallenge().getRewardXp() : 100;
-        leaderboardService.awardXp(user.getId(), xpReward, "CHALLENGE", challengeId);
+        userXpService.awardXpAndPoints(user.getId(), xpReward, xpReward, "CHALLENGE", challengeId);
 
         return UserChallengeResponse.fromEntity(ChallengeResponse.fromEntity(userChallenge.getChallenge()), saved);
     }

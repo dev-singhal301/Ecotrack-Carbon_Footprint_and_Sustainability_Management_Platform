@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Dashboard } from './dashboard';
 import { DashboardService } from './dashboard.service';
 import { Router } from '@angular/router';
@@ -8,8 +9,8 @@ import { DashboardSummary } from './dashboard.model';
 describe('Dashboard', () => {
   let component: Dashboard;
   let fixture: ComponentFixture<Dashboard>;
-  let dashboardServiceSpy: jasmine.SpyObj<DashboardService>;
-  let routerSpy: jasmine.SpyObj<Router>;
+  let dashboardServiceSpy: { getSummary: ReturnType<typeof vi.fn> };
+  let routerSpy: { navigate: ReturnType<typeof vi.fn> };
 
   const mockSummary: DashboardSummary = {
     username: 'Jane',
@@ -31,8 +32,12 @@ describe('Dashboard', () => {
   };
 
   beforeEach(async () => {
-    dashboardServiceSpy = jasmine.createSpyObj('DashboardService', ['getSummary']);
-    routerSpy = jasmine.createSpyObj('Router', ['navigate']);
+    dashboardServiceSpy = {
+      getSummary: vi.fn()
+    };
+    routerSpy = {
+      navigate: vi.fn()
+    };
 
     await TestBed.configureTestingModule({
       imports: [Dashboard],
@@ -42,7 +47,7 @@ describe('Dashboard', () => {
       ]
     }).compileComponents();
 
-    dashboardServiceSpy.getSummary.and.returnValue(of(mockSummary));
+    dashboardServiceSpy.getSummary.mockReturnValue(of(mockSummary));
 
     fixture = TestBed.createComponent(Dashboard);
     component = fixture.componentInstance;
@@ -65,7 +70,7 @@ describe('Dashboard', () => {
   });
 
   it('should show a visible error message when the summary request fails', () => {
-    dashboardServiceSpy.getSummary.and.returnValue(throwError(() => ({ error: { message: 'Server error' } })));
+    dashboardServiceSpy.getSummary.mockReturnValue(throwError(() => ({ error: { message: 'Server error' } })));
     fixture.detectChanges();
     expect(component.dataError).toBe('Server error');
   });

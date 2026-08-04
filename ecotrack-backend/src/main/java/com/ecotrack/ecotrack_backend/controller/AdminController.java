@@ -21,16 +21,11 @@ import java.util.Map;
 
 /**
  * Admin Portal backend. Every endpoint here requires ROLE_ADMIN — enforced
- * via @PreAuthorize, on top of SecurityConfig already requiring *any*
- * authenticated user for everything under /api/admin/**.
- *
- * Challenge CRUD lives here too (not a dedicated ChallengeController)
- * because it's admin-only per the Challenge Module Design doc's API table.
- * The public /api/challenges/* endpoints (list/join/log-activity) are a
- * separate ChallengeController, not built yet — that's user-side territory.
+ * via @PreAuthorize, on top of SecurityConfig requiring authenticated users.
  */
 @RestController
 @RequestMapping("/api/admin")
+@CrossOrigin(origins = "*")
 public class AdminController {
 
     private final AdminService adminService;
@@ -41,8 +36,6 @@ public class AdminController {
         this.challengeService = challengeService;
     }
 
-    // Kept from the original role-verification step — cheap way to confirm
-    // "is this token an admin token at all" independent of any real data.
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/ping")
     public Map<String, String> ping(Authentication authentication) {
@@ -64,9 +57,6 @@ public class AdminController {
         return ResponseEntity.ok(adminService.getAllUsers());
     }
 
-    // Soft-deactivation only (User.enabled = false), never a hard delete —
-    // preserves the FK-linked history (carbon entries, goals, etc.) the same
-    // way Challenge cancellation is soft rather than destructive.
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/users/{id}")
     public ResponseEntity<Map<String, String>> deactivateUser(
@@ -76,9 +66,6 @@ public class AdminController {
         return ResponseEntity.ok(Map.of("message", "User deactivated successfully"));
     }
 
-    // Reverses a deactivation. PATCH (not PUT) since this only flips one
-    // flag rather than replacing the whole resource — same reasoning as
-    // the existing PATCH /api/notifications/{id}/read pattern.
     @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/users/{id}/reactivate")
     public ResponseEntity<Map<String, String>> reactivateUser(@PathVariable Long id) {
@@ -124,7 +111,7 @@ public class AdminController {
         return ResponseEntity.ok(Map.of("message", "Challenge cancelled successfully"));
     }
 
-    // ── Exception handlers ──
+    // ── Exception Handlers ──
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, String>> handleValidation(MethodArgumentNotValidException ex) {

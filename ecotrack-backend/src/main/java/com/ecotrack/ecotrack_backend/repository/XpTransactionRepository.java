@@ -12,6 +12,11 @@ import java.util.List;
 public interface XpTransactionRepository extends JpaRepository<XpTransaction, Long> {
 
     /**
+     * Fetches itemized XP transaction history for a given user ordered by most recent.
+     */
+    List<XpTransaction> findByUserIdOrderByCreatedAtDesc(Long userId);
+
+    /**
      * Aggregates monthly XP per user for the active month using PostgreSQL date_trunc.
      * Returns arrays containing [userId, name, userRank, userLevel, monthlyXp, denseRank]
      */

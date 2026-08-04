@@ -33,6 +33,7 @@ public class GoalService {
     private final GoalProgressRepository goalProgressRepository;
     private final UserRepository userRepository;
     private final CarbonEntryRepository carbonEntryRepository;
+    private final UserXpService userXpService;
 
     private static final Set<GoalType> AGGREGATE_ALL_CATEGORIES = EnumSet.of(GoalType.REDUCE_CARBON_EMISSIONS);
     private static final int DEFAULT_BASELINE_DAYS = 30;
@@ -40,11 +41,13 @@ public class GoalService {
     public GoalService(GoalRepository goalRepository,
                        GoalProgressRepository goalProgressRepository,
                        UserRepository userRepository,
-                       CarbonEntryRepository carbonEntryRepository) {
+                       CarbonEntryRepository carbonEntryRepository,
+                       UserXpService userXpService) {
         this.goalRepository = goalRepository;
         this.goalProgressRepository = goalProgressRepository;
         this.userRepository = userRepository;
         this.carbonEntryRepository = carbonEntryRepository;
+        this.userXpService = userXpService;
     }
 
     // ── Create ──
@@ -142,9 +145,6 @@ public class GoalService {
     // ── Complete Goal & Award XP ──
     @Transactional
     public void completeGoal(Long userId, Long goalId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
-
         Goal goal = goalRepository.findById(goalId)
                 .orElseThrow(() -> new IllegalArgumentException("Goal not found: " + goalId));
 
@@ -160,21 +160,8 @@ public class GoalService {
         int xpToAward = (goal.getXpReward() != null) ? goal.getXpReward() : 100;
         int pointsToAward = (goal.getRewardPoints() != null) ? goal.getRewardPoints() : 50;
 
-        int currentXp = user.getCurrentXp();
-        int currentPoints = user.getRewardPoints();
-
-        int newXp = currentXp + xpToAward;
-        user.setCurrentXp(newXp);
-        user.setRewardPoints(currentPoints + pointsToAward);
-
-        // 2. Dynamic Level-Up Check using User fields
-        while (newXp >= user.getNextLevelXpTarget()) {
-            user.setUserLevel(user.getUserLevel() + 1);
-            user.setNextLevelXpTarget(user.getNextLevelXpTarget() + 50);
-            updateUserRank(user);
-        }
-
-        userRepository.save(user);
+        // 2. Delegate XP accumulation, level progression, and transaction logging to UserXpService
+        userXpService.awardXpAndPoints(userId, xpToAward, pointsToAward, "GOAL", goalId);
 
         // 3. Mark goal status as COMPLETED
         goal.setStatus("COMPLETED");
@@ -358,20 +345,6 @@ public class GoalService {
         if (!conflictingGoals.isEmpty()) {
             throw new IllegalArgumentException("You already have an active " + goalType + 
                     " goal set up within this timeframe (" + conflictingGoals.get(0).getStartDate() + " to " + conflictingGoals.get(0).getEndDate() + ").");
-        }
-    }
-
-    // ── Rank Helper ──
-    private void updateUserRank(User user) {
-        int level = user.getUserLevel();
-        if (level >= 20) {
-            user.setUserRank("Eco Master");
-        } else if (level >= 10) {
-            user.setUserRank("Eco Guardian");
-        } else if (level >= 5) {
-            user.setUserRank("Eco Warrior");
-        } else {
-            user.setUserRank("Eco Starter");
         }
     }
 

@@ -38,6 +38,8 @@ public class UserController {
         return ResponseEntity.ok(user);
     }
 
+    // ── Exception Handlers ──
+
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, String>> handleBadRequest(IllegalArgumentException ex) {
         return ResponseEntity.badRequest().body(Map.of("message", ex.getMessage()));

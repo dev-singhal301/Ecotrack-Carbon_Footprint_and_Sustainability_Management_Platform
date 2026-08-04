@@ -26,19 +26,24 @@ public class GamificationUtils {
     }
 
     /**
-     * Returns an eco-rank title matching the user's level.
+     * Returns the eco-rank title matching the user's level.
      */
     public static String getRankTitle(User user) {
         int level = getLevel(user);
-        if (level >= 10) return "Eco Legend";
-        if (level >= 7) return "Planet Protector";
-        if (level >= 5) return "Sustainability Champion";
-        if (level >= 3) return "Green Guardian";
-        return "Eco Starter";
+        if (level >= 50) return "Mythic Eco";
+        if (level >= 25) return "Eco Hero";
+        if (level >= 20) return "Eco Master";
+        if (level >= 15) return "Eco Champion";
+        if (level >= 11) return "Eco Sentinel";
+        if (level >= 8)  return "Eco Guardian";
+        if (level >= 5)  return "Eco Pioneer";
+        if (level >= 3)  return "Eco Explorer";
+        if (level >= 2)  return "Eco Scout";
+        return "Novice Eco";
     }
 
     /**
-     * Calculates carbon saved compared to a average baseline.
+     * Calculates carbon saved compared to an average baseline.
      */
     public static BigDecimal calculateCarbonSaved(BigDecimal totalEmissions, BigDecimal baselineEmissions) {
         if (baselineEmissions == null || baselineEmissions.compareTo(BigDecimal.ZERO) == 0) {

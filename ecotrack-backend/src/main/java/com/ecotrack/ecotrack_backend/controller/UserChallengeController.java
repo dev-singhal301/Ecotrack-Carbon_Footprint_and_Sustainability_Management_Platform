@@ -8,9 +8,11 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/user-challenges")
+@CrossOrigin(origins = "*")
 public class UserChallengeController {
 
     private final UserChallengeService userChallengeService;
@@ -48,5 +50,17 @@ public class UserChallengeController {
             @AuthenticationPrincipal UserDetails userDetails) {
         UserChallengeResponse response = userChallengeService.claimReward(userDetails.getUsername(), challengeId);
         return ResponseEntity.ok(response);
+    }
+
+    // ── Exception Handlers ──
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<Map<String, String>> handleIllegalState(IllegalStateException ex) {
+        return ResponseEntity.badRequest().body(Map.of("message", ex.getMessage()));
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Map<String, String>> handleBadRequest(IllegalArgumentException ex) {
+        return ResponseEntity.badRequest().body(Map.of("message", ex.getMessage()));
     }
 }
