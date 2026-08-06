@@ -51,4 +51,46 @@ public class UserXpService {
 
         return userRepository.save(user);
     }
+
+    /**
+     * Claws back previously-awarded XP (e.g. an admin cancelling a challenge
+     * a user had already completed). Mirrors awardXpAndPoints's contract —
+     * updates User.currentXp AND writes the matching XpTransaction row —
+     * but the amount is deducted rather than added, and clamped at 0 rather
+     * than allowed to go negative on the running total.
+     *
+     * The actual amount deducted (which may be less than xpAmount if the
+     * clamp kicks in) is what gets written to the ledger, so
+     * SUM(xp_amount) over xp_transactions always reconciles with
+     * User.currentXp — without this, cascadeCancellationToParticipants was
+     * decrementing currentXp directly and skipping the ledger entirely,
+     * so monthly/previous-month leaderboards and XP history (which sum
+     * xp_transactions by date range, not currentXp) never reflected the
+     * clawback.
+     */
+    @Transactional
+    public User clawbackXp(Long userId, int xpAmount, String sourceType, Long sourceId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));
+
+        if (xpAmount <= 0) {
+            return user;
+        }
+
+        int currentXp = (user.getCurrentXp() != null) ? user.getCurrentXp() : 0;
+        int clampedXp = Math.max(0, currentXp - xpAmount);
+        int actualDeducted = currentXp - clampedXp;
+
+        if (actualDeducted > 0) {
+            user.setCurrentXp(clampedXp);
+            user.setUserLevel(GamificationUtils.getLevel(user));
+            user.setNextLevelXpTarget(GamificationUtils.getNextLevelXpTarget(user));
+            user.setUserRank(GamificationUtils.getRankTitle(user));
+
+            XpTransaction transaction = new XpTransaction(userId, -actualDeducted, sourceType, sourceId);
+            xpTransactionRepository.save(transaction);
+        }
+
+        return userRepository.save(user);
+    }
 }

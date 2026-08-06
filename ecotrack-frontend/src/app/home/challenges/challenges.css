@@ -314,6 +314,16 @@
   font-weight: 700;
 }
 
+.btn-expired {
+  background-color: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fca5a5;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
 .btn-action {
   color: #ffffff;
   border: none;
@@ -336,4 +346,64 @@
 .btn-action.btn-disabled {
   background-color: #cbd5e1;
   cursor: not-allowed;
+}
+
+/* Activity Logging */
+.progress-hint {
+  font-size: 11px;
+  color: #94a3b8;
+  margin: 6px 0 0 0;
+  line-height: 1.4;
+}
+
+.activity-log-section {
+  margin-top: 4px;
+}
+
+.btn-log {
+  width: 100%;
+  background-color: #16a34a;
+  color: #ffffff;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.btn-log:hover:not(:disabled) {
+  background-color: #15803d;
+}
+
+.btn-log:disabled {
+  background-color: #dcfce7;
+  color: #15803d;
+  cursor: not-allowed;
+}
+
+.amount-log-row {
+  display: flex;
+  gap: 8px;
+}
+
+.log-input {
+  flex-grow: 1;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  font-size: 12px;
+  outline: none;
+  min-width: 0;
+}
+
+.log-input:focus {
+  border-color: #16a34a;
+}
+
+.amount-log-row .btn-log {
+  width: auto;
+  flex-shrink: 0;
+  padding: 8px 16px;
 }

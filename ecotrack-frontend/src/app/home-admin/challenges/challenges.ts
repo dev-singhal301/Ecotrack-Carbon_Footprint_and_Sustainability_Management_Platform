@@ -146,26 +146,50 @@ export class Challenges implements OnInit {
   readonly cardImages = CARD_HEADER_IMAGES;
   readonly badgeImages = CHALLENGE_BADGES;
   readonly trackingTypes: { value: TrackingType; label: string }[] = [
-    { value: 'COUNT', label: 'Count (e.g. trees planted)' },
-    { value: 'DISTANCE', label: 'Distance (e.g. km cycled)' },
-    { value: 'DURATION', label: 'Duration (e.g. minutes)' },
-    { value: 'BOOLEAN', label: 'Yes/No check-in' },
+    { value: 'BOOLEAN', label: 'Daily Check-in (e.g. did you cycle to work today?)' },
+    { value: 'DISTANCE', label: 'Cumulative Amount (e.g. km cycled, minutes saved, trees planted)' },
   ];
 
   // Bound to the Start Date input's [min] so past dates aren't selectable
   // at all, rather than only being rejected after submit. Computed once —
   // this app is zoneless, but a static value read at construction time
   // doesn't need a signal since nothing ever writes to it again.
-  readonly minDate: string = new Date().toISOString().split('T')[0];
+  //
+  // Uses toLocalDateString, NOT .toISOString() — toISOString() converts to
+  // UTC first, which silently shifts the date backward by one day for any
+  // timezone ahead of UTC (e.g. IST, UTC+5:30: local midnight minus 5:30h
+  // rolls back to the previous UTC calendar day, every time, not just near
+  // midnight). That was producing an off-by-one floor that left "yesterday"
+  // still selectable.
+  readonly minDate: string = Challenges.toLocalDateString(new Date());
 
-  // End Date's minimum can't just be `minDate` (today) — if the selected
-  // Start Date is later than today (the normal case), the End Date picker
-  // would still let you pick something between today and that start date,
-  // i.e. before the challenge even starts. This tracks whichever is later.
+  // End Date's minimum can't just be `minDate` (today) — it has to respect
+  // two separate floors and take whichever is later:
+  //   1. Can't be before today.
+  //   2. Can't be less than MIN_DURATION_DAYS after the selected Start
+  //      Date — mirrors ChallengeService's server-side check
+  //      (`ChronoUnit.DAYS.between(startDate, endDate) < MIN_DURATION_DAYS`)
+  //      so the picker itself can't select an invalid range, instead of
+  //      only rejecting it after submit.
+  private static readonly MIN_DURATION_DAYS = 7;
+
+  // Formats a Date using its LOCAL calendar fields (not UTC) — see the
+  // minDate comment above for why .toISOString() is the wrong tool here.
+  private static toLocalDateString(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
   get endMinDate(): string {
-    return this.form.startDate && this.form.startDate > this.minDate
-      ? this.form.startDate
-      : this.minDate;
+    if (!this.form.startDate) {
+      return this.minDate;
+    }
+    const start = new Date(this.form.startDate + 'T00:00:00');
+    start.setDate(start.getDate() + Challenges.MIN_DURATION_DAYS);
+    const floorFromStart = Challenges.toLocalDateString(start);
+    return floorFromStart > this.minDate ? floorFromStart : this.minDate;
   }
 
   form: ChallengeFormModel = { ...EMPTY_FORM };
@@ -216,7 +240,12 @@ export class Challenges implements OnInit {
       description: challenge.description,
       category: challenge.category,
       challengeType: challenge.challengeType,
-      trackingType: challenge.trackingType ?? '',
+      // COUNT and DURATION were folded into BOOLEAN and DISTANCE
+      // respectively when the dropdown went from 4 options to 2 — they
+      // behave identically on the backend either way, so remap here
+      // purely so the <select> doesn't render blank when editing a
+      // challenge created before this change.
+      trackingType: this.normalizeTrackingType(challenge.trackingType),
       targetValue: challenge.targetValue,
       // Normalize to '%' on load too, in case this is an older
       // carbon-reduction challenge created before unit got locked down —
@@ -236,6 +265,12 @@ export class Challenges implements OnInit {
     this.showForm.set(false);
   }
 
+  private normalizeTrackingType(trackingType: TrackingType | null | undefined): TrackingType | '' {
+    if (trackingType === 'COUNT') return 'BOOLEAN';
+    if (trackingType === 'DURATION') return 'DISTANCE';
+    return trackingType ?? '';
+  }
+
   // Carbon-reduction challenges are always a percentage — unit is locked
   // to '%' and not admin-editable (the "Target Value" field already reads
   // as a percentage everywhere else in this module, so a mismatched unit
@@ -248,6 +283,16 @@ export class Challenges implements OnInit {
       this.form.trackingType = '';
     } else {
       this.form.unit = '';
+    }
+  }
+
+  // If Start Date moves forward and that pushes the 7-day floor past an
+  // already-picked End Date, [min] alone won't un-pick it — it only blocks
+  // new invalid selections, not ones already sitting in the model. Clear
+  // it so the admin can't submit a now-too-short range without noticing.
+  onStartDateChange(): void {
+    if (this.form.endDate && this.form.endDate < this.endMinDate) {
+      this.form.endDate = '';
     }
   }
 

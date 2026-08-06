@@ -6,7 +6,6 @@ import com.ecotrack.ecotrack_backend.entity.CarbonCategory;
 import com.ecotrack.ecotrack_backend.entity.CarbonEntry;
 import com.ecotrack.ecotrack_backend.entity.EmissionFactor;
 import com.ecotrack.ecotrack_backend.entity.Goal;
-import com.ecotrack.ecotrack_backend.entity.TrackingType;
 import com.ecotrack.ecotrack_backend.entity.User;
 import com.ecotrack.ecotrack_backend.exception.CarbonEntryNotFoundException;
 import com.ecotrack.ecotrack_backend.exception.InvalidCategoryException;
@@ -29,20 +28,20 @@ public class CarbonEntryService {
     private final EmissionFactorRepository emissionFactorRepository;
     private final GoalRepository goalRepository;
     private final GoalService goalService;
-    private final UserXpService userXpService;
+    private final LeaderboardService leaderboardService;
     private final UserChallengeService userChallengeService;
 
     public CarbonEntryService(CarbonEntryRepository carbonEntryRepository,
-                               EmissionFactorRepository emissionFactorRepository,
-                               GoalRepository goalRepository,
-                               GoalService goalService,
-                               UserXpService userXpService,
-                               UserChallengeService userChallengeService) {
+                              EmissionFactorRepository emissionFactorRepository,
+                              GoalRepository goalRepository,
+                              GoalService goalService,
+                              LeaderboardService leaderboardService,
+                              UserChallengeService userChallengeService) {
         this.carbonEntryRepository = carbonEntryRepository;
         this.emissionFactorRepository = emissionFactorRepository;
         this.goalRepository = goalRepository;
         this.goalService = goalService;
-        this.userXpService = userXpService;
+        this.leaderboardService = leaderboardService;
         this.userChallengeService = userChallengeService;
     }
 
@@ -81,15 +80,19 @@ public class CarbonEntryService {
                 .size() <= 1; // <= 1 because 'saved' entry was just persisted above
 
         if (isFirstLogToday) {
-            // Delegate to UserXpService: Creates XpTransaction AND updates user level + total XP
-            userXpService.awardXpAndPoints(user.getId(), LOG_ENTRY_XP, 0, "DAILY_LOG", saved.getEntryId());
+            // Delegate to LeaderboardService: Creates XpTransaction AND updates user level + total XP
+            leaderboardService.awardXp(user.getId(), LOG_ENTRY_XP, "DAILY_LOG", saved.getEntryId());
         }
 
         // 2. Refresh progress for active goals affected by this new entry
         triggerActiveGoalRecalculation(user.getId());
 
-        // 3. Automatically update progress for active user challenges matching category & tracking type
-        triggerActiveChallengeProgress(user.getId(), category.name(), factor.getUnit(), request.getAmount());
+        // 3. Refresh progress for active carbon-reduction challenges. Note:
+        // this deliberately does NOT touch activity-based challenges —
+        // those are only ever updated through an explicit user action via
+        // UserChallengeService.logActivity (Challenge Module Design doc §7),
+        // never inferred from carbon-tracking entries.
+        triggerActiveCarbonChallengeRecalculation(user.getId());
 
         return toResponse(saved);
     }
@@ -128,8 +131,11 @@ public class CarbonEntryService {
 
         carbonEntryRepository.delete(entry);
 
-        // Recalculate goal progress to accurately reflect the removal of emissions
+        // Recalculate goal and carbon-challenge progress to accurately
+        // reflect the removal of emissions — currentValue can legitimately
+        // fall as well as rise (Workflow doc §11).
         triggerActiveGoalRecalculation(userId);
+        triggerActiveCarbonChallengeRecalculation(userId);
     }
 
     // ── Gamification & Challenge Helpers ──
@@ -145,21 +151,12 @@ public class CarbonEntryService {
         }
     }
 
-    private void triggerActiveChallengeProgress(Long userId, String category, String unit, BigDecimal amount) {
+    private void triggerActiveCarbonChallengeRecalculation(Long userId) {
         try {
-            TrackingType trackingType = determineTrackingType(unit);
-            userChallengeService.processActivityUpdate(userId, category, trackingType, amount);
+            userChallengeService.recalculateCarbonChallengesForUser(userId);
         } catch (Exception ignored) {
             // Silently ignore challenge evaluation errors to prevent blocking entry creation
         }
-    }
-
-    private TrackingType determineTrackingType(String unit) {
-        if (unit == null) return TrackingType.COUNT;
-        String u = unit.toLowerCase();
-        if (u.contains("km") || u.contains("mile") || u.contains("m")) return TrackingType.DISTANCE;
-        if (u.contains("hour") || u.contains("hr") || u.contains("min")) return TrackingType.DURATION;
-        return TrackingType.COUNT;
     }
 
     private CarbonEntryResponse toResponse(CarbonEntry entry) {

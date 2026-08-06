@@ -17,6 +17,15 @@ public class UserChallengeResponse {
     private LocalDateTime joinedAt;
     private LocalDateTime completedAt;
 
+    // COUNT/BOOLEAN activity challenges only — true once today's single
+    // allowed log has already been submitted. Computed server-side (see
+    // UserChallengeService.getUserChallenges) so the frontend's "already
+    // logged today" button state survives a page reload / navigation
+    // instead of only living in in-memory component state. Null when not
+    // applicable (not IN_PROGRESS, not an ACTIVITY_BASED COUNT/BOOLEAN
+    // challenge).
+    private Boolean loggedToday;
+
     public UserChallengeResponse() {}
 
     public static UserChallengeResponse fromEntity(ChallengeResponse challengeResponse, UserChallenge userChallenge) {
@@ -51,4 +60,6 @@ public class UserChallengeResponse {
     public BigDecimal getEffectiveTarget() { return effectiveTarget; }
     public LocalDateTime getJoinedAt() { return joinedAt; }
     public LocalDateTime getCompletedAt() { return completedAt; }
+    public Boolean getLoggedToday() { return loggedToday; }
+    public void setLoggedToday(Boolean loggedToday) { this.loggedToday = loggedToday; }
 }

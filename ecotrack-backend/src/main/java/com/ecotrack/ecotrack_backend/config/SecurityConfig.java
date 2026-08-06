@@ -76,10 +76,14 @@ public class SecurityConfig {
                                 "/api/auth/login",
                                 "/api/auth/google",
                                 "/api/auth/forgot-password",
-                                "/api/auth/reset-password",
-                                "/api/challenges/**",
-                                "/api/user-challenges/**"
+                                "/api/auth/reset-password"
                         ).permitAll()
+                        // /api/user-challenges/** was previously (incorrectly) permitAll — every
+                        // one of these endpoints reads @AuthenticationPrincipal UserDetails and
+                        // NPEs without a valid JWT, and per the Challenge Module Design doc §4
+                        // they're "Authenticated" access level, not public. The stale
+                        // "/api/challenges/**" rule is also removed: no controller is mapped
+                        // there (public join/list live under /api/user-challenges/**).
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);

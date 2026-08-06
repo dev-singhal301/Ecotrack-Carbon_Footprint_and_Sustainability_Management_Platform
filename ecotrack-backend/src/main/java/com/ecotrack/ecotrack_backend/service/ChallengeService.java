@@ -7,24 +7,34 @@ import com.ecotrack.ecotrack_backend.entity.ChallengeCategory;
 import com.ecotrack.ecotrack_backend.entity.ChallengeType;
 import com.ecotrack.ecotrack_backend.entity.TrackingType;
 import com.ecotrack.ecotrack_backend.entity.User;
+import com.ecotrack.ecotrack_backend.entity.UserChallenge;
+import com.ecotrack.ecotrack_backend.entity.UserChallengeStatus;
 import com.ecotrack.ecotrack_backend.exception.ChallengeNotFoundException;
 import com.ecotrack.ecotrack_backend.exception.InvalidChallengeRequestException;
 import com.ecotrack.ecotrack_backend.repository.ChallengeRepository;
+import com.ecotrack.ecotrack_backend.repository.UserChallengeRepository;
 import com.ecotrack.ecotrack_backend.repository.UserRepository;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Admin-facing challenge management: create / edit / cancel / list.
  *
  * Deliberately does NOT include join, progress tracking, or activity
- * logging — that's UserChallenge territory on the public /api/challenges/*
- * side, a separate later piece of work per the Challenge Module Design doc.
+ * logging — that's UserChallengeService's territory (see that class). The
+ * one exception is cancellation: cancelChallenge() reaches into
+ * UserChallengeRepository directly to cascade CANCELLED status (and XP
+ * clawback) to every participant, since that's fundamentally an admin
+ * action with side effects on participants, not a user-initiated one.
  *
  * Exception convention (matches AdminController / AdminService, which
  * already established IllegalArgumentException = "not found" -> 404 for
@@ -39,12 +49,26 @@ public class ChallengeService {
 
     private static final int MIN_DURATION_DAYS = 7;
 
+    // Non-terminal statuses a participant can be in when a challenge is cancelled.
+    private static final Set<UserChallengeStatus> CANCELLABLE_STATUSES =
+            EnumSet.of(UserChallengeStatus.JOINED, UserChallengeStatus.IN_PROGRESS);
+
     private final ChallengeRepository challengeRepository;
     private final UserRepository userRepository;
+    private final UserChallengeRepository userChallengeRepository;
+    private final ApplicationEventPublisher eventPublisher;
+    private final LeaderboardService leaderboardService;
 
-    public ChallengeService(ChallengeRepository challengeRepository, UserRepository userRepository) {
+    public ChallengeService(ChallengeRepository challengeRepository,
+                             UserRepository userRepository,
+                             UserChallengeRepository userChallengeRepository,
+                             ApplicationEventPublisher eventPublisher,
+                             LeaderboardService leaderboardService) {
         this.challengeRepository = challengeRepository;
         this.userRepository = userRepository;
+        this.userChallengeRepository = userChallengeRepository;
+        this.eventPublisher = eventPublisher;
+        this.leaderboardService = leaderboardService;
     }
 
     public List<ChallengeResponse> getAllChallenges() {
@@ -137,6 +161,7 @@ public class ChallengeService {
         return ChallengeResponse.fromEntity(saved);
     }
 
+    @Transactional
     public void cancelChallenge(Long challengeId) {
         Challenge challenge = findChallengeOrThrow(challengeId);
 
@@ -153,11 +178,51 @@ public class ChallengeService {
         challenge.setCancelledAt(LocalDateTime.now());
         challengeRepository.save(challenge);
 
-        // NOTE: bulk-updating non-terminal UserChallenge rows to CANCELLED
-        // (and clawing back XP from any already-COMPLETED row) happens here
-        // once the UserChallenge entity/repository exist. Nothing to cancel
-        // yet since joining isn't built — soft-cancelling the Challenge row
-        // itself is the complete, correct behavior for now.
+        cascadeCancellationToParticipants(challenge);
+    }
+
+    /**
+     * Design doc §5 / Workflow doc §12: cancelling bulk-updates every
+     * non-terminal participant row to CANCELLED, and any row already
+     * COMPLETED is also reverted to CANCELLED with its previously-awarded
+     * XP deducted (clamped at 0 — never negative). No participant is ever
+     * left showing as "failed" because of an admin cancellation, and a
+     * single ChallengeCancelledEvent carries every affected user id so
+     * Person C's Notification module can inform them.
+     *
+     * The clawback goes through LeaderboardService.clawbackXp rather than
+     * touching User.currentXp directly, so a matching negative XpTransaction
+     * (source "CHALLENGE_CANCELLED") lands in the ledger alongside the
+     * decrement — otherwise monthly/previous-month leaderboards and XP
+     * history, which sum xp_transactions by date range rather than reading
+     * currentXp, would never reflect the clawback and could show a user's
+     * all-time total as lower than their monthly-history sum implies.
+     */
+    private void cascadeCancellationToParticipants(Challenge challenge) {
+        List<UserChallenge> participants = userChallengeRepository.findByChallengeId(challenge.getChallengeId())
+                .stream()
+                .filter(uc -> CANCELLABLE_STATUSES.contains(uc.getStatus())
+                        || uc.getStatus() == UserChallengeStatus.COMPLETED)
+                .toList();
+
+        List<Long> affectedUserIds = new java.util.ArrayList<>();
+
+        for (UserChallenge uc : participants) {
+            if (uc.getStatus() == UserChallengeStatus.COMPLETED) {
+                int rewardXp = challenge.getRewardXp() != null ? challenge.getRewardXp() : 0;
+                if (rewardXp > 0) {
+                    leaderboardService.clawbackXp(
+                            uc.getUser().getId(), rewardXp, "CHALLENGE_CANCELLED", challenge.getChallengeId());
+                }
+            }
+            uc.setStatus(UserChallengeStatus.CANCELLED);
+            userChallengeRepository.save(uc);
+            affectedUserIds.add(uc.getUser().getId());
+        }
+
+        if (!affectedUserIds.isEmpty()) {
+            eventPublisher.publishEvent(new ChallengeCancelledEvent(this, challenge.getChallengeId(), affectedUserIds));
+        }
     }
 
     // ---- validation helpers ----

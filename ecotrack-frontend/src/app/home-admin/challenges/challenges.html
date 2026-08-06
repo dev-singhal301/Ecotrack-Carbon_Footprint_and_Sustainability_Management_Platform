@@ -198,7 +198,8 @@
         <div class="form-row">
           <label>
             Start Date
-            <input type="date" [(ngModel)]="form.startDate" name="startDate" [min]="minDate" required />
+            <input type="date" [(ngModel)]="form.startDate" name="startDate" [min]="minDate"
+                   (ngModelChange)="onStartDateChange()" required />
           </label>
 
           <label>

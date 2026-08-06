@@ -142,4 +142,15 @@ public class LeaderboardService {
     public void awardXp(Long userId, Integer xpAmount, String sourceType, Long sourceId) {
         userXpService.awardXpAndPoints(userId, xpAmount, 0, sourceType, sourceId);
     }
+
+    /**
+     * Claws back previously-awarded XP and records the matching negative
+     * XpTransaction, so monthly/previous-month leaderboards and XP history
+     * (which sum xp_transactions) reconcile with the all-time total on
+     * User.currentXp. See UserXpService.clawbackXp for the full contract.
+     */
+    @Transactional
+    public void clawbackXp(Long userId, Integer xpAmount, String sourceType, Long sourceId) {
+        userXpService.clawbackXp(userId, xpAmount, sourceType, sourceId);
+    }
 }
