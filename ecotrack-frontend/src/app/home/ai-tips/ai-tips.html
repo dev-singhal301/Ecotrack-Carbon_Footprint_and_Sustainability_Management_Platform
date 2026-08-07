@@ -61,6 +61,10 @@
         <button class="btn-explore" *ngIf="hasMoreToExplore" (click)="exploreNext()">
           Explore {{ nextCategoryLabel }} &darr;
         </button>
+
+        <button class="btn-refresh-fact" (click)="refreshRecommendations()">
+          🔄 Refresh Tips
+        </button>
       </div>
     </div>
 
