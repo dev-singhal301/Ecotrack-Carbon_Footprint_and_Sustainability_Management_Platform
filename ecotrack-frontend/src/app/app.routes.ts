@@ -9,17 +9,22 @@ import { Dashboard as AdminDashboard } from './home-admin/dashboard/dashboard';
 import { Users as AdminUsers } from './home-admin/users/users';
 import { Challenges as AdminChallenges } from './home-admin/challenges/challenges';
 
-// Import your newly generated dashboard sub-components
+// Home sub-components
 import { DashboardComponent } from './home/dashboard/dashboard';
 import { TrackingComponent } from './home/tracking/tracking';
 import { GoalsComponent } from './home/goals/goals';
 import { ChallengesComponent } from './home/challenges/challenges';
 import { AiTips } from './home/ai-tips/ai-tips';
-import { Analytics } from './home/analytics/analytics';
 import { LeaderboardComponent } from './home/leaderboard/leaderboard';
+<<<<<<< HEAD
 import { Notifications } from './home/notifications/notifications';
 import { Profile } from './home/profile/profile';
 import { Settings } from './home/settings/settings';
+=======
+import { NotificationsComponent } from './home/notifications/notifications';
+import { EcoIdentity } from './home/eco-identity/eco-identity';
+
+>>>>>>> 9e5f3ef (Slight styling update for navbar and nav list modified)
 import { SetPasswordPrompt } from './auth/set-password-prompt/set-password-prompt';
 import { mustSetPasswordGuard } from './auth/must-set-password.guard';
 
@@ -45,19 +50,19 @@ export const routes: Routes = [
             { path: 'goals', component: GoalsComponent },
             { path: 'challenges', component: ChallengesComponent },
             { path: 'ai-tips', component: AiTips },
-            { path: 'analytics', component: Analytics },
             { path: 'leaderboard', component: LeaderboardComponent },
+<<<<<<< HEAD
             { path: 'notifications', component: Notifications },
             { path: 'profile', component: Profile },
             { path: 'settings', component: Settings }
+=======
+            { path: 'notifications', component: NotificationsComponent },
+            { path: 'eco-identity', component: EcoIdentity }
+>>>>>>> 9e5f3ef (Slight styling update for navbar and nav list modified)
         ]
     },
     
-    // Parent Route for the Admin Portal shell — same authGuard as /home
-    // (must be logged in at all) plus adminGuard on top (must be ROLE_ADMIN).
-    // mustSetPasswordGuard is intentionally NOT applied here: that flow is
-    // for Google-only users setting a first password, and the seeded admin
-    // account always has one.
+    // Parent Route for the Admin Portal shell
     {
         path: 'home-admin',
         component: HomeAdmin,
