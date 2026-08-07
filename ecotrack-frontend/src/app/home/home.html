@@ -49,21 +49,13 @@
         <span>Leaderboard</span>
       </a>
 
-      <!-- Divider line with gap -->
+       <!-- Divider line with gap -->
       <div class="nav-divider"></div>
 
       <a routerLink="notifications" routerLinkActive="active" (click)="closeSidebar()">
         <i class="fa-solid fa-bell"></i>
         <span>Notifications</span>
-<<<<<<< HEAD
         <span class="nav-badge" *ngIf="unreadCount > 0">{{ unreadCount > 9 ? '9+' : unreadCount }}</span>
-      </a>
-
-      <a routerLink="profile" routerLinkActive="active" (click)="closeSidebar()">
-        <i class="fa-solid fa-user"></i>
-        <span>Profile</span>
-=======
->>>>>>> 9e5f3ef (Slight styling update for navbar and nav list modified)
       </a>
 
       <a routerLink="eco-identity" routerLinkActive="active" (click)="closeSidebar()">

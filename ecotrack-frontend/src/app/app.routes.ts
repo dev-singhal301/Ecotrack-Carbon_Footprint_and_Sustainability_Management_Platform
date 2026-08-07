@@ -16,20 +16,11 @@ import { GoalsComponent } from './home/goals/goals';
 import { ChallengesComponent } from './home/challenges/challenges';
 import { AiTips } from './home/ai-tips/ai-tips';
 import { LeaderboardComponent } from './home/leaderboard/leaderboard';
-<<<<<<< HEAD
-<<<<<<< HEAD
-import { Notifications } from './home/notifications/notifications';
-import { Profile } from './home/profile/profile';
-import { Settings } from './home/settings/settings';
-=======
-import { NotificationsComponent } from './home/notifications/notifications';
-import { EcoIdentity } from './home/eco-identity/eco-identity';
-=======
 import { Notifications } from './home/notifications/notifications';
 import { EcoIdentityComponent } from './home/eco-identity/eco-identity';
->>>>>>> 8005ae6 (Slight styling update for navbar and nav list modified)
+import { Settings } from './home/settings/settings';
 
->>>>>>> 9e5f3ef (Slight styling update for navbar and nav list modified)
+
 import { SetPasswordPrompt } from './auth/set-password-prompt/set-password-prompt';
 import { mustSetPasswordGuard } from './auth/must-set-password.guard';
 
@@ -56,19 +47,9 @@ export const routes: Routes = [
             { path: 'challenges', component: ChallengesComponent },
             { path: 'ai-tips', component: AiTips },
             { path: 'leaderboard', component: LeaderboardComponent },
-<<<<<<< HEAD
-<<<<<<< HEAD
             { path: 'notifications', component: Notifications },
-            { path: 'profile', component: Profile },
+            { path: 'eco-identity', component: EcoIdentityComponent },
             { path: 'settings', component: Settings }
-=======
-            { path: 'notifications', component: NotificationsComponent },
-            { path: 'eco-identity', component: EcoIdentity }
->>>>>>> 9e5f3ef (Slight styling update for navbar and nav list modified)
-=======
-            { path: 'notifications', component: Notifications },
-            { path: 'eco-identity', component: EcoIdentityComponent }
->>>>>>> 8005ae6 (Slight styling update for navbar and nav list modified)
         ]
     },
     
