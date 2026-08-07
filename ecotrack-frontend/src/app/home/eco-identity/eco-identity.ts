@@ -1,9 +1,10 @@
 import { Component } from '@angular/core';
 
 @Component({
-  selector: 'app-profile',
+  selector: 'app-eco-identity',
+  standalone: true,
   imports: [],
-  templateUrl: './profile.html',
-  styleUrl: './profile.css',
+  templateUrl: './eco-identity.html',
+  styleUrl: './eco-identity.css'
 })
-export class Profile {}
+export class EcoIdentityComponent { }

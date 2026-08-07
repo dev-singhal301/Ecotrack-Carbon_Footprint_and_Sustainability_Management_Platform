@@ -102,6 +102,12 @@
   position: relative;
 }
 
+.nav-divider {
+  height: 1px;
+  background-color: rgba(27, 94, 32, 0.15); /* Subtle match for eco-green palette */
+  margin: 12px 8px; /* Vertical gap above and below */
+}
+
 /* ----------------------------------
    Tablet & Mobile Layout (<= 1024px)
 ---------------------------------- */
