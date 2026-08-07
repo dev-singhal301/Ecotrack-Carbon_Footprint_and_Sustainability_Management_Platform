@@ -78,6 +78,19 @@
   box-shadow: 0 4px 12px rgba(27, 67, 50, 0.08);
 }
 
+.nav-badge {
+  margin-left: auto;
+  background-color: #10b981;
+  color: #ffffff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1;
+  padding: 4px 7px;
+  border-radius: 999px;
+  min-width: 18px;
+  text-align: center;
+}
+
 /* Main Content Container (White Inner Box) */
 .content {
   flex: 1;

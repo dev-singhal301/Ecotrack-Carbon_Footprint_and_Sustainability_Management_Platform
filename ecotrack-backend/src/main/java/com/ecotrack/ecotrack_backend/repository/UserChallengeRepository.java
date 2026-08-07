@@ -15,6 +15,10 @@ public interface UserChallengeRepository extends JpaRepository<UserChallenge, Lo
 
     List<UserChallenge> findByUserIdAndStatus(Long userId, UserChallengeStatus status);
 
+    // Used by the daily maintenance sweep to settle every participation
+    // whose window has closed, regardless of which user owns it.
+    List<UserChallenge> findByStatus(UserChallengeStatus status);
+
     @Query("SELECT uc FROM UserChallenge uc WHERE uc.challenge.challengeId = :challengeId")
     List<UserChallenge> findByChallengeId(@Param("challengeId") Long challengeId);
 

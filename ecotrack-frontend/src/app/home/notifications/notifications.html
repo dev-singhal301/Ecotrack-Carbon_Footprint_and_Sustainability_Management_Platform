@@ -1,1 +1,78 @@
-<p>notifications works!</p>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
+
+<div class="notifications-container">
+
+  <div class="notifications-header">
+    <div class="header-titles">
+      <h2><i class="fa-solid fa-bell"></i> Notifications</h2>
+      <p class="header-subtitle">Goal and challenge updates, and your monthly leaderboard result.</p>
+    </div>
+
+    <button
+      class="mark-all-btn"
+      *ngIf="unreadCount > 0"
+      (click)="onMarkAllAsRead()">
+      Mark all as read
+    </button>
+  </div>
+
+  <div class="filter-tabs">
+    <button
+      class="filter-tab"
+      [class.active]="filter === 'all'"
+      (click)="setFilter('all')">
+      All ({{ notifications.length }})
+    </button>
+    <button
+      class="filter-tab"
+      [class.active]="filter === 'unread'"
+      (click)="setFilter('unread')">
+      Unread ({{ unreadCount }})
+    </button>
+  </div>
+
+  <div class="state-message" *ngIf="isLoading">
+    <i class="fa-solid fa-spinner fa-spin"></i> Loading notifications...
+  </div>
+
+  <div class="state-message error" *ngIf="dataError && !isLoading">
+    <i class="fa-solid fa-triangle-exclamation"></i> {{ dataError }}
+  </div>
+
+  <div class="empty-state" *ngIf="!isLoading && !dataError && visibleNotifications.length === 0">
+    <i class="fa-solid fa-bell-slash"></i>
+    <p *ngIf="filter === 'all'">You don't have any notifications yet.</p>
+    <p *ngIf="filter === 'unread'">You're all caught up.</p>
+  </div>
+
+  <div class="notification-list" *ngIf="!isLoading && !dataError">
+    <div
+      class="notification-card"
+      *ngFor="let notification of visibleNotifications"
+      [class.unread]="!notification.read"
+      (click)="onMarkAsRead(notification)">
+
+      <div class="notification-icon" [ngClass]="colorClassFor(notification.type)">
+        <i [class]="iconFor(notification.type)"></i>
+      </div>
+
+      <div class="notification-body">
+        <div class="notification-title-row">
+          <span class="notification-title">{{ notification.title }}</span>
+          <span class="unread-dot" *ngIf="!notification.read"></span>
+        </div>
+        <p class="notification-message">{{ notification.message }}</p>
+        <span class="notification-time">{{ timeAgo(notification.createdAt) }}</span>
+      </div>
+
+      <button
+        class="mark-read-btn"
+        *ngIf="!notification.read"
+        (click)="onMarkAsRead(notification, $event)"
+        title="Mark as read">
+        <i class="fa-solid fa-check"></i>
+      </button>
+    </div>
+  </div>
+
+</div>

@@ -54,6 +54,12 @@
         <span>Leaderboard</span>
       </a>
 
+      <a routerLink="notifications" routerLinkActive="active" (click)="closeSidebar()">
+        <i class="fa-solid fa-bell"></i>
+        <span>Notifications</span>
+        <span class="nav-badge" *ngIf="unreadCount > 0">{{ unreadCount > 9 ? '9+' : unreadCount }}</span>
+      </a>
+
       <a routerLink="profile" routerLinkActive="active" (click)="closeSidebar()">
         <i class="fa-solid fa-user"></i>
         <span>Profile</span>

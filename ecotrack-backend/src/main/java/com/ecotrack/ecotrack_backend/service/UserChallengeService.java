@@ -98,6 +98,17 @@ public class UserChallengeService {
                 .toList();
     }
 
+    // ── Scheduled Maintenance: force-settle every in-progress participation
+    // whose window has closed, even if the user hasn't opened the app since.
+    // Reuses refreshAndFinalize, the exact same logic getUserChallenges()
+    // relies on for lazy, per-user finalization. ──
+    @Transactional
+    public int finalizeAllInProgressChallenges() {
+        List<UserChallenge> inProgress = userChallengeRepository.findByStatus(UserChallengeStatus.IN_PROGRESS);
+        inProgress.forEach(this::refreshAndFinalize);
+        return inProgress.size();
+    }
+
     // ── Join ──
 
     @Transactional

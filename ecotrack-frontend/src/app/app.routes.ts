@@ -17,6 +17,7 @@ import { ChallengesComponent } from './home/challenges/challenges';
 import { AiTips } from './home/ai-tips/ai-tips';
 import { Analytics } from './home/analytics/analytics';
 import { LeaderboardComponent } from './home/leaderboard/leaderboard';
+import { Notifications } from './home/notifications/notifications';
 import { Profile } from './home/profile/profile';
 import { Settings } from './home/settings/settings';
 import { SetPasswordPrompt } from './auth/set-password-prompt/set-password-prompt';
@@ -46,6 +47,7 @@ export const routes: Routes = [
             { path: 'ai-tips', component: AiTips },
             { path: 'analytics', component: Analytics },
             { path: 'leaderboard', component: LeaderboardComponent },
+            { path: 'notifications', component: Notifications },
             { path: 'profile', component: Profile },
             { path: 'settings', component: Settings }
         ]

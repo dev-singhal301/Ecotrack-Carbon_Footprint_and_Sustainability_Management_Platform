@@ -14,6 +14,7 @@ import com.ecotrack.ecotrack_backend.entity.CarbonEntry;
 import com.ecotrack.ecotrack_backend.repository.CarbonEntryRepository;
 import com.ecotrack.ecotrack_backend.repository.UserRepository;
 import com.ecotrack.ecotrack_backend.exception.GoalAccessDeniedException;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,6 +35,7 @@ public class GoalService {
     private final UserRepository userRepository;
     private final CarbonEntryRepository carbonEntryRepository;
     private final UserXpService userXpService;
+    private final ApplicationEventPublisher eventPublisher;
 
     private static final Set<GoalType> AGGREGATE_ALL_CATEGORIES = EnumSet.of(GoalType.REDUCE_CARBON_EMISSIONS);
     private static final int DEFAULT_BASELINE_DAYS = 30;
@@ -42,12 +44,14 @@ public class GoalService {
                        GoalProgressRepository goalProgressRepository,
                        UserRepository userRepository,
                        CarbonEntryRepository carbonEntryRepository,
-                       UserXpService userXpService) {
+                       UserXpService userXpService,
+                       ApplicationEventPublisher eventPublisher) {
         this.goalRepository = goalRepository;
         this.goalProgressRepository = goalProgressRepository;
         this.userRepository = userRepository;
         this.carbonEntryRepository = carbonEntryRepository;
         this.userXpService = userXpService;
+        this.eventPublisher = eventPublisher;
     }
 
     // ── Create ──
@@ -174,6 +178,8 @@ public class GoalService {
             progress.setCompletionPercentage(BigDecimal.valueOf(100));
             goalProgressRepository.save(progress);
         });
+
+        eventPublisher.publishEvent(new GoalCompletedEvent(this, userId, goalId, xpToAward));
     }
 
     // ── Delete ──
@@ -276,7 +282,7 @@ public class GoalService {
         if ("ACTIVE".equals(goal.getStatus())) {
             // Breached budget cap
             if (currentValue.compareTo(goal.getTargetValue()) > 0) {
-                goal.setStatus("EXPIRED");
+                markExpired(goal);
                 completed = false;
             } 
             // Successfully held under budget allowance through the end date
@@ -318,14 +324,42 @@ public class GoalService {
                 try {
                     completeGoal(goal.getUser().getId(), goal.getGoalId());
                 } catch (Exception e) {
-                    goal.setStatus("EXPIRED");
-                    goalRepository.save(goal);
+                    markExpired(goal);
                 }
             } else {
-                goal.setStatus("EXPIRED");
-                goalRepository.save(goal);
+                markExpired(goal);
             }
         }
+    }
+
+    // ── Shared expiry path: flips status and fires GoalExpiredEvent so the
+    // Notification module hears about it regardless of which caller
+    // (lazy read, or the daily maintenance sweep) triggered it. ──
+    private void markExpired(Goal goal) {
+        goal.setStatus("EXPIRED");
+        goalRepository.save(goal);
+        eventPublisher.publishEvent(new GoalExpiredEvent(this, goal.getUser().getId(), goal.getGoalId()));
+    }
+
+    // ── Scheduled Maintenance: force-settle every goal whose window has
+    // closed, even if its owner hasn't opened the app since. Reuses the
+    // exact same expiration/completion logic the UI relies on when a user
+    // does check in — see checkAndHandleExpiration. ──
+    @Transactional
+    public int finalizeAllActiveGoals() {
+        // Only goals whose endDate has already passed actually trigger
+        // anything inside checkAndHandleExpiration — everything else is a
+        // cheap no-op, so it's safe to sweep the whole ACTIVE set here.
+        // (completeGoal() re-fetches the goal by id internally, so we can't
+        // rely on this loop's own `goal` reference to tell whether it
+        // settled — candidatesPastEndDate is reported instead of a true
+        // "settled" count.)
+        List<Goal> activeGoals = goalRepository.findByStatus("ACTIVE");
+        int candidatesPastEndDate = (int) activeGoals.stream()
+                .filter(g -> LocalDate.now().isAfter(g.getEndDate()))
+                .count();
+        activeGoals.forEach(this::checkAndHandleExpiration);
+        return candidatesPastEndDate;
     }
 
     // ── Overlap Checker Helper ──

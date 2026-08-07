@@ -1,7 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule, Router } from '@angular/router';
+import { RouterModule, Router, NavigationEnd } from '@angular/router';
+import { filter } from 'rxjs/operators';
 import { Auth } from '../auth/auth';
+import { NotificationsService } from './notifications/notifications.service';
 
 @Component({
   selector: 'app-home',
@@ -10,14 +12,46 @@ import { Auth } from '../auth/auth';
   templateUrl: './home.html',
   styleUrls: ['./home.css']
 })
-export class Home {
+export class Home implements OnInit, OnDestroy {
   // Navigation sidebar drawer toggle state
   isSidebarOpen: boolean = false;
 
+  // Sidebar "Notifications" badge count
+  unreadCount = 0;
+  private pollInterval?: any;
+
   constructor(
     private router: Router,
-    private auth: Auth
+    private auth: Auth,
+    private notificationsService: NotificationsService
   ) {}
+
+  ngOnInit(): void {
+    this.refreshUnreadCount();
+
+    // Poll periodically so the badge stays roughly current even if the
+    // user never leaves the current screen.
+    this.pollInterval = setInterval(() => this.refreshUnreadCount(), 60000);
+
+    // Also refresh right after navigating — cheaply catches the badge
+    // clearing itself once the user has visited /home/notifications.
+    this.router.events
+      .pipe(filter(event => event instanceof NavigationEnd))
+      .subscribe(() => this.refreshUnreadCount());
+  }
+
+  ngOnDestroy(): void {
+    if (this.pollInterval) {
+      clearInterval(this.pollInterval);
+    }
+  }
+
+  private refreshUnreadCount(): void {
+    this.notificationsService.getUnreadCount().subscribe({
+      next: (res) => (this.unreadCount = res?.count ?? 0),
+      error: (err) => console.error('Failed to load unread notification count:', err)
+    });
+  }
 
   isAdmin(): boolean {
     return this.auth.isAdmin();
