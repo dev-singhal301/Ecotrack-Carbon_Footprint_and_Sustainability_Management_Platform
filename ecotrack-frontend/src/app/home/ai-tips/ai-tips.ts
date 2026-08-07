@@ -76,7 +76,7 @@ export class AiTips {
       this.loadRecommendations();
     }
 
-    if (this.activePanel === 'goals' && this.goalsWithProgress.length === 0 && !this.goalsLoading && !this.goalsError) {
+    if (this.activePanel === 'goals' && this.goalsWithProgress.length === 0 && !this.goalsLoading) {
       this.loadGoalInsights();
     }
 
@@ -104,6 +104,27 @@ export class AiTips {
       error: (err) => {
         console.error('Failed to load recommendations:', err);
         this.recError = err.error?.message || 'Could not load your recommendations. Please try again.';
+        this.recLoading = false;
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  refreshRecommendations(): void {
+    this.recLoading = true;
+    this.recError = null;
+    this.cdr.detectChanges();
+
+    this.recommendationService.refreshRecommendations().subscribe({
+      next: (res) => {
+        this.recommendations = res;
+        this.revealedCount = 1;
+        this.recLoading = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Failed to refresh recommendations:', err);
+        this.recError = err.error?.message || 'Could not refresh your recommendations. Please try again.';
         this.recLoading = false;
         this.cdr.detectChanges();
       },
