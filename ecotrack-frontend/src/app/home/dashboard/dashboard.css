@@ -91,7 +91,7 @@
   font-family: var(--eco-font-greeting);
   font-size: 2.1rem;
   font-weight: 800;
-  color: var(--eco-slate-900);
+  color: var(--eco-green-dark);
   line-height: 1.2;
   letter-spacing: -0.02em;
 }
@@ -101,6 +101,7 @@
   font-size: 0.95rem;
   font-weight: 500;
   color: var(--eco-text-muted);
+  font-style: italic;
 }
 
 .rank-row {
@@ -153,7 +154,7 @@
   color: var(--eco-slate-700);
 }
 
-/* Button Pair Styling (Inverse Visual Theme) */
+/* Button Pair Styling */
 .welcome-right {
   display: flex;
   flex-direction: column;
@@ -179,7 +180,6 @@
   transition: all 0.2s ease;
 }
 
-/* Primary Solid Button */
 .btn-log-entry {
   background: var(--eco-green);
   color: var(--eco-white);
@@ -194,7 +194,6 @@
   box-shadow: 0 5px 14px rgba(45, 106, 79, 0.3);
 }
 
-/* Inverted Secondary Button */
 .btn-ecobot-compact {
   background: var(--eco-white);
   color: var(--eco-green);
@@ -257,7 +256,7 @@
   font-family: var(--eco-font-heading);
   font-size: 1.85rem;
   font-weight: 800;
-  color: var(--eco-heading-color);
+  color: var(--eco-green);
   letter-spacing: -0.01em;
 }
 
@@ -293,19 +292,19 @@
   color: var(--eco-red);
 }
 
-/* ---------------- 3 & 4. Middle Section (Equal Height Desktop / Stacking Mobile) ---------------- */
+/* ---------------- 3 & 4. Middle Section ---------------- */
 .middle-row {
   display: grid;
   grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
   gap: 20px;
-  align-items: stretch; /* Guarantees both cards match height on desktop */
+  align-items: stretch;
 }
 
 .category-panel,
 .activity-panel {
   display: flex;
   flex-direction: column;
-  height: 100%; /* Expands to fill grid container cell height */
+  height: 100%;
   min-width: 0;
 }
 
@@ -369,14 +368,12 @@
   color: var(--eco-text-muted);
 }
 
-/* Chart Baseline */
 .daily-chart-container {
   position: relative;
   height: 230px;
   width: 100%;
 }
 
-/* Dynamic Legend Chips */
 .chart-legend-row {
   display: flex;
   flex-wrap: wrap;
@@ -407,18 +404,17 @@
   font-weight: 700;
 }
 
-/* Dynamically Flexed Activity List with Internal Scroll */
+/* Activity Feed with Desktop Scroll */
 .activity-list {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  flex: 1 1 0px;   /* Dynamically fills remaining card height to match chart card */
-  min-height: 0;    /* Essential for flex child scrolling */
-  overflow-y: auto; /* Activates internal scrollbar */
+  flex: 1 1 0px;
+  min-height: 0;
+  overflow-y: auto;
   padding-right: 4px;
 }
 
-/* Sleek Webkit Scrollbar */
 .activity-list::-webkit-scrollbar {
   width: 5px;
 }
@@ -529,7 +525,6 @@
 
 /* ---------------- Responsive Rules ---------------- */
 
-/* Tablet & Mobile Layout Adaptations (<= 1024px) */
 @media (max-width: 1024px) {
   :host {
     height: 100%;
@@ -545,10 +540,9 @@
 
   .kpi-row,
   .middle-row {
-    grid-template-columns: 1fr; /* Stacks panels one after the other */
+    grid-template-columns: 1fr;
   }
 
-  /* Reset panels to natural vertical flow */
   .category-panel,
   .activity-panel {
     height: auto;
@@ -558,11 +552,13 @@
     height: 220px;
   }
 
+  /* Fixed: Mobile internal scroll height boundary */
   .activity-list {
     flex: none;
-    max-height: none;
-    overflow-y: visible; /* Allows mobile to scroll naturally down the page */
-    padding-right: 0;
+    max-height: 265px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-right: 4px;
   }
 
   .welcome-banner {
@@ -593,7 +589,6 @@
   }
 }
 
-/* Smartphone Viewports (<= 640px) */
 @media (max-width: 640px) {
   .dashboard-container {
     padding: 12px;
@@ -608,15 +603,19 @@
     font-size: 1.6rem;
   }
 
-  /* Vertical stack for action buttons */
+  /* Fixed: Set flex-direction to row so buttons sit side-by-side */
   .welcome-right {
-    flex-direction: column;
+    flex-direction: row;
+    width: 100%;
+    gap: 10px;
   }
 
+  /* Fixed: Flex grow equally to fill 50% space each */
   .btn-log-entry,
   .btn-ecobot-compact {
-    width: 100%;
-    height: 40px;
+    flex: 1;
+    min-width: 0;
+    width: auto;
   }
 
   .chart-legend-row {
