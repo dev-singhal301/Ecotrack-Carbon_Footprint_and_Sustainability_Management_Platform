@@ -5,13 +5,17 @@ import com.ecotrack.ecotrack_backend.dto.DashboardSummaryResponse;
 import com.ecotrack.ecotrack_backend.dto.GoalProgressResponse;
 import com.ecotrack.ecotrack_backend.dto.GoalSnapshotResponse;
 import com.ecotrack.ecotrack_backend.dto.UserChallengeResponse;
+import com.ecotrack.ecotrack_backend.dto.XpActivityResponse;
 import com.ecotrack.ecotrack_backend.entity.Goal;
 import com.ecotrack.ecotrack_backend.entity.GoalProgress;
 import com.ecotrack.ecotrack_backend.entity.User;
+import com.ecotrack.ecotrack_backend.entity.XpTransaction;
 import com.ecotrack.ecotrack_backend.repository.GoalProgressRepository;
 import com.ecotrack.ecotrack_backend.repository.GoalRepository;
 import com.ecotrack.ecotrack_backend.repository.UserRepository;
+import com.ecotrack.ecotrack_backend.repository.XpTransactionRepository;
 import com.ecotrack.ecotrack_backend.util.GamificationUtils;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,19 +32,22 @@ public class DashboardService {
     private final GoalProgressRepository goalProgressRepository;
     private final GoalService goalService;
     private final UserChallengeService userChallengeService;
+    private final XpTransactionRepository xpTransactionRepository;
 
     public DashboardService(UserRepository userRepository,
                             CarbonFootprintService carbonFootprintService,
                             GoalRepository goalRepository,
                             GoalProgressRepository goalProgressRepository,
                             GoalService goalService,
-                            UserChallengeService userChallengeService) {
+                            UserChallengeService userChallengeService,
+                            XpTransactionRepository xpTransactionRepository) {
         this.userRepository = userRepository;
         this.carbonFootprintService = carbonFootprintService;
         this.goalRepository = goalRepository;
         this.goalProgressRepository = goalProgressRepository;
         this.goalService = goalService;
         this.userChallengeService = userChallengeService;
+        this.xpTransactionRepository = xpTransactionRepository;
     }
 
     /**
@@ -66,15 +73,36 @@ public class DashboardService {
         summary.setSavingsPercentage(carbonFootprintService.getSavingsPercentage(userId));
         summary.setTotalRewardPoints(user.getRewardPoints() != null ? user.getRewardPoints() : 0);
 
+        // ── Leaderboard Standing (Replacement for Eco-Budget Health) ──
+        Long monthlyXp = xpTransactionRepository.findCurrentMonthXpByUserId(userId);
+        Long monthlyRank = xpTransactionRepository.findCurrentMonthRankByUserId(userId);
+        summary.setMonthlyXp(monthlyXp != null ? monthlyXp : 0L);
+        summary.setMonthlyRank(monthlyRank != null ? monthlyRank : 0L);
+
         // ── Section 3: Category Emission Impact ──
         List<CategoryImpactResponse> categoryImpacts = carbonFootprintService.getCategoryImpactList(userId);
         summary.setCategoryImpacts(categoryImpacts);
 
-        // ── Section 4: Active Goal Meters ──
+        // ── Section 4: Recent XP Earned Feed ──
+        List<XpTransaction> recentTransactions = xpTransactionRepository
+                .findByUserIdOrderByCreatedAtDesc(userId, PageRequest.of(0, 15));
+
+        List<XpActivityResponse> recentActivities = recentTransactions.stream()
+                .map(tx -> new XpActivityResponse(
+                        tx.getXpTransactionId(),
+                        tx.getSourceType(),
+                        formatXpDescription(tx.getSourceType()),
+                        tx.getXpAmount(),
+                        tx.getCreatedAt()
+                ))
+                .toList();
+        summary.setRecentActivities(recentActivities);
+
+        // ── Section 5: Active Goal Meters ──
         List<GoalSnapshotResponse> activeGoalSnapshots = getActiveGoalSnapshots(userId);
         summary.setActiveGoals(activeGoalSnapshots);
 
-        // ── Section 5: Challenge Snapshots & Metrics ──
+        // ── Section 6: Challenge Snapshots & Metrics ──
         List<UserChallengeResponse> allUserChallenges = userChallengeService.getUserChallenges(user.getEmail());
 
         List<UserChallengeResponse> activeChallenges = allUserChallenges.stream()
@@ -90,6 +118,22 @@ public class DashboardService {
         summary.setActiveChallenges(activeChallenges);
 
         return summary;
+    }
+
+    /**
+     * Converts a raw sourceType into a user-friendly UI description.
+     */
+    private String formatXpDescription(String sourceType) {
+        if (sourceType == null) {
+            return "XP Reward Earned";
+        }
+        return switch (sourceType.toUpperCase()) {
+            case "GOAL" -> "Goal Completed Reward";
+            case "CHALLENGE" -> "Challenge Accomplished";
+            case "DAILY_LOG", "LOG" -> "Daily Log Entry Reward";
+            case "STREAK" -> "Streak Milestone Reward";
+            default -> "Activity XP Awarded";
+        };
     }
 
     /**

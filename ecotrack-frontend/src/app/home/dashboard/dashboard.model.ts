@@ -1,18 +1,9 @@
-// Matches GET /api/dashboard/summary exactly, per DashboardSummaryResponse.java,
-// CategoryImpactResponse.java, and GoalSnapshotResponse.java.
-
 export interface CategoryImpact {
   categoryName: string;
   totalEmissions: number;
   percentageShare: number;
 }
 
-// No status/daysLeft field — this list is pre-filtered server-side to
-// "active" goals. currentValue/targetValue still drive the fill bar and
-// status pill here defensively, in case DashboardService's active-goal
-// filtering ever drifts from GoalService's own isTaskActive() exclusion
-// of breached goals (two separate backend implementations, real risk of
-// going out of sync over time).
 export interface GoalSnapshot {
   goalId: number;
   goalName: string;
@@ -23,13 +14,16 @@ export interface GoalSnapshot {
   rewardPoints: number;
 }
 
-// Represents recent XP events (e.g., daily logs, streaks, completed goals)
 export interface XpActivityItem {
-  id: number;
-  activityName: string;
-  category: string;
+  xpTransactionId?: number;
+  id?: number;
+  sourceType?: string;
+  category?: string;
+  description?: string;
+  activityName?: string;
   xpEarned: number;
-  timestamp: string;
+  createdAt?: string;
+  timestamp?: string;
 }
 
 export interface DashboardSummary {
@@ -42,6 +36,8 @@ export interface DashboardSummary {
   carbonSaved: number;
   savingsPercentage: number;
   totalRewardPoints: number;
+  monthlyXp: number;
+  monthlyRank: number;
   categoryImpacts: CategoryImpact[];
   activeGoals: GoalSnapshot[];
   recentActivities?: XpActivityItem[];

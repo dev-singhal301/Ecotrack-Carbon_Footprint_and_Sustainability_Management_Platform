@@ -1,6 +1,7 @@
 package com.ecotrack.ecotrack_backend.repository;
 
 import com.ecotrack.ecotrack_backend.entity.XpTransaction;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -15,6 +16,12 @@ public interface XpTransactionRepository extends JpaRepository<XpTransaction, Lo
      * Fetches itemized XP transaction history for a given user ordered by most recent.
      */
     List<XpTransaction> findByUserIdOrderByCreatedAtDesc(Long userId);
+
+    /**
+     * Fetches top N recent XP transactions for a user (used for Dashboard activity list).
+     * Usage: findByUserIdOrderByCreatedAtDesc(userId, PageRequest.of(0, 15));
+     */
+    List<XpTransaction> findByUserIdOrderByCreatedAtDesc(Long userId, Pageable pageable);
 
     /**
      * Aggregates monthly XP per user for the active month using PostgreSQL date_trunc.
@@ -49,6 +56,31 @@ public interface XpTransactionRepository extends JpaRepository<XpTransaction, Lo
           AND created_at >= DATE_TRUNC('month', CURRENT_TIMESTAMP)
     """, nativeQuery = true)
     Long findCurrentMonthXpByUserId(@Param("userId") Long userId);
+
+    /**
+     * Calculates a specific user's rank position for the active calendar month.
+     */
+    @Query(value = """
+        WITH monthly_totals AS (
+            SELECT 
+                u.id AS user_id, 
+                COALESCE(SUM(x.xp_amount), 0) AS total_xp
+            FROM users u
+            LEFT JOIN xp_transactions x 
+                ON u.id = x.user_id 
+                AND x.created_at >= DATE_TRUNC('month', CURRENT_TIMESTAMP)
+            WHERE u.enabled = TRUE
+            GROUP BY u.id
+        ),
+        ranked_totals AS (
+            SELECT 
+                user_id, 
+                CAST(DENSE_RANK() OVER (ORDER BY total_xp DESC) AS BIGINT) AS rank
+            FROM monthly_totals
+        )
+        SELECT rank FROM ranked_totals WHERE user_id = :userId
+    """, nativeQuery = true)
+    Long findCurrentMonthRankByUserId(@Param("userId") Long userId);
 
     /**
      * Aggregates monthly XP per user for the previous calendar month.

@@ -128,7 +128,7 @@ export class Dashboard implements OnInit {
     return this.summary?.username ? `Hi ${this.summary.username}!` : 'Welcome back!';
   }
 
-  // --- XP & Level Logic Fixes ---
+  // --- XP & Level Calculations ---
   get currentLevelXpProgress(): number {
     if (!this.summary) return 0;
     const currentLevel = this.summary.userLevel || 1;
@@ -150,58 +150,26 @@ export class Dashboard implements OnInit {
     return (this.summary?.carbonSaved ?? 0) <= 0;
   }
 
-  // --- Goal Filtering Alignment Fix ---
+  // --- Active Goals ---
   get filteredActiveGoals(): GoalSnapshot[] {
     if (!this.summary?.activeGoals) return [];
-    // Active goals are pre-filtered by the backend.
-    // Return summary.activeGoals directly so the dashboard accurately reflects active meters.
     return this.summary.activeGoals;
   }
 
-  // --- Eco-Budget KPI Calculations ---
-  get overallBudgetUsedPercent(): number {
-    const goals = this.filteredActiveGoals;
-    if (!goals.length) return 0;
-
-    const totalPercentage = goals.reduce((acc, goal) => {
-      const pct = goal.targetValue > 0 ? (goal.currentValue / goal.targetValue) * 100 : 0;
-      return acc + pct;
-    }, 0);
-
-    return totalPercentage / goals.length;
-  }
-
-  get budgetHealthLabel(): string {
-    const goals = this.filteredActiveGoals;
-    if (!goals.length) return 'Optimal';
-
-    const hasBreached = goals.some(g => g.currentValue > g.targetValue);
-    if (hasBreached) return 'Breached';
-
-    const avg = this.overallBudgetUsedPercent;
-    if (avg >= 85) return 'Warning';
-    return 'Safe Zone';
-  }
-
-  get budgetHealthColor(): string {
-    const label = this.budgetHealthLabel;
-    if (label === 'Breached') return 'var(--critical, #ef4444)';
-    if (label === 'Warning') return 'var(--warning, #f59e0b)';
-    return 'var(--eco-safe, #10b981)';
-  }
-
-  // --- Recent Activities Logic ---
+  // --- Recent Activities ---
   get recentActivities(): XpActivityItem[] {
     if (this.summary?.recentActivities?.length) {
-      return this.summary.recentActivities;
+      return [...this.summary.recentActivities].sort((a, b) => {
+        const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return timeB - timeA; // Descending order: newest entries first
+      });
     }
 
-    // Temporary fallback/demo data showing chronological XP sources
     return [
-      { id: 1, activityName: 'Cut Electricity Goal Completed', category: 'GOAL', xpEarned: 50, timestamp: 'Today' },
-      { id: 2, activityName: 'Logged Daily Travel Entry', category: 'LOG', xpEarned: 10, timestamp: 'Today' },
-      { id: 3, activityName: '3-Day Tracking Streak', category: 'STREAK', xpEarned: 15, timestamp: 'Yesterday' },
-      { id: 4, activityName: 'Logged Food Footprint Entry', category: 'LOG', xpEarned: 10, timestamp: '2 days ago' }
+      { xpTransactionId: 1, description: 'Cut Electricity Goal Completed', sourceType: 'GOAL', xpEarned: 50, createdAt: new Date().toISOString() },
+      { xpTransactionId: 2, description: 'Logged Daily Travel Entry', sourceType: 'LOG', xpEarned: 10, createdAt: new Date().toISOString() },
+      { xpTransactionId: 3, description: '3-Day Tracking Streak', sourceType: 'STREAK', xpEarned: 15, createdAt: new Date().toISOString() }
     ];
   }
 
@@ -324,7 +292,6 @@ export class Dashboard implements OnInit {
     return this.categoryLabels[category] ?? category;
   }
 
-  // Keeping these methods intact just in case your test suite relies on them!
   getGoalUnit(goal: GoalSnapshot): string {
     return this.goalTypeUnits[goal.goalType] ?? 'kg CO\u2082';
   }
@@ -332,18 +299,6 @@ export class Dashboard implements OnInit {
   getGoalFillPercent(goal: GoalSnapshot): number {
     if (goal.targetValue <= 0) return 0;
     return Math.min(100, Math.max(0, (goal.currentValue / goal.targetValue) * 100));
-  }
-
-  getGoalStatusLabel(goal: GoalSnapshot): string {
-    if (goal.currentValue > goal.targetValue) return 'Over Budget';
-    if (this.getGoalFillPercent(goal) >= 85) return 'Approaching Limit';
-    return 'On Track';
-  }
-
-  getGoalStatusColor(goal: GoalSnapshot): string {
-    if (goal.currentValue > goal.targetValue) return 'var(--critical, #ef4444)';
-    if (this.getGoalFillPercent(goal) >= 85) return 'var(--warning, #f59e0b)';
-    return 'var(--eco-safe, #10b981)';
   }
 }
 

@@ -17,14 +17,21 @@ public class DashboardSummaryResponse {
     private BigDecimal carbonSaved;          // kg CO2e saved vs baseline
     private Double savingsPercentage;        // Percentage drop badge (e.g., 12.5%)
     private Integer totalRewardPoints;
+    
+    // --- Leaderboard Standing (New Replacement for Eco-Budget Health) ---
+    private Long monthlyRank;                // e.g., 3 (#3 in active month)
+    private Long monthlyXp;                  // e.g., 450 XP earned this month
 
     // --- Section 3: Category Emission Impact ---
     private List<CategoryImpactResponse> categoryImpacts;
 
-    // --- Section 4: Active Goal Meters ---
+    // --- Section 4: Recent XP Earned Feed ---
+    private List<XpActivityResponse> recentActivities;
+
+    // --- Section 5: Active Goal Meters ---
     private List<GoalSnapshotResponse> activeGoals;
 
-    // --- Section 5: Challenge Snapshots & Metrics ---
+    // --- Section 6: Challenge Snapshots & Metrics ---
     private Integer activeChallengesCount;
     private Integer completedChallengesCount;
     private List<UserChallengeResponse> activeChallenges;
@@ -34,7 +41,8 @@ public class DashboardSummaryResponse {
 
     public DashboardSummaryResponse(String username, Integer userLevel, String userRank, Integer currentXp, Integer nextLevelXpTarget,
                                     BigDecimal totalCarbonFootprint, BigDecimal carbonSaved, Double savingsPercentage,
-                                    Integer totalRewardPoints, List<CategoryImpactResponse> categoryImpacts,
+                                    Integer totalRewardPoints, Long monthlyRank, Long monthlyXp,
+                                    List<CategoryImpactResponse> categoryImpacts, List<XpActivityResponse> recentActivities,
                                     List<GoalSnapshotResponse> activeGoals, Integer activeChallengesCount,
                                     Integer completedChallengesCount, List<UserChallengeResponse> activeChallenges) {
         this.username = username;
@@ -46,7 +54,10 @@ public class DashboardSummaryResponse {
         this.carbonSaved = carbonSaved;
         this.savingsPercentage = savingsPercentage;
         this.totalRewardPoints = totalRewardPoints;
+        this.monthlyRank = monthlyRank;
+        this.monthlyXp = monthlyXp;
         this.categoryImpacts = categoryImpacts;
+        this.recentActivities = recentActivities;
         this.activeGoals = activeGoals;
         this.activeChallengesCount = activeChallengesCount;
         this.completedChallengesCount = completedChallengesCount;
@@ -81,8 +92,17 @@ public class DashboardSummaryResponse {
     public Integer getTotalRewardPoints() { return totalRewardPoints; }
     public void setTotalRewardPoints(Integer totalRewardPoints) { this.totalRewardPoints = totalRewardPoints; }
 
+    public Long getMonthlyRank() { return monthlyRank; }
+    public void setMonthlyRank(Long monthlyRank) { this.monthlyRank = monthlyRank; }
+
+    public Long getMonthlyXp() { return monthlyXp; }
+    public void setMonthlyXp(Long monthlyXp) { this.monthlyXp = monthlyXp; }
+
     public List<CategoryImpactResponse> getCategoryImpacts() { return categoryImpacts; }
     public void setCategoryImpacts(List<CategoryImpactResponse> categoryImpacts) { this.categoryImpacts = categoryImpacts; }
+
+    public List<XpActivityResponse> getRecentActivities() { return recentActivities; }
+    public void setRecentActivities(List<XpActivityResponse> recentActivities) { this.recentActivities = recentActivities; }
 
     public List<GoalSnapshotResponse> getActiveGoals() { return activeGoals; }
     public void setActiveGoals(List<GoalSnapshotResponse> activeGoals) { this.activeGoals = activeGoals; }
