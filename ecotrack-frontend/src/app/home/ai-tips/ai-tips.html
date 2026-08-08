@@ -3,7 +3,7 @@
   <div class="ecobot-header">
     <button class="btn-back" (click)="goToDashboard()">&larr; Dashboard</button>
     <div class="ecobot-header-title">
-      <span class="ecobot-header-icon">🌱</span>
+      <i class="fas fa-leaf ecobot-header-icon"></i>
       <h2>EcoBot</h2>
     </div>
     <p class="ecobot-header-subtext">Your personalized sustainability assistant</p>
@@ -14,15 +14,15 @@
       class="panel-btn"
       [class.panel-btn-active]="activePanel === 'recommendations'"
       (click)="selectPanel('recommendations')">
-      <span class="panel-btn-icon">📊</span>
-      <span class="panel-btn-label">Personalized Recommendations</span>
+      <i class="fas fa-chart-line panel-btn-icon"></i>
+      <span class="panel-btn-label">Top 3 Recommendations</span>
     </button>
 
     <button
       class="panel-btn"
       [class.panel-btn-active]="activePanel === 'goals'"
       (click)="selectPanel('goals')">
-      <span class="panel-btn-icon">🎯</span>
+      <i class="fas fa-bullseye panel-btn-icon"></i>
       <span class="panel-btn-label">Goal Insights</span>
     </button>
 
@@ -30,7 +30,7 @@
       class="panel-btn"
       [class.panel-btn-active]="activePanel === 'facts'"
       (click)="selectPanel('facts')">
-      <span class="panel-btn-icon">🌍</span>
+      <i class="fas fa-globe panel-btn-icon"></i>
       <span class="panel-btn-label">Carbon Facts</span>
     </button>
   </div>
@@ -43,6 +43,11 @@
       <div *ngIf="recError" class="rec-error">{{ recError }}</div>
 
       <div *ngIf="recommendations && !recLoading" class="rec-list">
+
+        <button class="btn-refresh-fact" (click)="refreshRecommendations()">
+          <i class="fas fa-rotate"></i> Refresh Tips
+        </button>
+
         <div class="rec-card" *ngFor="let cat of revealedCategories">
           <div class="rec-card-header">
             <span class="rec-card-category">{{ getCategoryLabel(cat.category) }}</span>
@@ -60,10 +65,6 @@
 
         <button class="btn-explore" *ngIf="hasMoreToExplore" (click)="exploreNext()">
           Explore {{ nextCategoryLabel }} &darr;
-        </button>
-
-        <button class="btn-refresh-fact" (click)="refreshRecommendations()">
-          🔄 Refresh Tips
         </button>
       </div>
     </div>
@@ -123,7 +124,7 @@
               <span class="goal-detail-value">{{ entry.progress.lastUpdated }}</span>
             </div>
             <div class="goal-detail-row" *ngIf="entry.progress.completed">
-              <span class="goal-detail-complete">✅ Goal completed!</span>
+              <span class="goal-detail-complete"><i class="fas fa-circle-check"></i> Goal completed!</span>
             </div>
           </div>
 
@@ -136,9 +137,11 @@
       <div *ngIf="factError" class="rec-error">{{ factError }}</div>
 
       <div class="fact-card" *ngIf="currentFact && !factLoading">
-        <span class="fact-icon">🌱</span>
+        <i class="fas fa-leaf fact-icon"></i>
         <p class="fact-text">{{ currentFact }}</p>
-        <button class="btn-refresh-fact" (click)="refreshFact()">🔄 Refresh</button>
+        <button class="btn-refresh-fact" (click)="refreshFact()">
+          <i class="fas fa-rotate"></i> Refresh
+        </button>
       </div>
     </div>
 

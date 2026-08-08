@@ -133,17 +133,20 @@ export class AiTips {
 
   get revealedCategories() {
     if (!this.recommendations) return [];
-    return this.recommendations.allCategoriesSorted.slice(0, this.revealedCount);
+    const topThree = this.recommendations.allCategoriesSorted.slice(0, 3);
+    return topThree.slice(0, this.revealedCount);
   }
 
   get hasMoreToExplore(): boolean {
     if (!this.recommendations) return false;
-    return this.revealedCount < this.recommendations.allCategoriesSorted.length;
+    const topThree = this.recommendations.allCategoriesSorted.slice(0, 3);
+    return this.revealedCount < topThree.length;
   }
 
   get nextCategoryLabel(): string {
     if (!this.recommendations) return '';
-    const next = this.recommendations.allCategoriesSorted[this.revealedCount];
+    const topThree = this.recommendations.allCategoriesSorted.slice(0, 3);
+    const next = topThree[this.revealedCount];
     return next ? this.getCategoryLabel(next.category) : '';
   }
 

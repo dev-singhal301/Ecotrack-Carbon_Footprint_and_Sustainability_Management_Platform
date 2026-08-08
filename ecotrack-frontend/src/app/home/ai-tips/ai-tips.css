@@ -370,3 +370,15 @@
   background: var(--eco-green-light);
   color: var(--eco-white);
 }
+
+.ecobot-header-icon {
+  color: var(--eco-green);
+}
+
+.panel-btn-icon {
+  color: var(--eco-green);
+}
+
+.fact-icon {
+  color: var(--eco-green);
+}
