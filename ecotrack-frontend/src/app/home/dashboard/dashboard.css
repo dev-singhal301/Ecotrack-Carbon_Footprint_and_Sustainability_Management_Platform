@@ -6,7 +6,7 @@
   --eco-font-body: 'Nunito', 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
   --eco-font-heading: 'Nunito', 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
 
-  /* ---- Brand green 3-tier ramp ---- */
+  /* ---- Brand Green 3-Tier Ramp ---- */
   --eco-green-light: #4ade80;
   --eco-green: #2d6a4f;
   --eco-green-dark: #1b4332;
@@ -18,9 +18,9 @@
   --eco-positive-bg: #dcfce7;
   --eco-positive-text: #15803d;
 
-  /* ---- Refined Slate & Heading Colors ---- */
-  --eco-heading-color: #0f172a;       /* Deep slate heading color */
-  --eco-heading-accent: #0d2818;      /* Deep forest dark hue */
+  /* ---- Refined Slate & Neutral Colors ---- */
+  --eco-heading-color: #0f172a;
+  --eco-heading-accent: #0d2818;
   --eco-slate-900: #0f172a;
   --eco-slate-800: #1e293b;
   --eco-slate-700: #334155;
@@ -32,7 +32,6 @@
   --eco-text-muted: #64748b;
   --eco-text-label: #475569;
 
-  /* ---- Background Theme Palette ---- */
   --eco-bg-light: #f8fafc;
 
   display: block;
@@ -56,6 +55,7 @@
   padding: 20px;
   box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  box-sizing: border-box;
 }
 
 /* Error Banner & Loader */
@@ -80,6 +80,10 @@
   align-items: center;
   justify-content: space-between;
   gap: 24px;
+}
+
+.welcome-left {
+  flex: 1;
 }
 
 .welcome-greeting {
@@ -149,15 +153,7 @@
   color: var(--eco-slate-700);
 }
 
-/* Button Layout & Hierarchy */
-.welcome-right {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 12px;
-}
-
-/* ---------------- Button Pair Styling ---------------- */
+/* Button Pair Styling (Inverse Visual Theme) */
 .welcome-right {
   display: flex;
   flex-direction: column;
@@ -165,7 +161,6 @@
   gap: 10px;
 }
 
-/* Shared base properties for perfect visual parity */
 .btn-log-entry,
 .btn-ecobot-compact {
   display: inline-flex;
@@ -184,7 +179,7 @@
   transition: all 0.2s ease;
 }
 
-/* 1. Primary Solid Button: + Log New Entry */
+/* Primary Solid Button */
 .btn-log-entry {
   background: var(--eco-green);
   color: var(--eco-white);
@@ -199,7 +194,7 @@
   box-shadow: 0 5px 14px rgba(45, 106, 79, 0.3);
 }
 
-/* 2. Inverted Secondary Button: Ask EcoBot */
+/* Inverted Secondary Button */
 .btn-ecobot-compact {
   background: var(--eco-white);
   color: var(--eco-green);
@@ -215,10 +210,9 @@
 }
 
 .ecobot-compact-icon {
-  font-size: 1rem;
+  font-size: 0.95rem;
 }
 
-/* Dynamic Badge that adapts when EcoBot button is hovered */
 .ecobot-compact-badge {
   background: var(--eco-green);
   color: var(--eco-white);
@@ -299,17 +293,24 @@
   color: var(--eco-red);
 }
 
-/* ---------------- 3 & 4. Middle Panels ---------------- */
+/* ---------------- 3 & 4. Middle Section (Equal Height Desktop / Stacking Mobile) ---------------- */
 .middle-row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
   gap: 20px;
-  align-items: stretch;
+  align-items: stretch; /* Guarantees both cards match height on desktop */
+}
+
+.category-panel,
+.activity-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%; /* Expands to fill grid container cell height */
+  min-width: 0;
 }
 
 .panel-heading {
-  margin-top: 0;
-  margin-bottom: 0;
+  margin: 0;
   font-family: var(--eco-font-heading);
   font-size: 1.15rem;
   font-weight: 800;
@@ -368,18 +369,14 @@
   color: var(--eco-text-muted);
 }
 
-.category-panel {
-  display: flex;
-  flex-direction: column;
-}
-
+/* Chart Baseline */
 .daily-chart-container {
   position: relative;
-  height: 250px;
+  height: 230px;
   width: 100%;
 }
 
-/* Legend Chips */
+/* Dynamic Legend Chips */
 .chart-legend-row {
   display: flex;
   flex-wrap: wrap;
@@ -410,26 +407,41 @@
   font-weight: 700;
 }
 
-/* ---------------- Activity / Recent XP Feed Section ---------------- */
-.activity-panel {
-  display: flex;
-  flex-direction: column;
-}
-
+/* Dynamically Flexed Activity List with Internal Scroll */
 .activity-list {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  max-height: 280px;
-  overflow-y: auto;
+  flex: 1 1 0px;   /* Dynamically fills remaining card height to match chart card */
+  min-height: 0;    /* Essential for flex child scrolling */
+  overflow-y: auto; /* Activates internal scrollbar */
   padding-right: 4px;
+}
+
+/* Sleek Webkit Scrollbar */
+.activity-list::-webkit-scrollbar {
+  width: 5px;
+}
+
+.activity-list::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+.activity-list::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.activity-list::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
 
 .activity-item {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px 14px;
+  padding: 12px 14px;
   background: var(--eco-input-field-bg);
   border: 1px solid var(--eco-input-border);
   border-radius: 10px;
@@ -441,7 +453,6 @@
   border-color: #cbd5e1;
 }
 
-/* Activity Icons */
 .activity-icon {
   width: 36px;
   height: 36px;
@@ -463,7 +474,8 @@
   color: #0284c7;
 }
 
-.activity-icon.log, .activity-icon.daily_log {
+.activity-icon.log, 
+.activity-icon.daily_log {
   background: #f1f5f9;
   color: #475569;
 }
@@ -477,12 +489,16 @@
   display: flex;
   flex-direction: column;
   flex: 1;
+  min-width: 0;
 }
 
 .activity-title {
   font-size: 0.88rem;
   font-weight: 700;
   color: var(--eco-slate-800);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .activity-time {
@@ -499,6 +515,8 @@
   background: rgba(45, 106, 79, 0.08);
   padding: 4px 10px;
   border-radius: 20px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .empty-state {
@@ -510,6 +528,8 @@
 }
 
 /* ---------------- Responsive Rules ---------------- */
+
+/* Tablet & Mobile Layout Adaptations (<= 1024px) */
 @media (max-width: 1024px) {
   :host {
     height: 100%;
@@ -518,22 +538,40 @@
   }
 
   .dashboard-container {
-    height: auto;
     padding: 16px;
     gap: 16px;
+    overflow-x: hidden;
   }
 
-  .kpi-row, .middle-row {
-    grid-template-columns: 1fr;
+  .kpi-row,
+  .middle-row {
+    grid-template-columns: 1fr; /* Stacks panels one after the other */
+  }
+
+  /* Reset panels to natural vertical flow */
+  .category-panel,
+  .activity-panel {
+    height: auto;
+  }
+
+  .daily-chart-container {
+    height: 220px;
+  }
+
+  .activity-list {
+    flex: none;
+    max-height: none;
+    overflow-y: visible; /* Allows mobile to scroll naturally down the page */
+    padding-right: 0;
   }
 
   .welcome-banner {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
+    gap: 16px;
   }
 
-  .welcome-right {
-    align-items: stretch;
+  .welcome-left {
     width: 100%;
   }
 
@@ -541,11 +579,55 @@
     width: 100%;
   }
 
-  .activity-list {
-    max-height: 250px;
+  .welcome-right {
+    align-items: stretch;
+    flex-direction: row;
+    width: 100%;
+    gap: 10px;
   }
 
-  .daily-chart-container {
-    height: 280px;
+  .btn-log-entry,
+  .btn-ecobot-compact {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+/* Smartphone Viewports (<= 640px) */
+@media (max-width: 640px) {
+  .dashboard-container {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .dashboard-card {
+    padding: 16px;
+  }
+
+  .welcome-greeting {
+    font-size: 1.6rem;
+  }
+
+  /* Vertical stack for action buttons */
+  .welcome-right {
+    flex-direction: column;
+  }
+
+  .btn-log-entry,
+  .btn-ecobot-compact {
+    width: 100%;
+    height: 40px;
+  }
+
+  .chart-legend-row {
+    gap: 6px;
+  }
+
+  .legend-chip {
+    padding: 3px 8px;
+  }
+
+  .legend-chip-label {
+    font-size: 0.7rem;
   }
 }
