@@ -33,6 +33,12 @@ public class ChallengeResponse {
     // there's no stored status column.
     private String status;
 
+    // True once the join window (start_date .. start_date + JOIN_WINDOW_DAYS)
+    // has passed. Lets the frontend show "join window closed" on a
+    // still-ACTIVE, not-yet-joined challenge without duplicating the rule
+    // UserChallengeService.joinChallenge() already enforces server-side.
+    private boolean joinWindowClosed;
+
     public ChallengeResponse() {}
 
     public static ChallengeResponse fromEntity(Challenge challenge) {
@@ -56,6 +62,7 @@ public class ChallengeResponse {
         response.createdAt = challenge.getCreatedAt();
         response.updatedAt = challenge.getUpdatedAt();
         response.status = deriveStatus(challenge);
+        response.joinWindowClosed = deriveJoinWindowClosed(challenge);
         return response;
     }
 
@@ -81,6 +88,15 @@ public class ChallengeResponse {
        }
     }
 
+    private static boolean deriveJoinWindowClosed(Challenge challenge) {
+        LocalDate startDate = challenge.getStartDate();
+        if (startDate == null) {
+            return false;
+        }
+        LocalDate joinDeadline = startDate.plusDays(Challenge.JOIN_WINDOW_DAYS);
+        return LocalDate.now().isAfter(joinDeadline);
+    }
+
     public Long getChallengeId() { return challengeId; }
     public String getTitle() { return title; }
     public String getDescription() { return description; }
@@ -100,4 +116,5 @@ public class ChallengeResponse {
     public LocalDateTime getCreatedAt() { return createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public String getStatus() { return status; }
+    public boolean isJoinWindowClosed() { return joinWindowClosed; }
 }

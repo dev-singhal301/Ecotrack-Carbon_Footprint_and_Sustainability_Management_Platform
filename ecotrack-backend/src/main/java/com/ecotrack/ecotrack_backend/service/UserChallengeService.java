@@ -35,9 +35,6 @@ import java.util.stream.Collectors;
 @Service
 public class UserChallengeService {
 
-    // Join allowed from the challenge's start_date through this many days after it.
-    private static final int JOIN_WINDOW_DAYS = 2;
-
     // Historical window used to compute a carbon-reduction challenge's baseline.
     private static final int BASELINE_WINDOW_DAYS = 30;
 
@@ -128,7 +125,7 @@ public class UserChallengeService {
         if (today.isBefore(challenge.getStartDate())) {
             throw new JoinWindowClosedException("This challenge hasn't started yet");
         }
-        LocalDate joinDeadline = challenge.getStartDate().plusDays(JOIN_WINDOW_DAYS);
+        LocalDate joinDeadline = challenge.getStartDate().plusDays(Challenge.JOIN_WINDOW_DAYS);
         if (today.isAfter(joinDeadline)) {
             throw new JoinWindowClosedException("The join window for this challenge has closed");
         }
@@ -455,6 +452,13 @@ public class UserChallengeService {
 
     private void expireChallenge(UserChallenge userChallenge) {
         userChallenge.setStatus(UserChallengeStatus.EXPIRED);
+        // Reuses the same completedAt column to mean "the moment this
+        // participation was resolved" (completed OR expired), not literally
+        // "completed" — avoids a schema change just to support sorting the
+        // Completed/Expired tabs by recency. UserChallengeResponse still
+        // exposes it as completedAt; the frontend treats it as a generic
+        // resolvedAt when the outcome is EXPIRED.
+        userChallenge.setCompletedAt(LocalDateTime.now());
         UserChallenge saved = userChallengeRepository.save(userChallenge);
 
         eventPublisher.publishEvent(new ChallengeExpiredEvent(

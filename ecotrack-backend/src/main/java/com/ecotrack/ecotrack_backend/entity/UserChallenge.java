@@ -43,6 +43,10 @@ public class UserChallenge {
     @Column(name = "joined_at", nullable = false, updatable = false)
     private LocalDateTime joinedAt = LocalDateTime.now();
 
+    // Timestamp this participation was resolved — set on both COMPLETED
+    // and EXPIRED (see UserChallengeService.completeChallenge/expireChallenge).
+    // Column name stays completed_at to avoid a migration; treat it as
+    // "resolvedAt" when status is EXPIRED.
     @Column(name = "completed_at")
     private LocalDateTime completedAt;
 

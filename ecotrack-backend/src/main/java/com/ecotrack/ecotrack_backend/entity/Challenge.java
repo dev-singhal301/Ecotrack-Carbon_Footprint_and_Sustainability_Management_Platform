@@ -19,6 +19,13 @@ import java.time.LocalDateTime;
 @Table(name = "challenges")
 public class Challenge {
 
+    // Business rule shared by UserChallengeService (enforces it on join)
+    // and ChallengeResponse (surfaces it to the frontend as
+    // joinWindowClosed) — kept in one place so the two can't drift apart.
+    // A challenge can be joined from its start_date through
+    // start_date + JOIN_WINDOW_DAYS, inclusive.
+    public static final int JOIN_WINDOW_DAYS = 2;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "challenge_id")

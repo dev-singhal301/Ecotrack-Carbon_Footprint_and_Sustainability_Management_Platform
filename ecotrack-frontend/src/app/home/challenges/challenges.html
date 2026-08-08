@@ -12,7 +12,7 @@
         (click)="setActiveTab(tab)"
         [class.active]="activeTab === tab"
         class="tab-btn">
-        {{ tab === 'ALL' ? 'All Challenges' : tab }}
+        {{ tab }}
       </button>
     </div>
 
@@ -122,12 +122,15 @@
 
           <button 
             *ngSwitchDefault
-            [disabled]="item.challenge.status !== 'ACTIVE'"
+            [disabled]="item.challenge.status !== 'ACTIVE' || item.challenge.joinWindowClosed"
             (click)="joinChallenge(item)"
-            [class.btn-active]="item.challenge.status === 'ACTIVE'"
-            [class.btn-disabled]="item.challenge.status !== 'ACTIVE'"
+            [class.btn-active]="item.challenge.status === 'ACTIVE' && !item.challenge.joinWindowClosed"
+            [class.btn-disabled]="item.challenge.status !== 'ACTIVE' || item.challenge.joinWindowClosed"
+            [title]="item.challenge.joinWindowClosed ? 'The join window for this challenge has passed — it can\'t be joined anymore.' : ''"
             class="btn-action">
-            {{ item.challenge.status === 'ACTIVE' ? 'Join Challenge' : (item.challenge.status === 'UPCOMING' ? 'Upcoming' : 'Ended') }}
+            {{ item.challenge.status === 'ACTIVE'
+                ? (item.challenge.joinWindowClosed ? 'Join Window Closed' : 'Join Challenge')
+                : (item.challenge.status === 'UPCOMING' ? 'Upcoming' : 'Ended') }}
           </button>
         </ng-container>
       </div>

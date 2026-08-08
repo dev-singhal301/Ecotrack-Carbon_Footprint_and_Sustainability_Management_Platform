@@ -28,6 +28,11 @@ export interface ChallengeDto {
   // challenge's own lifecycle, not the user's participation state
   // (that's UserChallengeStatus below: JOINED/COMPLETED/EXPIRED/etc).
   status?: 'ACTIVE' | 'UPCOMING' | 'ENDED' | 'CANCELLED';
+  // True once start_date + JOIN_WINDOW_DAYS (2 days) has passed — the
+  // challenge can still be ACTIVE, but joining it is no longer allowed.
+  // Computed server-side in ChallengeResponse so the 2-day rule lives in
+  // exactly one place (UserChallengeService.joinChallenge enforces it).
+  joinWindowClosed?: boolean;
 }
 
 export interface UserChallengeResponseDto {

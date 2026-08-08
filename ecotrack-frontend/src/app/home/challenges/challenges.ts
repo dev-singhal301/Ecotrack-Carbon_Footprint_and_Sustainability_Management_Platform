@@ -7,7 +7,7 @@ import {
   ChallengeCategory 
 } from './challenges.service';
 
-export type ChallengeTab = 'ALL' | 'ACTIVE' | 'UPCOMING' | 'JOINED' | 'COMPLETED' | 'EXPIRED';
+export type ChallengeTab = 'ACTIVE' | 'UPCOMING' | 'JOINED' | 'COMPLETED' | 'EXPIRED';
 
 @Component({
   selector: 'app-challenges',
@@ -17,9 +17,10 @@ export type ChallengeTab = 'ALL' | 'ACTIVE' | 'UPCOMING' | 'JOINED' | 'COMPLETED
   styleUrls: ['./challenges.css']
 })
 export class ChallengesComponent implements OnInit {
-  // Tab Navigation
-  readonly tabs: ChallengeTab[] = ['ALL', 'ACTIVE', 'UPCOMING', 'JOINED', 'COMPLETED', 'EXPIRED'];
-  activeTab: ChallengeTab = 'ALL';
+  // Tab Navigation — "ACTIVE" (open, joinable challenges) is the default
+  // landing view instead of a catch-all "All Challenges" tab.
+  readonly tabs: ChallengeTab[] = ['ACTIVE', 'UPCOMING', 'JOINED', 'COMPLETED', 'EXPIRED'];
+  activeTab: ChallengeTab = 'ACTIVE';
 
   // Category & Search Filters
   selectedCategory: string = 'ALL';
@@ -172,14 +173,22 @@ export class ChallengesComponent implements OnInit {
   }
 
   get filteredChallenges(): UserChallengeResponseDto[] {
-    return this.challengeItems.filter((item) => {
+    const filtered = this.challengeItems.filter((item) => {
       const ch = item.challenge;
       const isJoined = item.userStatus === 'JOINED' || item.userStatus === 'IN_PROGRESS';
       const isCompleted = item.userStatus === 'COMPLETED';
       const isExpired = item.userStatus === 'EXPIRED';
 
       // Tab filter
-      if (this.activeTab === 'ACTIVE' && ch.status !== 'ACTIVE') return false;
+      if (this.activeTab === 'ACTIVE') {
+        // ch.status === 'ACTIVE' means the challenge itself is still open
+        // (within its date window) — but that's not enough on its own.
+        // Once this user's own participation has resolved to COMPLETED or
+        // EXPIRED, it belongs in those tabs only, even if the challenge
+        // window is technically still running for other participants.
+        if (ch.status !== 'ACTIVE') return false;
+        if (isCompleted || isExpired) return false;
+      }
       if (this.activeTab === 'UPCOMING' && ch.status !== 'UPCOMING') return false;
       if (this.activeTab === 'JOINED' && !isJoined) return false;
       if (this.activeTab === 'COMPLETED' && !isCompleted) return false;
@@ -200,6 +209,94 @@ export class ChallengesComponent implements OnInit {
 
       return true;
     });
+
+    // Completed/Expired tabs: most recently resolved first. completedAt is
+    // set on both outcomes (see UserChallengeService) — items without it
+    // (pre-existing rows resolved before that field was tracked for expiry)
+    // sort to the bottom instead of breaking the order.
+    if (this.activeTab === 'COMPLETED' || this.activeTab === 'EXPIRED') {
+      filtered.sort((a, b) => {
+        const aTime = a.completedAt ? new Date(a.completedAt).getTime() : 0;
+        const bTime = b.completedAt ? new Date(b.completedAt).getTime() : 0;
+        return bTime - aTime;
+      });
+    }
+
+    // Upcoming tab: soonest-starting challenge first. If two challenges
+    // start on the same date, the one ending sooner (closer to now) goes
+    // first. If both dates tie too, leave their relative order as-is.
+    if (this.activeTab === 'UPCOMING') {
+      filtered.sort((a, b) => {
+        const aStart = new Date(a.challenge.startDate).getTime();
+        const bStart = new Date(b.challenge.startDate).getTime();
+        if (aStart !== bStart) return aStart - bStart;
+
+        const aEnd = new Date(a.challenge.endDate).getTime();
+        const bEnd = new Date(b.challenge.endDate).getTime();
+        return aEnd - bEnd;
+      });
+    }
+
+    // Active tab: challenges not yet joined (and still joinable) come
+    // first, joined/in-progress ones after, and not-yet-joined challenges
+    // whose join window has already closed go last of all — otherwise a
+    // user who's joined everything they still could ends up staring at a
+    // "Join Window Closed" card at the very top, which looks broken.
+    // Within each group: most recently started first, ties broken by
+    // closer end date.
+    if (this.activeTab === 'ACTIVE') {
+      const groupRank = (item: UserChallengeResponseDto): number => {
+        if (item.userStatus === 'NOT_JOINED') {
+          return item.challenge.joinWindowClosed ? 2 : 0;
+        }
+        return 1; // JOINED / IN_PROGRESS
+      };
+
+      filtered.sort((a, b) => {
+        const aRank = groupRank(a);
+        const bRank = groupRank(b);
+        if (aRank !== bRank) return aRank - bRank;
+
+        const aStart = new Date(a.challenge.startDate).getTime();
+        const bStart = new Date(b.challenge.startDate).getTime();
+        if (aStart !== bStart) return bStart - aStart; // newer start date first
+
+        const aEnd = new Date(a.challenge.endDate).getTime();
+        const bEnd = new Date(b.challenge.endDate).getTime();
+        return aEnd - bEnd; // closer end date first
+      });
+    }
+
+    // Joined tab: Activity-based challenges first, Carbon-reduction ones
+    // after. Within Activity-based: more progress first, ties broken by
+    // closer end date. Within Carbon-reduction: less budget remaining
+    // first (closer to breaching = more urgent), ties broken by later end
+    // date — deliberately the opposite tie-break direction from the
+    // Activity-based group.
+    if (this.activeTab === 'JOINED') {
+      filtered.sort((a, b) => {
+        const aActivity = a.challenge.challengeType === 'ACTIVITY_BASED' ? 0 : 1;
+        const bActivity = b.challenge.challengeType === 'ACTIVITY_BASED' ? 0 : 1;
+        if (aActivity !== bActivity) return aActivity - bActivity;
+
+        const aEnd = new Date(a.challenge.endDate).getTime();
+        const bEnd = new Date(b.challenge.endDate).getTime();
+
+        if (a.challenge.challengeType === 'ACTIVITY_BASED') {
+          const aProgress = a.completionPercentage ?? 0;
+          const bProgress = b.completionPercentage ?? 0;
+          if (aProgress !== bProgress) return bProgress - aProgress; // more progress first
+          return aEnd - bEnd; // closer end date first
+        } else {
+          const aRemaining = (a.effectiveTarget ?? 0) - (a.currentValue ?? 0);
+          const bRemaining = (b.effectiveTarget ?? 0) - (b.currentValue ?? 0);
+          if (aRemaining !== bRemaining) return aRemaining - bRemaining; // less budget remaining first
+          return bEnd - aEnd; // later end date first
+        }
+      });
+    }
+
+    return filtered;
   }
 
   private loadData(): void {
