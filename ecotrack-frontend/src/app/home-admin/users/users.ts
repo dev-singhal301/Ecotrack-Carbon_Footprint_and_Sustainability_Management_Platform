@@ -148,12 +148,31 @@ export class Users implements OnInit {
     Math.min(this.currentPage(), this.totalPages())
   );
 
-  // Plain [1, 2, 3, ...] for the page-number buttons — built here rather
-  // than with an array-constructor trick in the template, since that's
-  // fragile to read and easy to get wrong on a re-edit.
-  pageNumbers = computed(() =>
-    Array.from({ length: this.totalPages() }, (_, i) => i + 1)
-  );
+  // Windowed page numbers for the page-number buttons — shows at most 3
+  // page buttons, centered on the current page (e.g. page 6 of 10 shows
+  // 5 6 7), sliding to one side once the current page is within one of
+  // either edge (e.g. page 1 shows 1 2 3, last page shows the last 3).
+  // Centering first and clamping after means the edge cases fall out for
+  // free instead of needing separate first/last branches.
+  pageNumbers = computed(() => {
+    const total = this.totalPages();
+    const current = this.safeCurrentPage();
+    const windowSize = Math.min(3, total);
+
+    let start = current - 1;
+    let end = current + 1;
+
+    if (start < 1) {
+      start = 1;
+      end = start + windowSize - 1;
+    }
+    if (end > total) {
+      end = total;
+      start = end - windowSize + 1;
+    }
+
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+  });
 
   pagedUsers = computed(() => {
     const start = (this.safeCurrentPage() - 1) * this.pageSize;

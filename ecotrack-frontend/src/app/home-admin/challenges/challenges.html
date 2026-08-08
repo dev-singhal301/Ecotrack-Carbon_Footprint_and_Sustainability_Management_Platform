@@ -150,7 +150,7 @@
 
         <label>
           Description
-          <textarea [(ngModel)]="form.description" name="description" rows="3"></textarea>
+          <textarea [(ngModel)]="form.description" name="description" rows="2"></textarea>
         </label>
 
         <div class="form-row">
@@ -172,13 +172,28 @@
           </label>
         </div>
 
-        <label *ngIf="form.challengeType === 'ACTIVITY_BASED'">
-          Tracking Type
-          <select [(ngModel)]="form.trackingType" name="trackingType" required>
-            <option value="" disabled>Select tracking type</option>
-            <option *ngFor="let t of trackingTypes" [value]="t.value">{{ t.label }}</option>
-          </select>
-        </label>
+        <ng-container *ngIf="form.challengeType === 'ACTIVITY_BASED'; else rewardXpAlone">
+          <div class="form-row">
+            <label>
+              Tracking Type
+              <select [(ngModel)]="form.trackingType" name="trackingType" required>
+                <option value="" disabled>Select tracking type</option>
+                <option *ngFor="let t of trackingTypes" [value]="t.value">{{ t.label }}</option>
+              </select>
+            </label>
+
+            <label>
+              Reward XP
+              <input type="number" [(ngModel)]="form.rewardXp" name="rewardXp" min="0" />
+            </label>
+          </div>
+        </ng-container>
+        <ng-template #rewardXpAlone>
+          <label>
+            Reward XP
+            <input type="number" [(ngModel)]="form.rewardXp" name="rewardXp" min="0" />
+          </label>
+        </ng-template>
 
         <div class="form-row">
           <label>
@@ -208,16 +223,10 @@
           </label>
         </div>
 
-        <label>
-          Reward XP
-          <input type="number" [(ngModel)]="form.rewardXp" name="rewardXp" min="0" />
-        </label>
-
         <div class="form-row">
           <label>
             Card Header Image
             <select [(ngModel)]="form.cardImageUrl" name="cardImageUrl">
-              <option value="">None</option>
               <option *ngFor="let img of cardImages" [value]="img.url">{{ img.label }}</option>
             </select>
           </label>
@@ -225,7 +234,6 @@
           <label>
             Badge Image
             <select [(ngModel)]="form.badgeImageUrl" name="badgeImageUrl">
-              <option value="">None</option>
               <option *ngFor="let img of badgeImages" [value]="img.url">{{ img.label }}</option>
             </select>
           </label>

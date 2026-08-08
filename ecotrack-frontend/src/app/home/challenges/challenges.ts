@@ -59,6 +59,7 @@ export class ChallengesComponent implements OnInit {
 
   setActiveTab(tab: ChallengeTab): void {
     this.activeTab = tab;
+    this.currentPage = 1;
   }
 
   joinChallenge(item: UserChallengeResponseDto): void {
@@ -297,6 +298,73 @@ export class ChallengesComponent implements OnInit {
     }
 
     return filtered;
+  }
+
+  // ── Pagination ── Completed/Expired only. These are read-only history
+  // tabs that can only grow over time (unlike Active/Upcoming/Joined,
+  // which stay naturally small — a challenge leaves those tabs the moment
+  // it resolves), so they're the ones that actually need paging as a
+  // user's history accumulates.
+  //
+  // Page size is 9 rather than 10: these are large image cards
+  // (grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)) inside
+  // a max-width: 1200px container), which works out to 3 columns in
+  // practice — 9 fills exactly 3 full rows with no dangling partial row.
+  private readonly pageSize = 9;
+  currentPage = 1;
+
+  get isHistoryTab(): boolean {
+    return this.activeTab === 'COMPLETED' || this.activeTab === 'EXPIRED';
+  }
+
+  get totalPages(): number {
+    return Math.max(1, Math.ceil(this.filteredChallenges.length / this.pageSize));
+  }
+
+  get safeCurrentPage(): number {
+    return Math.min(this.currentPage, this.totalPages);
+  }
+
+  get pageNumbers(): number[] {
+    const total = this.totalPages;
+    const current = this.safeCurrentPage;
+    const windowSize = Math.min(3, total);
+
+    let start = current - 1;
+    let end = current + 1;
+
+    if (start < 1) {
+      start = 1;
+      end = start + windowSize - 1;
+    }
+    if (end > total) {
+      end = total;
+      start = end - windowSize + 1;
+    }
+
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+  }
+
+  /** Sliced for Completed/Expired; every other tab renders unpaginated, same as before. */
+  get pagedChallenges(): UserChallengeResponseDto[] {
+    if (!this.isHistoryTab) {
+      return this.filteredChallenges;
+    }
+    const start = (this.safeCurrentPage - 1) * this.pageSize;
+    return this.filteredChallenges.slice(start, start + this.pageSize);
+  }
+
+  goToPage(page: number): void {
+    this.currentPage = Math.min(Math.max(1, page), this.totalPages);
+    this.cdr.markForCheck();
+  }
+
+  prevPage(): void {
+    this.goToPage(this.safeCurrentPage - 1);
+  }
+
+  nextPage(): void {
+    this.goToPage(this.safeCurrentPage + 1);
   }
 
   private loadData(): void {

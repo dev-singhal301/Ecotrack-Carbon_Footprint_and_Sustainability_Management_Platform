@@ -83,100 +83,140 @@
       <ng-container *ngIf="!isLoading">
 
         <!-- ACTIVE VIEW: Renders items that have time remaining and haven't breached limits -->
-        <div class="goals-grid" *ngIf="activeTab === 'ACTIVE'">
-          <ng-container *ngFor="let goal of displayedGoals">
-            <div class="goal-card meter-card" *ngIf="isTaskActive(goal)" [class.no-data-card]="!hasProgressData(goal)">
-              <button class="btn-delete" (click)="deleteGoal(goal.goalId)" title="Remove tracker">&#10005;</button>
+        <div class="tab-scroll-area" *ngIf="activeTab === 'ACTIVE'">
+          <div class="goals-grid">
+            <ng-container *ngFor="let goal of displayedGoals">
+              <div class="goal-card meter-card" *ngIf="isTaskActive(goal)" [class.no-data-card]="!hasProgressData(goal)">
+                <button class="btn-delete" (click)="deleteGoal(goal.goalId)" title="Remove tracker">&#10005;</button>
 
-              <h3 class="meter-title">{{ goal.goalName }}</h3>
-              <span class="meter-status" [style.color]="getZoneColor(goal)">{{ getStatusLabel(goal) }}</span>
+                <h3 class="meter-title">{{ goal.goalName }}</h3>
+                <span class="meter-status" [style.color]="getZoneColor(goal)">{{ getStatusLabel(goal) }}</span>
 
-              <div class="gauge-svg-container">
-                <svg class="gauge-svg" viewBox="0 0 200 135">
-                  <path class="gauge-track" d="M 20 100 A 80 80 0 0 1 180 100" />
-                  <path
-                    class="gauge-fill"
-                    d="M 20 100 A 80 80 0 0 1 180 100"
-                    [attr.stroke]="getZoneColor(goal)"
-                    [attr.stroke-dasharray]="arcLength"
-                    [attr.stroke-dashoffset]="getArcDashoffset(goal)" />
-                  <line class="gauge-target-tick" x1="150" y1="38" x2="158" y2="30" />
-                  <text class="gauge-label-text" x="15" y="122" text-anchor="start">0%</text>
-                  <text class="gauge-label-text" x="185" y="122" text-anchor="end">Cap</text>
-                </svg>
+                <div class="gauge-svg-container">
+                  <svg class="gauge-svg" viewBox="0 0 200 135">
+                    <path class="gauge-track" d="M 20 100 A 80 80 0 0 1 180 100" />
+                    <path
+                      class="gauge-fill"
+                      d="M 20 100 A 80 80 0 0 1 180 100"
+                      [attr.stroke]="getZoneColor(goal)"
+                      [attr.stroke-dasharray]="arcLength"
+                      [attr.stroke-dashoffset]="getArcDashoffset(goal)" />
+                    <line class="gauge-target-tick" x1="150" y1="38" x2="158" y2="30" />
+                    <text class="gauge-label-text" x="15" y="122" text-anchor="start">0%</text>
+                    <text class="gauge-label-text" x="185" y="122" text-anchor="end">Cap</text>
+                  </svg>
 
-                <div class="gauge-center-readout">
-                  <div class="gauge-center-value">
-                    <span *ngIf="hasProgressData(goal)">{{ goal.progress?.currentValue | number:'1.1-1' }} / {{ goal.targetValue | number:'1.1-1' }}</span>
-                    <span *ngIf="!hasProgressData(goal)">&mdash; / {{ goal.targetValue | number:'1.1-1' }}</span>
+                  <div class="gauge-center-readout">
+                    <div class="gauge-center-value">
+                      <span *ngIf="hasProgressData(goal)">{{ goal.progress?.currentValue | number:'1.1-1' }} / {{ goal.targetValue | number:'1.1-1' }}</span>
+                      <span *ngIf="!hasProgressData(goal)">&mdash; / {{ goal.targetValue | number:'1.1-1' }}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div class="meter-xp">
-                <span *ngIf="hasProgressData(goal)">Live Value Score: {{ getProjectedXp(goal) }} XP</span>
-                <span *ngIf="!hasProgressData(goal)">Live Value Score: &mdash;</span>
-                <span class="days-left-separator"> • </span>
-                <span class="days-left-count">{{ goal.daysLeft }} days left</span>
+                <div class="meter-xp">
+                  <span *ngIf="hasProgressData(goal)">Live Value Score: {{ getProjectedXp(goal) }} XP</span>
+                  <span *ngIf="!hasProgressData(goal)">Live Value Score: &mdash;</span>
+                  <span class="days-left-separator"> • </span>
+                  <span class="days-left-count">{{ goal.daysLeft }} days left</span>
+                </div>
               </div>
+            </ng-container>
+
+            <div class="empty-state" *ngIf="getActiveGoalsCount() === 0">
+              No active budget trackers running safely.
             </div>
-          </ng-container>
-
-          <div class="empty-state" *ngIf="getActiveGoalsCount() === 0">
-            No active budget trackers running safely.
           </div>
         </div>
 
         <!-- ACCOMPLISHED VIEW: Displays successfully terminated timelines under cap -->
-        <div class="goals-list" *ngIf="activeTab === 'COMPLETED'">
-          <ng-container *ngFor="let goal of displayedGoals">
-            <div class="goal-card history-row" *ngIf="isTaskAccomplished(goal)">
-              <div class="history-row-main">
-                <h3 class="history-row-title">{{ goal.goalName }}</h3>
-                <span class="history-row-dates">{{ goal.startDate }} &rarr; {{ goal.endDate }}</span>
-              </div>
+        <ng-container *ngIf="activeTab === 'COMPLETED'">
+          <div class="tab-scroll-area">
+            <div class="goals-list">
+              <ng-container *ngFor="let goal of pagedGoals">
+                <div class="goal-card history-row" *ngIf="isTaskAccomplished(goal)">
+                  <div class="history-row-main">
+                    <h3 class="history-row-title">{{ goal.goalName }}</h3>
+                    <span class="history-row-dates">{{ goal.startDate }} &rarr; {{ goal.endDate }}</span>
+                  </div>
 
-              <div class="history-row-stats">
-                <span class="stat-chip stat-success">Goal Achieved</span>
-                <!-- Added safe check to verify dynamic savings value visibility -->
-                <span class="stat-chip" *ngIf="hasProgressData(goal) && (getFootprintSaved(goal) ?? 0) > 0">
-                  Footprint Saved: {{ getFootprintSaved(goal) | number:'1.1-1' }}
-                </span>
-                <span class="stat-chip" *ngIf="hasProgressData(goal)">XP Claimed: {{ getProjectedXp(goal) }} XP</span>
-              </div>
+                  <div class="history-row-stats">
+                    <span class="stat-chip stat-success">Goal Achieved</span>
+                    <!-- Added safe check to verify dynamic savings value visibility -->
+                    <span class="stat-chip" *ngIf="hasProgressData(goal) && (getFootprintSaved(goal) ?? 0) > 0">
+                      Footprint Saved: {{ getFootprintSaved(goal) | number:'1.1-1' }}
+                    </span>
+                    <span class="stat-chip" *ngIf="hasProgressData(goal)">XP Claimed: {{ getProjectedXp(goal) }} XP</span>
+                  </div>
 
-              <button class="btn-delete" (click)="deleteGoal(goal.goalId)" title="Remove record">&#10005;</button>
+                  <button class="btn-delete" (click)="deleteGoal(goal.goalId)" title="Remove record">&#10005;</button>
+                </div>
+              </ng-container>
+
+              <div class="empty-state" *ngIf="getAccomplishedGoalsCount() === 0">
+                No accomplished goals yet. Keep within your eco-budgets to complete them successfully!
+              </div>
             </div>
-          </ng-container>
-
-          <div class="empty-state" *ngIf="getAccomplishedGoalsCount() === 0">
-            No accomplished goals yet. Keep within your eco-budgets to complete them successfully!
           </div>
-        </div>
+
+          <div *ngIf="getAccomplishedGoalsCount() > 0" class="pagination-bar">
+            <span class="pagination-info">Page {{ safeCurrentPage }} of {{ totalPages }}</span>
+            <div class="pagination-controls">
+              <button class="page-btn" [disabled]="safeCurrentPage === 1" (click)="prevPage()">&lsaquo; Prev</button>
+              <button
+                *ngFor="let page of pageNumbers"
+                class="page-btn"
+                [class.active]="safeCurrentPage === page"
+                (click)="goToPage(page)">
+                {{ page }}
+              </button>
+              <button class="page-btn" [disabled]="safeCurrentPage === totalPages" (click)="nextPage()">Next &rsaquo;</button>
+            </div>
+          </div>
+        </ng-container>
 
         <!-- FAILED / BREACHED VIEW: Renders instant or past target cap breaches -->
-        <div class="goals-list" *ngIf="activeTab === 'EXPIRED'">
-          <ng-container *ngFor="let goal of displayedGoals">
-            <div class="goal-card history-row failed-row" *ngIf="isTaskFailed(goal)">
-              <div class="history-row-main">
-                <h3 class="history-row-title">{{ goal.goalName }}</h3>
-                <span class="history-row-dates">{{ goal.startDate }} &rarr; {{ goal.endDate }}</span>
-              </div>
+        <ng-container *ngIf="activeTab === 'EXPIRED'">
+          <div class="tab-scroll-area">
+            <div class="goals-list">
+              <ng-container *ngFor="let goal of pagedGoals">
+                <div class="goal-card history-row failed-row" *ngIf="isTaskFailed(goal)">
+                  <div class="history-row-main">
+                    <h3 class="history-row-title">{{ goal.goalName }}</h3>
+                    <span class="history-row-dates">{{ goal.startDate }} &rarr; {{ goal.endDate }}</span>
+                  </div>
 
-              <div class="history-row-stats">
-                <span class="stat-chip stat-failure">Ceiling Breached — Task Failed</span>
-                <span class="stat-chip" *ngIf="hasProgressData(goal)">Target Ceiling: {{ goal.targetValue | number:'1.1-1' }}</span>
-                <span class="stat-chip">XP Earned: 0 XP</span>
-              </div>
+                  <div class="history-row-stats">
+                    <span class="stat-chip stat-failure">Ceiling Breached — Task Failed</span>
+                    <span class="stat-chip" *ngIf="hasProgressData(goal)">Target Ceiling: {{ goal.targetValue | number:'1.1-1' }}</span>
+                    <span class="stat-chip">XP Earned: 0 XP</span>
+                  </div>
 
-              <button class="btn-delete" (click)="deleteGoal(goal.goalId)" title="Remove record">&#10005;</button>
+                  <button class="btn-delete" (click)="deleteGoal(goal.goalId)" title="Remove record">&#10005;</button>
+                </div>
+              </ng-container>
+
+              <div class="empty-state" *ngIf="getFailedGoalsCount() === 0">
+                Clean record! No failed or breached meters found.
+              </div>
             </div>
-          </ng-container>
-
-          <div class="empty-state" *ngIf="getFailedGoalsCount() === 0">
-            Clean record! No failed or breached meters found.
           </div>
-        </div>
+
+          <div *ngIf="getFailedGoalsCount() > 0" class="pagination-bar">
+            <span class="pagination-info">Page {{ safeCurrentPage }} of {{ totalPages }}</span>
+            <div class="pagination-controls">
+              <button class="page-btn" [disabled]="safeCurrentPage === 1" (click)="prevPage()">&lsaquo; Prev</button>
+              <button
+                *ngFor="let page of pageNumbers"
+                class="page-btn"
+                [class.active]="safeCurrentPage === page"
+                (click)="goToPage(page)">
+                {{ page }}
+              </button>
+              <button class="page-btn" [disabled]="safeCurrentPage === totalPages" (click)="nextPage()">Next &rsaquo;</button>
+            </div>
+          </div>
+        </ng-container>
 
       </ng-container>
     </div>

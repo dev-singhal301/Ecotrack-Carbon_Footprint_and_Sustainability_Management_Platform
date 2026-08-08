@@ -27,7 +27,8 @@ interface ChallengeFormModel {
 
 const EMPTY_FORM: ChallengeFormModel = {
   title: '', description: '', category: '', challengeType: '', trackingType: '',
-  targetValue: null, unit: '', rewardXp: 100, cardImageUrl: '', badgeImageUrl: '',
+  targetValue: null, unit: '', rewardXp: 100,
+  cardImageUrl: CARD_HEADER_IMAGES[0].url, badgeImageUrl: CHALLENGE_BADGES[0].url,
   startDate: '', endDate: '',
 };
 
@@ -116,9 +117,27 @@ export class Challenges implements OnInit {
     Math.min(this.currentPage(), this.totalPages())
   );
 
-  pageNumbers = computed(() =>
-    Array.from({ length: this.totalPages() }, (_, i) => i + 1)
-  );
+  // Windowed page numbers — same centered-and-clamped pattern as the
+  // Users table (see users.ts for the full rationale).
+  pageNumbers = computed(() => {
+    const total = this.totalPages();
+    const current = this.safeCurrentPage();
+    const windowSize = Math.min(3, total);
+
+    let start = current - 1;
+    let end = current + 1;
+
+    if (start < 1) {
+      start = 1;
+      end = start + windowSize - 1;
+    }
+    if (end > total) {
+      end = total;
+      start = end - windowSize + 1;
+    }
+
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+  });
 
   pagedChallenges = computed(() => {
     const start = (this.safeCurrentPage() - 1) * this.pageSize;

@@ -29,112 +29,129 @@
     </div>
   </div>
 
-  <div *ngIf="filteredChallenges.length === 0" class="empty-state">
-    <p>No challenges match your current search or filter criteria.</p>
-  </div>
+  <div class="tab-scroll-area">
+    <div *ngIf="filteredChallenges.length === 0" class="empty-state">
+      <p>No challenges match your current search or filter criteria.</p>
+    </div>
 
-  <div class="cards-grid">
-    <div *ngFor="let item of filteredChallenges" class="challenge-card">
+    <div class="cards-grid">
+      <div *ngFor="let item of pagedChallenges" class="challenge-card">
       
-      <div class="card-content-wrapper">
-        <div class="card-banner">
-          <img [src]="item.challenge.cardImageUrl" [alt]="item.challenge.title" class="banner-img" />
-          
-          <div class="badge-overlay">
-            <img [src]="item.challenge.badgeImageUrl" alt="Badge" class="badge-img" />
-          </div>
-
-          <span class="xp-badge">+{{ item.challenge.rewardXp }} XP</span>
-        </div>
-
-        <div class="card-body">
-          <div class="pills-group">
-            <span class="category-pill">{{ item.challenge.category }}</span>
-            <span class="type-pill">
-              {{ item.challenge.challengeType === 'CARBON_REDUCTION' ? 'Carbon Cut' : 'Activity' }}
-            </span>
-          </div>
-
-          <h3 class="card-title">{{ item.challenge.title }}</h3>
-          <p class="card-desc">{{ item.challenge.description }}</p>
-
-          <div class="target-info" *ngIf="!isCarbonType(item) || item.userStatus === 'NOT_JOINED'">
-            Target: <span class="target-value">{{ item.challenge.targetValue }} {{ item.challenge.unit || (isCarbonType(item) ? '%' : '') }}</span>
-          </div>
-          <div class="target-info" *ngIf="isCarbonType(item) && item.userStatus !== 'NOT_JOINED' && item.effectiveTarget != null">
-            Your target: <span class="target-value">stay under {{ item.effectiveTarget | number:'1.0-2' }} kg CO₂</span>
-          </div>
-
-          <!-- Progress Bar for Joined / In Progress / Completed Users -->
-          <div *ngIf="item.userStatus === 'JOINED' || item.userStatus === 'IN_PROGRESS' || item.userStatus === 'COMPLETED'" class="progress-container">
-            <div class="progress-header">
-              <span class="progress-label">{{ isCarbonType(item) ? 'Budget Remaining' : 'Progress' }}</span>
-              <span class="progress-text" *ngIf="!isCarbonType(item)">{{ item.currentValue }} / {{ item.challenge.targetValue }} {{ item.challenge.unit }} ({{ item.completionPercentage }}%)</span>
-              <span class="progress-text" *ngIf="isCarbonType(item)">{{ item.currentValue | number:'1.0-2' }} kg emitted ({{ item.completionPercentage }}% budget left)</span>
+        <div class="card-content-wrapper">
+          <div class="card-banner">
+            <img [src]="item.challenge.cardImageUrl" [alt]="item.challenge.title" class="banner-img" />
+            
+            <div class="badge-overlay">
+              <img [src]="item.challenge.badgeImageUrl" alt="Badge" class="badge-img" />
             </div>
-            <div class="progress-bar-bg">
-              <div [style.width.%]="item.completionPercentage" class="progress-bar-fill"></div>
-            </div>
-            <p class="progress-hint" *ngIf="isCarbonType(item) && item.userStatus === 'IN_PROGRESS'">
-              Tracked automatically from your carbon log — nothing to do here but keep logging entries as usual.
-            </p>
+
+            <span class="xp-badge">+{{ item.challenge.rewardXp }} XP</span>
           </div>
 
-          <!-- Activity Logging (ACTIVITY_BASED challenges only, while in progress) -->
-          <div *ngIf="canLogActivity(item)" class="activity-log-section">
-            <ng-container *ngIf="isQuickLogType(item); else amountLog">
-              <button
-                class="btn-log"
-                [disabled]="item.loggedToday || loggingInFlight.has(item.challenge.challengeId)"
-                (click)="logQuickActivity(item)">
-                {{ item.loggedToday ? 'Logged for Today ✓' : quickLogLabel(item) }}
-              </button>
-            </ng-container>
-            <ng-template #amountLog>
-              <div class="amount-log-row">
-                <input
-                  type="number"
-                  min="0.01"
-                  step="0.01"
-                  class="log-input"
-                  [placeholder]="'Amount (' + item.challenge.unit + ')'"
-                  [(ngModel)]="logAmounts[item.challenge.challengeId]" />
+          <div class="card-body">
+            <div class="pills-group">
+              <span class="category-pill">{{ item.challenge.category }}</span>
+              <span class="type-pill">
+                {{ item.challenge.challengeType === 'CARBON_REDUCTION' ? 'Carbon Cut' : 'Activity' }}
+              </span>
+            </div>
+
+            <h3 class="card-title">{{ item.challenge.title }}</h3>
+            <p class="card-desc">{{ item.challenge.description }}</p>
+
+            <div class="target-info" *ngIf="!isCarbonType(item) || item.userStatus === 'NOT_JOINED'">
+              Target: <span class="target-value">{{ item.challenge.targetValue }} {{ item.challenge.unit || (isCarbonType(item) ? '%' : '') }}</span>
+            </div>
+            <div class="target-info" *ngIf="isCarbonType(item) && item.userStatus !== 'NOT_JOINED' && item.effectiveTarget != null">
+              Your target: <span class="target-value">stay under {{ item.effectiveTarget | number:'1.0-2' }} kg CO₂</span>
+            </div>
+
+            <!-- Progress Bar for Joined / In Progress / Completed Users -->
+            <div *ngIf="item.userStatus === 'JOINED' || item.userStatus === 'IN_PROGRESS' || item.userStatus === 'COMPLETED'" class="progress-container">
+              <div class="progress-header">
+                <span class="progress-label">{{ isCarbonType(item) ? 'Budget Remaining' : 'Progress' }}</span>
+                <span class="progress-text" *ngIf="!isCarbonType(item)">{{ item.currentValue }} / {{ item.challenge.targetValue }} {{ item.challenge.unit }} ({{ item.completionPercentage }}%)</span>
+                <span class="progress-text" *ngIf="isCarbonType(item)">{{ item.currentValue | number:'1.0-2' }} kg emitted ({{ item.completionPercentage }}% budget left)</span>
+              </div>
+              <div class="progress-bar-bg">
+                <div [style.width.%]="item.completionPercentage" class="progress-bar-fill"></div>
+              </div>
+              <p class="progress-hint" *ngIf="isCarbonType(item) && item.userStatus === 'IN_PROGRESS'">
+                Tracked automatically from your carbon log — nothing to do here but keep logging entries as usual.
+              </p>
+            </div>
+
+            <!-- Activity Logging (ACTIVITY_BASED challenges only, while in progress) -->
+            <div *ngIf="canLogActivity(item)" class="activity-log-section">
+              <ng-container *ngIf="isQuickLogType(item); else amountLog">
                 <button
                   class="btn-log"
-                  [disabled]="loggingInFlight.has(item.challenge.challengeId)"
-                  (click)="logAmountActivity(item)">
-                  Log
+                  [disabled]="item.loggedToday || loggingInFlight.has(item.challenge.challengeId)"
+                  (click)="logQuickActivity(item)">
+                  {{ item.loggedToday ? 'Logged for Today ✓' : quickLogLabel(item) }}
                 </button>
-              </div>
-            </ng-template>
+              </ng-container>
+              <ng-template #amountLog>
+                <div class="amount-log-row">
+                  <input
+                    type="number"
+                    min="0.01"
+                    step="0.01"
+                    class="log-input"
+                    [placeholder]="'Amount (' + item.challenge.unit + ')'"
+                    [(ngModel)]="logAmounts[item.challenge.challengeId]" />
+                  <button
+                    class="btn-log"
+                    [disabled]="loggingInFlight.has(item.challenge.challengeId)"
+                    (click)="logAmountActivity(item)">
+                    Log
+                  </button>
+                </div>
+              </ng-template>
+            </div>
           </div>
         </div>
+
+        <div class="card-footer">
+          <span class="date-range">{{ item.challenge.startDate }} - {{ item.challenge.endDate }}</span>
+
+          <ng-container [ngSwitch]="item.userStatus">
+            <button *ngSwitchCase="'JOINED'" disabled class="btn-joined">Joined ✓</button>
+            <button *ngSwitchCase="'IN_PROGRESS'" disabled class="btn-joined">Joined ✓</button>
+            <button *ngSwitchCase="'COMPLETED'" disabled class="btn-completed">Completed 🏆</button>
+            <button *ngSwitchCase="'EXPIRED'" disabled class="btn-expired">Expired ✗</button>
+
+            <button 
+              *ngSwitchDefault
+              [disabled]="item.challenge.status !== 'ACTIVE' || item.challenge.joinWindowClosed"
+              (click)="joinChallenge(item)"
+              [class.btn-active]="item.challenge.status === 'ACTIVE' && !item.challenge.joinWindowClosed"
+              [class.btn-disabled]="item.challenge.status !== 'ACTIVE' || item.challenge.joinWindowClosed"
+              [title]="item.challenge.joinWindowClosed ? 'The join window for this challenge has passed — it can\'t be joined anymore.' : ''"
+              class="btn-action">
+              {{ item.challenge.status === 'ACTIVE'
+                  ? (item.challenge.joinWindowClosed ? 'Join Window Closed' : 'Join Challenge')
+                  : (item.challenge.status === 'UPCOMING' ? 'Upcoming' : 'Ended') }}
+            </button>
+          </ng-container>
+        </div>
+
       </div>
+    </div>
+  </div>
 
-      <div class="card-footer">
-        <span class="date-range">{{ item.challenge.startDate }} - {{ item.challenge.endDate }}</span>
-
-        <ng-container [ngSwitch]="item.userStatus">
-          <button *ngSwitchCase="'JOINED'" disabled class="btn-joined">Joined ✓</button>
-          <button *ngSwitchCase="'IN_PROGRESS'" disabled class="btn-joined">Joined ✓</button>
-          <button *ngSwitchCase="'COMPLETED'" disabled class="btn-completed">Completed 🏆</button>
-          <button *ngSwitchCase="'EXPIRED'" disabled class="btn-expired">Expired ✗</button>
-
-          <button 
-            *ngSwitchDefault
-            [disabled]="item.challenge.status !== 'ACTIVE' || item.challenge.joinWindowClosed"
-            (click)="joinChallenge(item)"
-            [class.btn-active]="item.challenge.status === 'ACTIVE' && !item.challenge.joinWindowClosed"
-            [class.btn-disabled]="item.challenge.status !== 'ACTIVE' || item.challenge.joinWindowClosed"
-            [title]="item.challenge.joinWindowClosed ? 'The join window for this challenge has passed — it can\'t be joined anymore.' : ''"
-            class="btn-action">
-            {{ item.challenge.status === 'ACTIVE'
-                ? (item.challenge.joinWindowClosed ? 'Join Window Closed' : 'Join Challenge')
-                : (item.challenge.status === 'UPCOMING' ? 'Upcoming' : 'Ended') }}
-          </button>
-        </ng-container>
-      </div>
-
+  <div *ngIf="isHistoryTab && filteredChallenges.length > 0" class="pagination-bar">
+    <span class="pagination-info">Page {{ safeCurrentPage }} of {{ totalPages }}</span>
+    <div class="pagination-controls">
+      <button class="page-btn" [disabled]="safeCurrentPage === 1" (click)="prevPage()">‹ Prev</button>
+      <button
+        *ngFor="let page of pageNumbers"
+        class="page-btn"
+        [class.active]="safeCurrentPage === page"
+        (click)="goToPage(page)">
+        {{ page }}
+      </button>
+      <button class="page-btn" [disabled]="safeCurrentPage === totalPages" (click)="nextPage()">Next ›</button>
     </div>
   </div>
 

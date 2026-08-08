@@ -129,6 +129,7 @@
             <div class="activity-icon" [ngClass]="item.sourceType?.toLowerCase()">
               <i *ngIf="item.sourceType === 'GOAL'" class="fas fa-bullseye"></i>
               <i *ngIf="item.sourceType === 'CHALLENGE'" class="fas fa-trophy"></i>
+              <i *ngIf="item.sourceType === 'CHALLENGE_CANCELLED'" class="fas fa-ban"></i>
               <i *ngIf="item.sourceType === 'DAILY_LOG' || item.sourceType === 'LOG'" class="fas fa-clipboard-list"></i>
               <i *ngIf="item.sourceType === 'STREAK'" class="fas fa-fire"></i>
             </div>
@@ -138,8 +139,8 @@
               <span class="activity-time">{{ item.createdAt | date:'shortDate' }}</span>
             </div>
 
-            <div class="activity-xp">
-              +{{ item.xpEarned }} XP
+            <div class="activity-xp" [class.negative]="item.xpEarned < 0">
+              {{ item.xpEarned >= 0 ? '+' : '' }}{{ item.xpEarned }} XP
             </div>
           </div>
         </div>

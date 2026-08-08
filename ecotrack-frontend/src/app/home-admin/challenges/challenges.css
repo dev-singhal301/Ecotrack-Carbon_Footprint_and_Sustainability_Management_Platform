@@ -338,9 +338,9 @@
   background-color: rgba(28, 43, 51, 0.45);
   backdrop-filter: blur(2px);
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
-  padding: 40px 20px;
+  padding: 20px;
   overflow-y: auto;
   z-index: 200;
   animation: overlayFadeIn 0.15s ease-out;
@@ -354,15 +354,21 @@
 .form-panel {
   background-color: #fff;
   border-radius: var(--admin-radius-xl);
-  padding: 32px;
+  padding: 26px 30px;
   width: 100%;
   max-width: 640px;
+  /* Fits the whole form within the viewport on typical screen heights
+     (see spacing below) — max-height + overflow-y here is only a safety
+     net for pathological cases (e.g. a phone in landscape), not the
+     primary way this fits. */
+  max-height: 94vh;
+  overflow-y: auto;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
 }
 
 .form-panel h2 {
-  margin: 0 0 20px;
-  font-size: 1.3rem;
+  margin: 0 0 16px;
+  font-size: 1.25rem;
   font-weight: 800;
   color: var(--admin-ink);
 }
@@ -370,14 +376,14 @@
 .form-panel form {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
 }
 
 .form-panel label {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   font-weight: 600;
   color: var(--admin-ink-soft);
   flex: 1;
@@ -387,8 +393,8 @@
 .form-panel select,
 .form-panel textarea {
   font-family: inherit;
-  font-size: 0.9rem;
-  padding: 10px 12px;
+  font-size: 0.88rem;
+  padding: 9px 12px;
   border-radius: var(--admin-radius-s);
   border: 1px solid #d7dde1;
   color: var(--admin-ink);
@@ -422,7 +428,7 @@
 
 .form-row {
   display: flex;
-  gap: 16px;
+  gap: 12px;
 }
 
 .form-row label {
@@ -434,7 +440,7 @@
   display: flex;
   justify-content: flex-end;
   gap: 12px;
-  margin-top: 8px;
+  margin-top: 4px;
 }
 
 .cancel-form-btn {

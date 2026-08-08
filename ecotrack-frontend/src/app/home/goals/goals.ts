@@ -82,6 +82,7 @@ export class Goals implements OnInit {
       return;
     }
     this.activeTab = tab;
+    this.currentPage = 1;
     this.loadGoals(tab);
   }
 
@@ -247,6 +248,62 @@ export class Goals implements OnInit {
 
   getFailedGoalsCount(): number {
     return this.displayedGoals.filter(g => this.isTaskFailed(g)).length;
+  }
+
+  // ── Pagination ── only used by the Accomplished/Failed history lists
+  // (goals-list); the Active tab is a small grid that's naturally capped
+  // to one goal per category (see isTrackLocked), so it never needs
+  // paging. Same windowed-3-page pattern as the admin Users/Challenges
+  // tables, just as plain getters instead of signal/computed since this
+  // component drives change detection manually via ChangeDetectorRef
+  // rather than using signals.
+  private readonly historyPageSize = 10;
+  currentPage = 1;
+
+  get totalPages(): number {
+    return Math.max(1, Math.ceil(this.displayedGoals.length / this.historyPageSize));
+  }
+
+  get safeCurrentPage(): number {
+    return Math.min(this.currentPage, this.totalPages);
+  }
+
+  get pageNumbers(): number[] {
+    const total = this.totalPages;
+    const current = this.safeCurrentPage;
+    const windowSize = Math.min(3, total);
+
+    let start = current - 1;
+    let end = current + 1;
+
+    if (start < 1) {
+      start = 1;
+      end = start + windowSize - 1;
+    }
+    if (end > total) {
+      end = total;
+      start = end - windowSize + 1;
+    }
+
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+  }
+
+  get pagedGoals(): GoalWithProgress[] {
+    const start = (this.safeCurrentPage - 1) * this.historyPageSize;
+    return this.displayedGoals.slice(start, start + this.historyPageSize);
+  }
+
+  goToPage(page: number): void {
+    this.currentPage = Math.min(Math.max(1, page), this.totalPages);
+    this.cdr.detectChanges();
+  }
+
+  prevPage(): void {
+    this.goToPage(this.safeCurrentPage - 1);
+  }
+
+  nextPage(): void {
+    this.goToPage(this.safeCurrentPage + 1);
   }
 
   get calculatedDurationDays(): number {

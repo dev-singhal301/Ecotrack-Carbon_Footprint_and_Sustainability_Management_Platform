@@ -130,6 +130,7 @@ public class DashboardService {
         return switch (sourceType.toUpperCase()) {
             case "GOAL" -> "Goal Completed Reward";
             case "CHALLENGE" -> "Challenge Accomplished";
+            case "CHALLENGE_CANCELLED" -> "Challenge Cancelled — XP Deducted";
             case "DAILY_LOG", "LOG" -> "Daily Log Entry Reward";
             case "STREAK" -> "Streak Milestone Reward";
             default -> "Activity XP Awarded";

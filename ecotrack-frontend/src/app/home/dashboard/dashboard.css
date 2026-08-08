@@ -16,7 +16,649 @@
   --eco-warning: #ed6c02;
 
   --eco-positive-bg: #dcfce7;
+  --eco-positive-text: #15803d;@import url('https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap');
+
+:host {
+  /* ---- Typography Variables ---- */
+  --eco-font-greeting: 'Nunito', 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+  --eco-font-body: 'Nunito', 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+  --eco-font-heading: 'Nunito', 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+
+  /* ---- Brand Green 3-Tier Ramp ---- */
+  --eco-green-light: #4ade80;
+  --eco-green: #2d6a4f;
+  --eco-green-dark: #1b4332;
+
+  --eco-white: #ffffff;
+  --eco-red: #ef4444;
+  --eco-warning: #ed6c02;
+
+  --eco-positive-bg: #dcfce7;
   --eco-positive-text: #15803d;
+
+  /* ---- Refined Slate & Neutral Colors ---- */
+  --eco-heading-color: #0f172a;
+  --eco-heading-accent: #0d2818;
+  --eco-slate-900: #0f172a;
+  --eco-slate-800: #1e293b;
+  --eco-slate-700: #334155;
+  --eco-slate-400: #94a3b8;
+
+  --eco-input-field-bg: #f8fafc;
+  --eco-input-border: #e2e8f0;
+  --eco-text-main: #1e293b;
+  --eco-text-muted: #64748b;
+  --eco-text-label: #475569;
+
+  --eco-bg-light: #f8fafc;
+
+  display: block;
+  font-family: var(--eco-font-body);
+}
+
+.dashboard-container {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  box-sizing: border-box;
+  background: var(--eco-bg-light);
+  height: fit-content;
+}
+
+.dashboard-card {
+  background: var(--eco-white);
+  border: 1.5px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  box-sizing: border-box;
+}
+
+/* Error Banner & Loader */
+.data-error-banner {
+  background: rgba(239, 68, 68, 0.08);
+  color: var(--eco-red);
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+.loading-state {
+  text-align: center;
+  padding: 48px;
+  color: var(--eco-text-muted);
+  font-size: 1.1rem;
+}
+
+/* ---------------- 1. Welcome Banner ---------------- */
+.welcome-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.welcome-left {
+  flex: 1;
+}
+
+.welcome-greeting {
+  margin: 0 0 4px;
+  font-family: var(--eco-font-greeting);
+  font-size: 2.1rem;
+  font-weight: 800;
+  color: var(--eco-green-dark);
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.welcome-subtext {
+  margin: 0 0 16px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--eco-text-muted);
+  font-style: italic;
+}
+
+.rank-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.rank-badge {
+  background: var(--eco-green);
+  color: var(--eco-white);
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 4px 12px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.level-label {
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  color: var(--eco-slate-700);
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 20px;
+}
+
+.xp-bar-track {
+  height: 10px;
+  width: 300px;
+  background: #e2e8f0;
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+
+.xp-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #16a34a 0%, #15803d 100%);
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+.xp-bar-caption {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--eco-slate-700);
+}
+
+/* Button Pair Styling */
+.welcome-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.btn-log-entry,
+.btn-ecobot-compact {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 42px;
+  padding: 0 20px;
+  border-radius: 999px;
+  font-family: var(--eco-font-heading);
+  font-size: 0.88rem;
+  font-weight: 800;
+  cursor: pointer;
+  box-sizing: border-box;
+  min-width: 165px;
+  transition: all 0.2s ease;
+}
+
+.btn-log-entry {
+  background: var(--eco-green);
+  color: var(--eco-white);
+  border: 2px solid var(--eco-green);
+  box-shadow: 0 3px 10px rgba(45, 106, 79, 0.2);
+}
+
+.btn-log-entry:hover {
+  background: var(--eco-green-dark);
+  border-color: var(--eco-green-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 5px 14px rgba(45, 106, 79, 0.3);
+}
+
+.btn-ecobot-compact {
+  background: var(--eco-white);
+  color: var(--eco-green);
+  border: 2px solid var(--eco-green);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.btn-ecobot-compact:hover {
+  background: var(--eco-green);
+  color: var(--eco-white);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(45, 106, 79, 0.25);
+}
+
+.ecobot-compact-icon {
+  font-size: 0.95rem;
+}
+
+.ecobot-compact-badge {
+  background: var(--eco-green);
+  color: var(--eco-white);
+  font-size: 0.6rem;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.btn-ecobot-compact:hover .ecobot-compact-badge {
+  background: var(--eco-white);
+  color: var(--eco-green-dark);
+}
+
+/* ---------------- 2. KPI Cards ---------------- */
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.kpi-card {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.kpi-label {
+  font-family: var(--eco-font-heading);
+  font-size: 0.82rem;
+  color: var(--eco-text-muted);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 8px;
+}
+
+.kpi-value {
+  font-family: var(--eco-font-heading);
+  font-size: 1.85rem;
+  font-weight: 800;
+  color: var(--eco-green);
+  letter-spacing: -0.01em;
+}
+
+.kpi-positive {
+  color: var(--eco-green);
+}
+
+.kpi-negative {
+  color: var(--eco-red);
+}
+
+.kpi-unit {
+  font-family: var(--eco-font-body);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--eco-text-muted);
+}
+
+.kpi-badge {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: var(--eco-positive-bg);
+  color: var(--eco-positive-text);
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+.kpi-badge-negative {
+  background: #fee2e2;
+  color: var(--eco-red);
+}
+
+/* ---------------- 3 & 4. Middle Section ---------------- */
+.middle-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  gap: 20px;
+  align-items: stretch;
+}
+
+.category-panel,
+.activity-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-width: 0;
+}
+
+.panel-heading {
+  margin: 0;
+  font-family: var(--eco-font-heading);
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--eco-heading-color);
+}
+
+.panel-header-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.title-with-badge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.panel-subtitle-badge {
+  font-size: 0.7rem;
+  font-weight: 800;
+  background: #f1f5f9;
+  color: var(--eco-text-muted);
+  padding: 3px 8px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.panel-total-metric {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.panel-total-metric .metric-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--eco-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.panel-total-metric .metric-value {
+  font-family: var(--eco-font-heading);
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--eco-heading-color);
+}
+
+.panel-total-metric .metric-value small {
+  font-family: var(--eco-font-body);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--eco-text-muted);
+}
+
+.daily-chart-container {
+  position: relative;
+  height: 230px;
+  width: 100%;
+}
+
+.chart-legend-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed #e2e8f0;
+}
+
+.legend-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-weight: 700;
+}
+
+.legend-chip-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.legend-chip-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+/* Activity Feed with Desktop Scroll */
+.activity-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1 1 0px;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.activity-list::-webkit-scrollbar {
+  width: 5px;
+}
+
+.activity-list::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+.activity-list::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.activity-list::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.activity-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--eco-input-field-bg);
+  border: 1px solid var(--eco-input-border);
+  border-radius: 10px;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.activity-item:hover {
+  transform: translateX(2px);
+  border-color: #cbd5e1;
+}
+
+.activity-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.activity-icon.goal {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.activity-icon.challenge {
+  background: #e0f2fe;
+  color: #0284c7;
+}
+
+.activity-icon.log, 
+.activity-icon.daily_log {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.activity-icon.streak {
+  background: #ffedd5;
+  color: #c2410c;
+}
+
+.activity-icon.challenge_cancelled {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.activity-details {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.activity-title {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--eco-slate-800);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.activity-time {
+  font-size: 0.75rem;
+  color: var(--eco-text-muted);
+  margin-top: 1px;
+}
+
+.activity-xp {
+  font-family: var(--eco-font-heading);
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--eco-green);
+  background: rgba(45, 106, 79, 0.08);
+  padding: 4px 10px;
+  border-radius: 20px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* XP deductions (e.g. challenge cancellation) — same pill shape, red instead of green */
+.activity-xp.negative {
+  color: #dc2626;
+  background: rgba(220, 38, 38, 0.08);
+}
+
+.empty-state {
+  color: var(--eco-slate-400);
+  font-style: italic;
+  font-size: 0.88rem;
+  padding: 24px 0;
+  text-align: center;
+}
+
+/* ---------------- Responsive Rules ---------------- */
+
+@media (max-width: 1024px) {
+  :host {
+    height: 100%;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .dashboard-container {
+    padding: 16px;
+    gap: 16px;
+    overflow-x: hidden;
+  }
+
+  .kpi-row,
+  .middle-row {
+    grid-template-columns: 1fr;
+  }
+
+  .category-panel,
+  .activity-panel {
+    height: auto;
+  }
+
+  .daily-chart-container {
+    height: 220px;
+  }
+
+  /* Fixed: Mobile internal scroll height boundary */
+  .activity-list {
+    flex: none;
+    max-height: 265px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-right: 4px;
+  }
+
+  .welcome-banner {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+  }
+
+  .welcome-left {
+    width: 100%;
+  }
+
+  .xp-bar-track {
+    width: 100%;
+  }
+
+  .welcome-right {
+    align-items: stretch;
+    flex-direction: row;
+    width: 100%;
+    gap: 10px;
+  }
+
+  .btn-log-entry,
+  .btn-ecobot-compact {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .dashboard-container {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .dashboard-card {
+    padding: 16px;
+  }
+
+  .welcome-greeting {
+    font-size: 1.6rem;
+  }
+
+  /* Fixed: Set flex-direction to row so buttons sit side-by-side */
+  .welcome-right {
+    flex-direction: row;
+    width: 100%;
+    gap: 10px;
+  }
+
+  /* Fixed: Flex grow equally to fill 50% space each */
+  .btn-log-entry,
+  .btn-ecobot-compact {
+    flex: 1;
+    min-width: 0;
+    width: auto;
+  }
+
+  .chart-legend-row {
+    gap: 6px;
+  }
+
+  .legend-chip {
+    padding: 3px 8px;
+  }
+
+  .legend-chip-label {
+    font-size: 0.7rem;
+  }
+}
 
   /* ---- Refined Slate & Neutral Colors ---- */
   --eco-heading-color: #0f172a;
