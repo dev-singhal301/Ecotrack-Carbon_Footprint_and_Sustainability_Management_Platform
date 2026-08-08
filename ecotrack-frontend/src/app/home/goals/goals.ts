@@ -429,7 +429,13 @@ export class Goals implements OnInit {
     const today = this.parseLocalDate(this.todayStr());
     const end = this.parseLocalDate(normalizedDate);
     const timeDiff = end.getTime() - today.getTime();
-    const days = Math.ceil(timeDiff / (1000 * 3600 * 24));
+    // +1 makes this inclusive of today: on the goal's actual end date,
+    // there is still one full day remaining (today itself), so daysLeft
+    // should read 1, not 0. Without the +1, a goal spanning e.g. the 5th
+    // through the 8th would read "0 days left" and disappear from the
+    // Active tab (isTaskActive requires daysLeft > 0) a full day early,
+    // on the 8th instead of the 9th.
+    const days = Math.ceil(timeDiff / (1000 * 3600 * 24)) + 1;
     return days < 0 ? 0 : days;
   }
 
