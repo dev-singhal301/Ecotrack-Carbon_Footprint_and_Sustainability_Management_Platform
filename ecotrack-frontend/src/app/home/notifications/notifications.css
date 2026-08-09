@@ -2,8 +2,10 @@
   display: block;
   width: 100%;
   height: 100%;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
+  /* No overflow here anymore — .tab-scroll-area below does the
+     scrolling, so the header/filter rows stay pinned at the top and
+     .pagination-bar (a sibling of the scroll area, not inside it) stays
+     pinned at the bottom instead of scrolling away with the list. */
   box-sizing: border-box;
 
   /* Standardized EcoTrack Tokens (kept in sync with leaderboard.css) */
@@ -17,6 +19,9 @@
 }
 
 .notifications-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
   max-width: 780px;
   margin: 0 auto;
   padding: 16px 20px;
@@ -24,7 +29,6 @@
   color: var(--eco-text-main);
   box-sizing: border-box;
   width: 100%;
-  min-height: 100%;
 }
 
 /* Header */
@@ -101,6 +105,57 @@
   background-color: var(--eco-bg-muted);
 }
 
+/* Type filter — independent second row (Goal/Challenge/Leaderboard/All),
+   separate from the read-status row above it. Same size as .filter-tab so
+   both rows read as equal-weight filters; background/active colors are
+   what distinguish this row visually, not size. */
+.type-filter-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.type-tab {
+  background: var(--eco-bg-muted);
+  border: 1px solid var(--eco-border);
+  color: var(--eco-text-sub);
+  font-weight: 600;
+  font-size: 0.85rem;
+  padding: 6px 14px;
+  border-radius: 20px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.type-tab i {
+  font-size: 0.8rem;
+}
+
+.type-tab.active {
+  background-color: var(--eco-primary-dark);
+  border-color: var(--eco-primary-dark);
+  color: #ffffff;
+}
+
+.type-tab:not(.active):hover {
+  border-color: var(--eco-primary);
+  color: var(--eco-primary-dark);
+}
+
+/* Scrolls independently of the header/filter rows above and the
+   pagination bar below — see the :host/.notifications-container comment
+   for why. */
+.tab-scroll-area {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 /* State messages */
 .state-message {
   text-align: center;
@@ -133,6 +188,20 @@
   gap: 10px;
 }
 
+.group-header {
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #94a3b8;
+  padding: 4px 2px;
+  margin-top: 4px;
+}
+
+.group-header:first-child {
+  margin-top: 0;
+}
+
 .notification-card {
   display: flex;
   align-items: flex-start;
@@ -141,8 +210,15 @@
   border: 1px solid var(--eco-border);
   border-radius: 12px;
   padding: 14px 16px;
-  cursor: pointer;
+  /* Only notification types with a resolved navigation target get a
+     pointer cursor — the rest still support tap-to-mark-read, just
+     without implying there's somewhere to go. */
+  cursor: default;
   transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.notification-card.clickable {
+  cursor: pointer;
 }
 
 .notification-card.unread {
@@ -150,7 +226,7 @@
   border-color: #a7f3d0;
 }
 
-.notification-card:hover {
+.notification-card.clickable:hover {
   border-color: var(--eco-primary);
 }
 
@@ -241,6 +317,60 @@
   background-color: var(--eco-primary);
   border-color: var(--eco-primary);
   color: #ffffff;
+}
+
+/* ── Pagination ── */
+.pagination-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 14px;
+  margin-top: 6px;
+  border-top: 1px solid var(--eco-border);
+  flex-shrink: 0;
+}
+
+.pagination-info {
+  font-size: 0.8rem;
+  color: var(--eco-text-sub);
+  font-weight: 600;
+}
+
+.pagination-controls {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.page-btn {
+  border: 1px solid var(--eco-border);
+  background-color: #ffffff;
+  color: var(--eco-text-sub);
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.8rem;
+  min-width: 34px;
+  transition: all 0.15s ease;
+}
+
+.page-btn:hover:not(:disabled):not(.active) {
+  border-color: var(--eco-primary);
+  color: var(--eco-primary-dark);
+}
+
+.page-btn.active {
+  background-color: var(--eco-primary);
+  border-color: var(--eco-primary);
+  color: #ffffff;
+}
+
+.page-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 @media (max-width: 640px) {

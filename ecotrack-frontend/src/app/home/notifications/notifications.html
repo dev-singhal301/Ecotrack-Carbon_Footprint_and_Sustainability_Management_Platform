@@ -31,47 +31,87 @@
     </button>
   </div>
 
-  <div class="state-message" *ngIf="isLoading">
-    <i class="fa-solid fa-spinner fa-spin"></i> Loading notifications...
+  <div class="type-filter-tabs">
+    <button class="type-tab" [class.active]="typeFilter === 'all'" (click)="setTypeFilter('all')">
+      All Types
+    </button>
+    <button class="type-tab" [class.active]="typeFilter === 'goal'" (click)="setTypeFilter('goal')">
+      <i class="fa-solid fa-bullseye"></i> Goals
+    </button>
+    <button class="type-tab" [class.active]="typeFilter === 'challenge'" (click)="setTypeFilter('challenge')">
+      <i class="fa-solid fa-trophy"></i> Challenges
+    </button>
+    <button class="type-tab" [class.active]="typeFilter === 'leaderboard'" (click)="setTypeFilter('leaderboard')">
+      <i class="fa-solid fa-ranking-star"></i> Leaderboard
+    </button>
   </div>
 
-  <div class="state-message error" *ngIf="dataError && !isLoading">
-    <i class="fa-solid fa-triangle-exclamation"></i> {{ dataError }}
-  </div>
+  <div class="tab-scroll-area">
 
-  <div class="empty-state" *ngIf="!isLoading && !dataError && visibleNotifications.length === 0">
-    <i class="fa-solid fa-bell-slash"></i>
-    <p *ngIf="filter === 'all'">You don't have any notifications yet.</p>
-    <p *ngIf="filter === 'unread'">You're all caught up.</p>
-  </div>
+    <div class="state-message" *ngIf="isLoading">
+      <i class="fa-solid fa-spinner fa-spin"></i> Loading notifications...
+    </div>
 
-  <div class="notification-list" *ngIf="!isLoading && !dataError">
-    <div
-      class="notification-card"
-      *ngFor="let notification of visibleNotifications"
-      [class.unread]="!notification.read"
-      (click)="onMarkAsRead(notification)">
+    <div class="state-message error" *ngIf="dataError && !isLoading">
+      <i class="fa-solid fa-triangle-exclamation"></i> {{ dataError }}
+    </div>
 
-      <div class="notification-icon" [ngClass]="colorClassFor(notification.type)">
-        <i [class]="iconFor(notification.type)"></i>
-      </div>
+    <div class="empty-state" *ngIf="!isLoading && !dataError && filteredNotifications.length === 0">
+      <i class="fa-solid fa-bell-slash"></i>
+      <p *ngIf="filter === 'all' && typeFilter === 'all'">You don't have any notifications yet.</p>
+      <p *ngIf="filter === 'unread' && typeFilter === 'all'">You're all caught up.</p>
+      <p *ngIf="typeFilter !== 'all'">No notifications match this filter.</p>
+    </div>
 
-      <div class="notification-body">
-        <div class="notification-title-row">
-          <span class="notification-title">{{ notification.title }}</span>
-          <span class="unread-dot" *ngIf="!notification.read"></span>
+    <div class="notification-list" *ngIf="!isLoading && !dataError && filteredNotifications.length > 0">
+      <ng-container *ngFor="let group of groupedNotifications">
+        <div class="group-header">{{ group.label }}</div>
+
+        <div
+          class="notification-card"
+          *ngFor="let notification of group.items"
+          [class.unread]="!notification.read"
+          [class.clickable]="isNavigable(notification.type)"
+          (click)="onNotificationClick(notification)">
+
+          <div class="notification-icon" [ngClass]="colorClassFor(notification.type)">
+            <i [class]="iconFor(notification.type)"></i>
+          </div>
+
+          <div class="notification-body">
+            <div class="notification-title-row">
+              <span class="notification-title">{{ notification.title }}</span>
+              <span class="unread-dot" *ngIf="!notification.read"></span>
+            </div>
+            <p class="notification-message">{{ notification.message }}</p>
+            <span class="notification-time">{{ timeAgo(notification.createdAt) }}</span>
+          </div>
+
+          <button
+            class="mark-read-btn"
+            *ngIf="!notification.read"
+            (click)="onMarkAsRead(notification, $event)"
+            title="Mark as read">
+            <i class="fa-solid fa-check"></i>
+          </button>
         </div>
-        <p class="notification-message">{{ notification.message }}</p>
-        <span class="notification-time">{{ timeAgo(notification.createdAt) }}</span>
-      </div>
+      </ng-container>
+    </div>
 
+  </div>
+
+  <div *ngIf="!isLoading && !dataError && filteredNotifications.length > 0" class="pagination-bar">
+    <span class="pagination-info">Page {{ safeCurrentPage }} of {{ totalPages }}</span>
+    <div class="pagination-controls">
+      <button class="page-btn" [disabled]="safeCurrentPage === 1" (click)="prevPage()">&lsaquo; Prev</button>
       <button
-        class="mark-read-btn"
-        *ngIf="!notification.read"
-        (click)="onMarkAsRead(notification, $event)"
-        title="Mark as read">
-        <i class="fa-solid fa-check"></i>
+        *ngFor="let page of pageNumbers"
+        class="page-btn"
+        [class.active]="safeCurrentPage === page"
+        (click)="goToPage(page)">
+        {{ page }}
       </button>
+      <button class="page-btn" [disabled]="safeCurrentPage === totalPages" (click)="nextPage()">Next &rsaquo;</button>
     </div>
   </div>
 

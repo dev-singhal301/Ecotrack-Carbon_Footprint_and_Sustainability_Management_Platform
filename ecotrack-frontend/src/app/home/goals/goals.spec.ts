@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { ActivatedRoute } from '@angular/router';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { of } from 'rxjs';
 import { Goals } from './goals';
@@ -23,7 +24,10 @@ describe('Goals Component Unit Tests', () => {
     await TestBed.configureTestingModule({
       imports: [ReactiveFormsModule, HttpClientTestingModule, Goals],
       providers: [
-        { provide: GoalService, useValue: mockGoalService }
+        { provide: GoalService, useValue: mockGoalService },
+        // No route params in these tests — the component just falls
+        // back to its default ACTIVE tab.
+        { provide: ActivatedRoute, useValue: { queryParams: of({}) } }
       ]
     }).compileComponents();
 
@@ -54,8 +58,7 @@ describe('Goals Component Unit Tests', () => {
     component.goalForm.patchValue({
       goalType: 'REDUCE_WATER_USAGE',
       targetValue: 45,
-      endDate: tomorrowStr,
-      baselinePeriodDays: 30
+      endDate: tomorrowStr
     });
     expect(component.goalForm.valid).toBe(true);
   });

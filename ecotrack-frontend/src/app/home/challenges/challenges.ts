@@ -1,6 +1,7 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { 
   ChallengeService, 
   UserChallengeResponseDto, 
@@ -50,10 +51,18 @@ export class ChallengesComponent implements OnInit {
 
   constructor(
     private challengeService: ChallengeService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private route: ActivatedRoute
   ) {}
 
   ngOnInit(): void {
+    this.route.queryParams.subscribe(params => {
+      const requestedTab = params['tab'];
+      if (this.tabs.includes(requestedTab)) {
+        this.activeTab = requestedTab;
+        this.currentPage = 1;
+      }
+    });
     this.loadData();
   }
 

@@ -1,6 +1,7 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormGroup, FormControl, Validators } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { forkJoin, Observable, of } from 'rxjs';
 import { switchMap, map } from 'rxjs/operators';
 import { GoalService, GoalResponse, GoalProgressResponse, GoalRequest } from './goals.service';
@@ -58,13 +59,25 @@ export class Goals implements OnInit {
 
   constructor(
     private goalService: GoalService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private route: ActivatedRoute
   ) {
     this.calculateFormDateBounds();
   }
 
   ngOnInit(): void {
-    this.loadGoals(this.activeTab);
+    // Subscribed rather than read once — if this component is already
+    // mounted and the person clicks a second notification pointing here
+    // (e.g. Completed -> Expired), Angular reuses the instance instead of
+    // recreating it, so a one-time read in ngOnInit would miss the change.
+    this.route.queryParams.subscribe(params => {
+      const requestedTab = params['tab'];
+      if (requestedTab === 'ACTIVE' || requestedTab === 'COMPLETED' || requestedTab === 'EXPIRED') {
+        this.activeTab = requestedTab;
+        this.currentPage = 1;
+      }
+      this.loadGoals(this.activeTab);
+    });
   }
 
   private calculateFormDateBounds(): void {

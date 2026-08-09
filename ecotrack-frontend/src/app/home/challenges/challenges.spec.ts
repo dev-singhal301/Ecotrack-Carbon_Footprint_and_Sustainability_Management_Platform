@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { ActivatedRoute } from '@angular/router';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { of, throwError } from 'rxjs';
 import { ChallengesComponent } from './challenges';
@@ -47,7 +48,10 @@ describe('ChallengesComponent', () => {
 
     await TestBed.configureTestingModule({
       imports: [HttpClientTestingModule, ChallengesComponent],
-      providers: [{ provide: ChallengeService, useValue: mockChallengeService }]
+      providers: [
+        { provide: ChallengeService, useValue: mockChallengeService },
+        { provide: ActivatedRoute, useValue: { queryParams: of({}) } }
+      ]
     }).compileComponents();
 
     fixture = TestBed.createComponent(ChallengesComponent);
