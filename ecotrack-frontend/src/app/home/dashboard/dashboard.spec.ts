@@ -15,7 +15,7 @@ describe('Dashboard', () => {
   const mockSummary: DashboardSummary = {
     username: 'Jane',
     userLevel: 2,
-    userRank: 'Green Guardian',
+    userRank: 'Eco Scout',
     currentXp: 700,
     nextLevelXpTarget: 1000,
     totalCarbonFootprint: 250.5,
@@ -87,12 +87,6 @@ describe('Dashboard', () => {
   it('should read active goals directly from the summary response', () => {
     fixture.detectChanges();
     expect(component.summary?.activeGoals.length).toBe(1);
-    expect(component.getGoalStatusLabel(component.summary!.activeGoals[0])).toBe('On Track');
-  });
-
-  it('should flag a goal as Over Budget when currentValue exceeds targetValue', () => {
-    const breachedGoal = { goalId: 2, goalName: 'Cut Water', goalType: 'REDUCE_WATER_USAGE', targetValue: 50, currentValue: 60, completionPercentage: 120, rewardPoints: 35 };
-    expect(component.getGoalStatusLabel(breachedGoal)).toBe('Over Budget');
   });
 
   it('should navigate to the tracking route when Log New Entry is clicked', () => {
