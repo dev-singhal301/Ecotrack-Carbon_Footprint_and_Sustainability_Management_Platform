@@ -8,6 +8,7 @@ import { RecommendationResponse } from './recommendation.model';
 import { GoalService } from './goal.service';
 import { GoalResponse, GoalProgressResponse } from './goal.model';
 import { FactService } from './fact.service';
+import { getGoalStatus, getGoalInsightMessage, getCategoryForGoalType, GoalStatus } from './goal-insight-messages';
 
 type EcoBotPanel = 'recommendations' | 'goals' | 'facts' | null;
 
@@ -215,6 +216,43 @@ export class AiTips {
 
   getUnitFor(category: string): string {
     return this.categoryUnits[category] ?? '';
+  }
+
+  getGoalStatusFor(item: GoalWithProgress): GoalStatus | null {
+    if (!item.progress) return null;
+
+    return getGoalStatus(
+      item.goal.startDate,
+      item.goal.endDate,
+      item.progress.completionPercentage,
+      item.progress.completed
+    );
+  }
+
+  getGoalInsightFor(item: GoalWithProgress): string {
+    const status = this.getGoalStatusFor(item);
+    if (!status) {
+      return 'Progress data is temporarily unavailable for this goal.';
+    }
+    return getGoalInsightMessage(item.goal.goalType, status);
+  }
+
+  getGoalCategoryLabel(goalType: string): string {
+    const category = getCategoryForGoalType(goalType);
+    return category ? this.getCategoryLabel(category) : 'Overall';
+  }
+
+  getGoalCategoryUnit(goalType: string): string {
+    const category = getCategoryForGoalType(goalType);
+    return category ? this.getUnitFor(category) : '';
+  }
+
+  getGoalProgressLine(entry: GoalWithProgress): string {
+    if (!entry.progress) return '';
+    const unit = this.getGoalCategoryUnit(entry.goal.goalType);
+    const from = unit ? `${entry.progress.baselineValue} ${unit}` : `${entry.progress.baselineValue}`;
+    const to = unit ? `${entry.progress.currentValue} ${unit}` : `${entry.progress.currentValue}`;
+    return `Started at ${from} → now at ${to}`;
   }
 
   // --- Carbon Facts logic ---
