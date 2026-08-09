@@ -8,7 +8,7 @@ public class DashboardSummaryResponse {
     // --- Section 1: Header & Welcome Banner ---
     private String username;
     private Integer userLevel;               // e.g., Level 1
-    private String userRank;                // e.g., "Eco Starter"
+    private String userRank;                // e.g., "Novice Eco"
     private Integer currentXp;
     private Integer nextLevelXpTarget;
 
