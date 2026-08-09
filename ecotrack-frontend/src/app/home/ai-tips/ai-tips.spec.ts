@@ -156,6 +156,72 @@ describe('AiTips', () => {
       expect(component.recLoading).toBeFalsy();
       expect(component.recError).toBe('Server error');
     });
+
+    it('should stop revealing at 3 categories, even though allCategoriesSorted has 6', () => {
+      component.selectPanel('recommendations');
+      httpMock.expectOne('http://localhost:8080/api/recommendations').flush(mockRecResponse);
+
+      expect(component.revealedCategories.length).toBe(1);
+      expect(component.hasMoreToExplore).toBeTruthy();
+
+      component.exploreNext();
+      expect(component.revealedCategories.length).toBe(2);
+      expect(component.hasMoreToExplore).toBeTruthy();
+
+      component.exploreNext();
+      expect(component.revealedCategories.length).toBe(3);
+      expect(component.hasMoreToExplore).toBeFalsy();
+      expect(component.nextCategoryLabel).toBe('');
+
+      // A further call should not push past 3
+      component.exploreNext();
+      expect(component.revealedCategories.length).toBe(3);
+    });
+
+    it('should call POST /api/recommendations/refresh and update state on refreshRecommendations()', () => {
+      component.selectPanel('recommendations');
+      httpMock.expectOne('http://localhost:8080/api/recommendations').flush(mockRecResponse);
+
+      component.exploreNext(); // simulate having revealed more than 1, to confirm reset happens
+      expect(component.revealedCategories.length).toBe(2);
+
+      const refreshedResponse: RecommendationResponse = {
+        topRecommendations: [
+          { category: 'WASTE', suggestionText: 'Start recycling paper/plastic waste', impactEstimate: 4.0 },
+        ],
+        allCategoriesSorted: [
+          { category: 'WASTE', percentage: 40 },
+          { category: 'TRANSPORTATION', percentage: 30 },
+          { category: 'ELECTRICITY', percentage: 20 },
+          { category: 'FUEL', percentage: 5 },
+          { category: 'WATER', percentage: 3 },
+          { category: 'FOOD', percentage: 2 },
+        ],
+      };
+
+      component.refreshRecommendations();
+
+      const req = httpMock.expectOne('http://localhost:8080/api/recommendations/refresh');
+      expect(req.request.method).toBe('POST');
+      req.flush(refreshedResponse);
+
+      expect(component.recommendations).toEqual(refreshedResponse);
+      expect(component.revealedCategories.length).toBe(1); // confirms revealedCount reset to 1
+      expect(component.recLoading).toBeFalsy();
+    });
+
+    it('should set recError if refreshRecommendations() request fails', () => {
+      component.selectPanel('recommendations');
+      httpMock.expectOne('http://localhost:8080/api/recommendations').flush(mockRecResponse);
+
+      component.refreshRecommendations();
+      httpMock
+        .expectOne('http://localhost:8080/api/recommendations/refresh')
+        .flush({ message: 'Refresh failed' }, { status: 500, statusText: 'Server Error' });
+
+      expect(component.recLoading).toBeFalsy();
+      expect(component.recError).toBe('Refresh failed');
+    });
   });
 
   // --- Goal Insights panel ---
