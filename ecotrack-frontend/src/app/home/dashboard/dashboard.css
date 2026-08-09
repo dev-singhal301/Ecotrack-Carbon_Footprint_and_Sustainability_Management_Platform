@@ -16,7 +16,7 @@
   --eco-warning: #ed6c02;
 
   --eco-positive-bg: #dcfce7;
-  --eco-positive-text: #15803d;@import url('https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap');
+  --eco-positive-text: #15803d;
 
 :host {
   /* ---- Typography Variables ---- */
@@ -488,7 +488,7 @@
   color: #0284c7;
 }
 
-.activity-icon.log, 
+.activity-icon.log,
 .activity-icon.daily_log {
   background: #f1f5f9;
   color: #475569;
@@ -1112,7 +1112,7 @@
   color: #0284c7;
 }
 
-.activity-icon.log, 
+.activity-icon.log,
 .activity-icon.daily_log {
   background: #f1f5f9;
   color: #475569;

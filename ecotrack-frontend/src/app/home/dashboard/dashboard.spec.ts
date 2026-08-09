@@ -22,6 +22,8 @@ describe('Dashboard', () => {
     carbonSaved: 45.2,
     savingsPercentage: 15.3,
     totalRewardPoints: 420,
+    monthlyXp: 700,
+    monthlyRank: 5,
     categoryImpacts: [
       { categoryName: 'ELECTRICITY', totalEmissions: 120.5, percentageShare: 48.1 },
       { categoryName: 'TRANSPORTATION', totalEmissions: 80.0, percentageShare: 31.9 }

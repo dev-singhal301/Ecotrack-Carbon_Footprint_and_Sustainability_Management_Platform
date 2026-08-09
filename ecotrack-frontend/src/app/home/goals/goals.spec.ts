@@ -54,8 +54,7 @@ describe('Goals Component Unit Tests', () => {
     component.goalForm.patchValue({
       goalType: 'REDUCE_WATER_USAGE',
       targetValue: 45,
-      endDate: tomorrowStr,
-      baselinePeriodDays: 30
+      endDate: tomorrowStr
     });
     expect(component.goalForm.valid).toBe(true);
   });

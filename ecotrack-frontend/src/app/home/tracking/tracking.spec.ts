@@ -22,18 +22,18 @@ describe('TrackingComponent', () => {
   });
 
   it('should initialize default parameters correctly', () => {
-    expect(component.entry.category).toBe('');
-    expect(component.entry.amount).toBeNull();
-    expect(component.entry.activityDate).toBeTruthy();
+    expect(component.trackingForm.get('category')?.value).toBe('');
+    expect(component.trackingForm.get('amount')?.value).toBeNull();
+    expect(component.trackingForm.get('activityDate')?.value).toBeTruthy();
   });
 
   it('should update measurement unit dynamically on category change', () => {
-    component.entry.category = 'ELECTRICITY';
+    component.trackingForm.patchValue({ category: 'ELECTRICITY' });
     component.onCategoryChange();
-    expect(component.entry.unit).toBe('kWh');
+    expect(component.trackingForm.get('unit')?.value).toBe('kWh');
 
-    component.entry.category = 'TRANSPORTATION';
+    component.trackingForm.patchValue({ category: 'TRANSPORTATION' });
     component.onCategoryChange();
-    expect(component.entry.unit).toBe('km');
+    expect(component.trackingForm.get('unit')?.value).toBe('km');
   });
 });

@@ -1,6 +1,7 @@
 package com.ecotrack.ecotrack_backend.service;
 
 import com.ecotrack.ecotrack_backend.entity.CarbonCategory;
+import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -15,6 +16,7 @@ import java.util.List;
  * Each tier returns at least 3 tips, joined into one string since
  * suggestion_text is a single VARCHAR(500) column, not a list.
  */
+@Component
 public class RecommendationRuleEngine {
 
     private static final String TIP_SEPARATOR = " | ";

@@ -32,14 +32,16 @@ public class RecommendationService {
     private final CarbonEntryRepository carbonEntryRepository;
     private final RecommendationRepository recommendationRepository;
     private final UserRepository userRepository;
-    private final RecommendationRuleEngine ruleEngine = new RecommendationRuleEngine();
+    private final RecommendationRuleEngine ruleEngine;
 
     public RecommendationService(CarbonEntryRepository carbonEntryRepository,
                                  RecommendationRepository recommendationRepository,
-                                 UserRepository userRepository) {
+                                 UserRepository userRepository,
+                                 RecommendationRuleEngine ruleEngine) {
         this.carbonEntryRepository = carbonEntryRepository;
         this.recommendationRepository = recommendationRepository;
         this.userRepository = userRepository;
+        this.ruleEngine = ruleEngine;
     }
 
     /**

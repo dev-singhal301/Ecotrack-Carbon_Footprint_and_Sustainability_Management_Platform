@@ -40,6 +40,9 @@ class RecommendationServiceTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private RecommendationRuleEngine ruleEngine;
+
     @InjectMocks
     private RecommendationService recommendationService;
 

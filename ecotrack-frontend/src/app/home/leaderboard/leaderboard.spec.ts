@@ -1,7 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
-import { Leaderboard, LeaderboardUser, UserHistoryItem } from './leaderboard';
+import { Leaderboard } from './leaderboard';
+import { LeaderboardUser, UserHistoryItem } from './leaderboard.service';
 
 describe('Leaderboard Component', () => {
   let component: Leaderboard;
