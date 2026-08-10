@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS users (
     reset_password_token VARCHAR(255) DEFAULT NULL,
     token_expiry_date TIMESTAMP DEFAULT NULL,
     user_level INT DEFAULT 1,
-    user_rank VARCHAR(50) DEFAULT 'Eco Starter',
+    user_rank VARCHAR(50) DEFAULT 'Novice Eco',
     current_xp INT DEFAULT 0,
     next_level_xp_target INT DEFAULT 50,
     reward_points INT DEFAULT 0,
@@ -56,7 +56,7 @@ ON CONFLICT (email) DO NOTHING;
 
 -- Existing User Table Patches
 ALTER TABLE users ADD COLUMN IF NOT EXISTS user_level INT DEFAULT 1;
-ALTER TABLE users ADD COLUMN IF NOT EXISTS user_rank VARCHAR(50) DEFAULT 'Eco Starter';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS user_rank VARCHAR(50) DEFAULT 'Novice Eco';
 ALTER TABLE users ADD COLUMN IF NOT EXISTS current_xp INT DEFAULT 0;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS next_level_xp_target INT DEFAULT 50;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS reward_points INT DEFAULT 0;
@@ -386,7 +386,7 @@ CREATE TABLE IF NOT EXISTS badges (
 
 -- Seed baseline badges if missing
 INSERT INTO badges (name, description, category, icon_url, required_xp) VALUES
-('Eco Starter', 'Created an account and started your eco journey.', 'LEVEL', '/assets/badges/starter.avif', 0),
+('Novice Eco', 'Created an account and started your eco journey.', 'LEVEL', '/assets/badges/starter.avif', 0),
 ('Carbon Cutter', 'Completed your first carbon reduction challenge.', 'CHALLENGE', '/assets/badges/cutter.avif', 100),
 ('Green Warrior', 'Earned 500 total XP in EcoTrack.', 'LEVEL', '/assets/badges/warrior.avif', 500)
 ON CONFLICT (name) DO NOTHING;

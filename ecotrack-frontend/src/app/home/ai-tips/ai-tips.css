@@ -328,6 +328,37 @@
   font-weight: 800;
 }
 
+.goal-status-badge {
+  font-family: var(--eco-font-heading);
+  font-weight: 800;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 3px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.goal-status-badge.on_track {
+  background: var(--eco-positive-bg);
+  color: var(--eco-positive-text);
+}
+
+.goal-status-badge.completed {
+  background: var(--eco-green);
+  color: var(--eco-white);
+}
+
+.goal-status-badge.behind {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.goal-status-badge.missed {
+  background: #fee2e2;
+  color: var(--eco-red, #ef4444);
+}
+
 .fact-card {
   background: var(--eco-white);
   border: 1px solid var(--eco-input-border);

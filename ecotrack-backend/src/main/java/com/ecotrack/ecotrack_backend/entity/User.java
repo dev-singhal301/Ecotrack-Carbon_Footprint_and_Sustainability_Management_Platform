@@ -44,7 +44,7 @@ public class User {
     private Integer userLevel = 1;
 
     @Column(name = "user_rank", length = 50)
-    private String userRank = "Eco Starter";
+    private String userRank = "Novice Eco";
 
     @Column(name = "current_xp", nullable = false)
     private Integer currentXp = 0;
@@ -73,7 +73,7 @@ public class User {
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
         if (this.userLevel == null) this.userLevel = 1;
-        if (this.userRank == null) this.userRank = "Eco Starter";
+        if (this.userRank == null) this.userRank = "Novice Eco";
         if (this.currentXp == null) this.currentXp = 0;
         if (this.nextLevelXpTarget == null) this.nextLevelXpTarget = 50;
         if (this.rewardPoints == null) this.rewardPoints = 0;

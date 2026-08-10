@@ -86,14 +86,16 @@
             <div class="goal-card-main">
               <span class="goal-card-name">{{ entry.goal.goalName }}</span>
               <span class="goal-card-baseline" *ngIf="entry.progress">
-                Started at {{ entry.progress.baselineValue }} {{ getUnitFor(entry.goal.goalType) }}
-                &rarr; now at {{ entry.progress.currentValue }} {{ getUnitFor(entry.goal.goalType) }}
+                {{ getGoalProgressLine(entry) }}
               </span>
               <span class="goal-card-baseline" *ngIf="!entry.progress">
                 Progress unavailable right now
               </span>
             </div>
             <div class="goal-card-side">
+              <span class="goal-status-badge" *ngIf="entry.progress" [ngClass]="getGoalStatusFor(entry)?.toLowerCase()">
+                {{ getGoalStatusFor(entry) }}
+              </span>
               <span class="goal-card-percent" *ngIf="entry.progress">
                 {{ entry.progress.completionPercentage | number:'1.0-0' }}%
               </span>
@@ -105,11 +107,11 @@
           <div class="goal-card-detail" *ngIf="isGoalExpanded(entry.goal.goalId) && entry.progress">
             <div class="goal-detail-row">
               <span class="goal-detail-label">Category</span>
-              <span class="goal-detail-value">{{ getCategoryLabel(entry.goal.goalType) }}</span>
+              <span class="goal-detail-value">{{ getGoalCategoryLabel(entry.goal.goalType) }}</span>
             </div>
             <div class="goal-detail-row">
               <span class="goal-detail-label">Target</span>
-              <span class="goal-detail-value">{{ entry.goal.targetValue }} {{ getUnitFor(entry.goal.goalType) }}</span>
+              <span class="goal-detail-value">{{ entry.goal.targetValue }} {{ getGoalCategoryUnit(entry.goal.goalType) }}</span>
             </div>
             <div class="goal-detail-row">
               <span class="goal-detail-label">Reward</span>
@@ -122,6 +124,10 @@
             <div class="goal-detail-row">
               <span class="goal-detail-label">Last updated</span>
               <span class="goal-detail-value">{{ entry.progress.lastUpdated }}</span>
+            </div>
+            <div class="goal-detail-row" *ngIf="entry.progress">
+              <span class="goal-detail-label">Insight</span>
+              <span class="goal-detail-value">{{ getGoalInsightFor(entry) }}</span>
             </div>
             <div class="goal-detail-row" *ngIf="entry.progress.completed">
               <span class="goal-detail-complete"><i class="fas fa-circle-check"></i> Goal completed!</span>
