@@ -105,9 +105,13 @@ describe('AiTips', () => {
     expect(buttons.length).toBe(3);
   });
 
-  it('should toggle a panel closed if the same panel is selected twice (no HTTP call)', () => {
+  it('should toggle a panel closed if the same panel is selected twice', () => {
     component.selectPanel('facts');
     expect(component.activePanel).toBe('facts');
+
+    const req = httpMock.expectOne('http://localhost:8080/api/facts/random');
+    req.flush({ fact: 'Test fact.' });
+
     component.selectPanel('facts');
     expect(component.activePanel).toBeNull();
   });
