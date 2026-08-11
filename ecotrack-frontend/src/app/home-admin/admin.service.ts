@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { AdminDashboardSummary } from './dashboard/dashboard.model';
+import { AdminDashboardSummary, AdminParticipation } from './dashboard/dashboard.model';
 import { AdminUser } from './users/users.model';
 import { Challenge } from '../../types/challenge';
 import { ChallengeAdminRequest } from './challenges/challenges.model';
@@ -57,5 +57,13 @@ export class AdminService {
   // Rejected with 409 if already cancelled or already ended.
   cancelChallenge(id: number): Observable<{ message: string }> {
     return this.http.delete<{ message: string }>(`${this.baseUrl}/challenges/${id}`);
+  }
+
+  // GET /api/admin/participations — every participation across every user,
+  // for dashboard analytics (current in-progress count, activity trend,
+  // resolved completion rate trend). Fetched once; filtered/bucketed by
+  // date range client-side, same pattern as getChallenges()/getUsers().
+  getParticipations(): Observable<AdminParticipation[]> {
+    return this.http.get<AdminParticipation[]>(`${this.baseUrl}/participations`);
   }
 }

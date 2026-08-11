@@ -1,6 +1,7 @@
 package com.ecotrack.ecotrack_backend.controller;
 
 import com.ecotrack.ecotrack_backend.dto.AdminDashboardSummaryResponse;
+import com.ecotrack.ecotrack_backend.dto.AdminParticipationResponse;
 import com.ecotrack.ecotrack_backend.dto.AdminUserResponse;
 import com.ecotrack.ecotrack_backend.dto.ChallengeRequest;
 import com.ecotrack.ecotrack_backend.dto.ChallengeResponse;
@@ -8,6 +9,7 @@ import com.ecotrack.ecotrack_backend.exception.ChallengeNotFoundException;
 import com.ecotrack.ecotrack_backend.exception.InvalidChallengeRequestException;
 import com.ecotrack.ecotrack_backend.service.AdminService;
 import com.ecotrack.ecotrack_backend.service.ChallengeService;
+import com.ecotrack.ecotrack_backend.service.UserChallengeService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -30,10 +32,13 @@ public class AdminController {
 
     private final AdminService adminService;
     private final ChallengeService challengeService;
+    private final UserChallengeService userChallengeService;
 
-    public AdminController(AdminService adminService, ChallengeService challengeService) {
+    public AdminController(AdminService adminService, ChallengeService challengeService,
+                            UserChallengeService userChallengeService) {
         this.adminService = adminService;
         this.challengeService = challengeService;
+        this.userChallengeService = userChallengeService;
     }
 
     @PreAuthorize("hasRole('ADMIN')")
@@ -109,6 +114,14 @@ public class AdminController {
     public ResponseEntity<Map<String, String>> cancelChallenge(@PathVariable Long challengeId) {
         challengeService.cancelChallenge(challengeId);
         return ResponseEntity.ok(Map.of("message", "Challenge cancelled successfully"));
+    }
+
+    // ── Participation Analytics (dashboard support) ──
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/participations")
+    public ResponseEntity<List<AdminParticipationResponse>> getAllParticipations() {
+        return ResponseEntity.ok(userChallengeService.getAllParticipationsForAdmin());
     }
 
     // ── Exception Handlers ──

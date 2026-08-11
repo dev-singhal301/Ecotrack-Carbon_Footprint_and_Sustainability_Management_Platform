@@ -1,6 +1,7 @@
 package com.ecotrack.ecotrack_backend.service;
 
 import com.ecotrack.ecotrack_backend.dto.ActivityLogRequest;
+import com.ecotrack.ecotrack_backend.dto.AdminParticipationResponse;
 import com.ecotrack.ecotrack_backend.dto.ChallengeResponse;
 import com.ecotrack.ecotrack_backend.dto.UserChallengeResponse;
 import com.ecotrack.ecotrack_backend.entity.*;
@@ -583,5 +584,20 @@ public class UserChallengeService {
     private User findUserByEmailOrThrow(String email) {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("User not found with email: " + email));
+    }
+
+    // ── Admin Dashboard support ──
+
+    /**
+     * Returns every participation across every user, for the admin
+     * dashboard's participation analytics (current in-progress count,
+     * activity trend, resolved completion rate trend — all computed
+     * client-side over this list). Admin-only; unrelated to the
+     * user-facing getUserChallenges() above, which scopes to one user.
+     */
+    public List<AdminParticipationResponse> getAllParticipationsForAdmin() {
+        return userChallengeRepository.findAll().stream()
+                .map(AdminParticipationResponse::fromEntity)
+                .toList();
     }
 }
