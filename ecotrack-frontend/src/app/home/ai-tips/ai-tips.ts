@@ -132,21 +132,28 @@ export class AiTips {
     });
   }
 
+  get isZeroEmissionState(): boolean {
+    return !!this.recommendations?.message;
+  }
+
   get revealedCategories() {
     if (!this.recommendations) return [];
-    const topThree = this.recommendations.allCategoriesSorted.slice(0, 3);
+    const nonZero = this.recommendations.allCategoriesSorted.filter(c => c.percentage > 0);
+    const topThree = nonZero.slice(0, 3);
     return topThree.slice(0, this.revealedCount);
   }
 
   get hasMoreToExplore(): boolean {
     if (!this.recommendations) return false;
-    const topThree = this.recommendations.allCategoriesSorted.slice(0, 3);
+    const nonZero = this.recommendations.allCategoriesSorted.filter(c => c.percentage > 0);
+    const topThree = nonZero.slice(0, 3);
     return this.revealedCount < topThree.length;
   }
 
   get nextCategoryLabel(): string {
     if (!this.recommendations) return '';
-    const topThree = this.recommendations.allCategoriesSorted.slice(0, 3);
+    const nonZero = this.recommendations.allCategoriesSorted.filter(c => c.percentage > 0);
+    const topThree = nonZero.slice(0, 3);
     const next = topThree[this.revealedCount];
     return next ? this.getCategoryLabel(next.category) : '';
   }
@@ -169,22 +176,30 @@ export class AiTips {
     this.goalsError = null;
     this.cdr.detectChanges();
 
-    this.goalService.getActiveGoals().subscribe({
+    this.goalService.getAllGoals().subscribe({
       next: (goals) => {
-        if (goals.length === 0) {
+        const active = goals.filter(g => g.status === 'ACTIVE');
+        const ended = goals
+          .filter(g => g.status === 'COMPLETED' || g.status === 'EXPIRED')
+          .sort((a, b) => new Date(b.endDate).getTime() - new Date(a.endDate).getTime())
+          .slice(0, 7);
+
+        const visibleGoals = [...active, ...ended];
+
+        if (visibleGoals.length === 0) {
           this.goalsWithProgress = [];
           this.goalsLoading = false;
           this.cdr.detectChanges();
           return;
         }
 
-        const progressCalls = goals.reduce((acc, goal) => {
+        const progressCalls = visibleGoals.reduce((acc, goal) => {
           acc[goal.goalId] = this.goalService.getGoalProgress(goal.goalId).pipe(catchError(() => of(null)));
           return acc;
         }, {} as Record<number, Observable<GoalProgressResponse | null>>);
 
         forkJoin(progressCalls).subscribe((progressMap) => {
-          this.goalsWithProgress = goals.map((goal) => ({
+          this.goalsWithProgress = visibleGoals.map((goal) => ({
             goal,
             progress: progressMap[goal.goalId],
           }));
@@ -229,13 +244,19 @@ export class AiTips {
     );
   }
 
-  getGoalInsightFor(item: GoalWithProgress): string {
-    const status = this.getGoalStatusFor(item);
-    if (!status) {
-      return 'Progress data is temporarily unavailable for this goal.';
+    getGoalInsightFor(item: GoalWithProgress): string {
+      const status = this.getGoalStatusFor(item);
+      if (!status || !item.progress) {
+        return 'Progress data is temporarily unavailable for this goal.';
+      }
+      const unit = this.getGoalCategoryUnit(item.goal.goalType);
+      const currentDisplay = unit ? `${item.progress.currentValue} ${unit}` : `${item.progress.currentValue}`;
+      const targetDisplay = unit ? `${item.goal.targetValue} ${unit}` : `${item.goal.targetValue}`;
+      const endDateDisplay = new Date(item.goal.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      const daysRemaining = Math.max(0, Math.ceil((new Date(item.goal.endDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
+
+      return getGoalInsightMessage(item.goal.goalType, status, { currentDisplay, targetDisplay, endDateDisplay, daysRemaining });
     }
-    return getGoalInsightMessage(item.goal.goalType, status);
-  }
 
   getGoalCategoryLabel(goalType: string): string {
     const category = getCategoryForGoalType(goalType);
@@ -245,14 +266,6 @@ export class AiTips {
   getGoalCategoryUnit(goalType: string): string {
     const category = getCategoryForGoalType(goalType);
     return category ? this.getUnitFor(category) : '';
-  }
-
-  getGoalProgressLine(entry: GoalWithProgress): string {
-    if (!entry.progress) return '';
-    const unit = this.getGoalCategoryUnit(entry.goal.goalType);
-    const from = unit ? `${entry.progress.baselineValue} ${unit}` : `${entry.progress.baselineValue}`;
-    const to = unit ? `${entry.progress.currentValue} ${unit}` : `${entry.progress.currentValue}`;
-    return `Started at ${from} → now at ${to}`;
   }
 
   // --- Carbon Facts logic ---

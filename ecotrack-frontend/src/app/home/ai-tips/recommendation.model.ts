@@ -12,4 +12,5 @@ export interface CategoryBreakdownDto {
 export interface RecommendationResponse {
   topRecommendations: TopRecommendationDto[];
   allCategoriesSorted: CategoryBreakdownDto[];
+  message: string | null;
 }

@@ -359,6 +359,13 @@
   color: var(--eco-red, #ef4444);
 }
 
+.goal-insight-text {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--eco-text, #1f2937);
+  margin: 0.75rem 0;
+}
+
 .fact-card {
   background: var(--eco-white);
   border: 1px solid var(--eco-input-border);

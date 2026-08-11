@@ -17,6 +17,11 @@ export class GoalService {
     return this.http.get<GoalResponse[]>(`${this.baseUrl}?status=ACTIVE`);
   }
 
+  // GET /api/goals — no status filter, returns every goal regardless of status
+  getAllGoals(): Observable<GoalResponse[]> {
+    return this.http.get<GoalResponse[]>(this.baseUrl);
+  }
+
   // GET /api/goals/{id}/progress
   getGoalProgress(goalId: number): Observable<GoalProgressResponse> {
     return this.http.get<GoalProgressResponse>(`${this.baseUrl}/${goalId}/progress`);
