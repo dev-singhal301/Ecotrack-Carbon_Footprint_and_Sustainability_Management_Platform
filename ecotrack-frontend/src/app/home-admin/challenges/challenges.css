@@ -14,8 +14,7 @@
   color: var(--admin-ink);
 }
 
-/* Header, filter bar, and pagination stay pinned — only the table body
-   scrolls, and only if it truly has to. Same reasoning as Users. */
+/* Header, filter bar, and pagination stay pinned */
 .page-header,
 .filter-bar,
 .pagination-bar {
@@ -65,8 +64,7 @@
   transform: translateY(1px);
 }
 
-/* ── Filter bar ── matches Users' bordered container so both admin
-   pages read as the same control, not two separately-styled toolbars. */
+/* ── Filter bar ── */
 .filter-bar {
   display: flex;
   flex-wrap: wrap;
@@ -164,9 +162,7 @@
   opacity: 0.88;
 }
 
-/* ── Table card ── flex:1 fills the space between the filter bar and
-   pagination bar regardless of how many rows are on the current page —
-   see Users' table-wrapper for the full reasoning. */
+/* ── Table card ── */
 .table-wrapper {
   flex: 1 1 auto;
   min-height: 0;
@@ -222,8 +218,7 @@
   white-space: normal !important;
 }
 
-/* ── Status badges ── dot + tinted pill, same construction as the
-   status/role badges on the Users page. */
+/* ── Status badges ── */
 .status-badge {
   display: inline-flex;
   align-items: center;
@@ -279,7 +274,7 @@
   background-color: var(--admin-danger);
 }
 
-/* ── Row actions ── pill buttons, matching Users' deactivate/reactivate. */
+/* ── Row actions ── */
 .actions-cell {
   display: grid;
   grid-template-columns: 62px 70px;
@@ -426,18 +421,19 @@
   min-width: 0;
 }
 
-/* ── Visual Image Pickers ── */
-.image-picker-section {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  margin-top: 4px;
+/* ── Custom Image Dropdowns ── */
+.image-picker-row {
+  align-items: flex-start;
+  position: relative;
 }
 
-.image-picker-group {
+.dropdown-select {
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
 }
 
 .picker-label {
@@ -446,103 +442,171 @@
   color: var(--admin-ink-soft);
 }
 
-.image-picker-grid {
-  display: grid;
-  gap: 10px;
-}
-
-.card-picker-grid {
-  grid-template-columns: repeat(auto-fill, minmax(105px, 1fr));
-}
-
-.badge-picker-grid {
-  grid-template-columns: repeat(auto-fill, minmax(75px, 1fr));
-}
-
-.image-picker-item {
+.dropdown-trigger {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  padding: 6px;
-  border-radius: var(--admin-radius-s);
-  border: 2px solid var(--admin-border);
-  background-color: #ffffff;
-  cursor: pointer;
-  transition: border-color 0.15s ease, background-color 0.15s ease, transform 0.1s ease;
-  user-select: none;
-}
-
-.image-picker-item:hover {
-  border-color: #c7ced2;
-  transform: translateY(-1px);
-}
-
-.image-picker-item.selected {
-  border-color: var(--admin-accent);
-  background-color: var(--admin-accent-soft);
-}
-
-.img-wrapper {
-  position: relative;
+  justify-content: space-between;
+  gap: 10px;
   width: 100%;
-  border-radius: calc(var(--admin-radius-s) - 2px);
-  overflow: hidden;
+  box-sizing: border-box;
+  padding: 8px 12px;
+  border: 1px solid #d7dde1;
+  border-radius: var(--admin-radius-s);
+  background-color: #fff;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.88rem;
+  color: var(--admin-ink);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.dropdown-trigger:hover {
+  border-color: #c7ced2;
+}
+
+.dropdown-select.open .dropdown-trigger {
+  border-color: var(--admin-accent);
+  box-shadow: 0 0 0 3px var(--admin-accent-soft);
+}
+
+.trigger-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.trigger-thumb {
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  object-fit: cover;
+  flex-shrink: 0;
   background-color: var(--admin-surface);
 }
 
-.card-item .img-wrapper {
-  aspect-ratio: 16 / 9;
-}
-
-.badge-item .img-wrapper {
-  aspect-ratio: 1 / 1;
-}
-
-.img-wrapper img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-.badge-item .img-wrapper img {
+.trigger-thumb.badge-thumb {
   object-fit: contain;
-  padding: 4px;
+  padding: 2px;
   box-sizing: border-box;
 }
 
-.check-icon {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  background-color: var(--admin-accent);
-  color: #ffffff;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.65rem;
-  font-weight: 800;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-}
-
-.item-label {
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: var(--admin-ink-soft);
-  margin-top: 6px;
-  text-align: center;
-  width: 100%;
+.trigger-text {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.image-picker-item.selected .item-label {
+.dropdown-caret {
+  font-size: 0.7rem;
+  color: var(--admin-muted);
+  flex-shrink: 0;
+  transition: transform 0.15s ease;
+}
+
+.dropdown-select.open .dropdown-caret {
+  transform: rotate(180deg);
   color: var(--admin-accent);
-  font-weight: 700;
+}
+
+/* Upward opening panel, extended width for comfortable larger thumbnails */
+.dropdown-panel {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  top: auto;
+  left: 0;
+  min-width: 340px;
+  width: 125%;
+  max-height: 290px;
+  overflow-y: auto;
+  background-color: #fff;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-m);
+  box-shadow: 0 -12px 32px rgba(0, 0, 0, 0.18);
+  z-index: 30;
+  padding: 10px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr); /* 3 images per row */
+  gap: 10px;
+  box-sizing: border-box;
+}
+
+/* Align right-side dropdown panel to the right edge so it doesn't overflow the form */
+.dropdown-select:last-child .dropdown-panel {
+  left: auto;
+  right: 0;
+}
+
+/* Image-only option tiles (Larger size) */
+.dropdown-option {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border: 2px solid var(--admin-border-soft);
+  border-radius: var(--admin-radius-s);
+  cursor: pointer;
+  background-color: var(--admin-surface);
+  transition: all 0.15s ease;
+  height: 70px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.dropdown-option:hover {
+  background-color: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.dropdown-option.selected {
+  background-color: var(--admin-accent-soft);
+  border-color: var(--admin-accent);
+}
+
+.option-thumb {
+  width: 100%;
+  height: 100%;
+  border-radius: 4px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+/* Badge specific option adjustments (Square tile with soft container for circular transparent PNGs) */
+.dropdown-option.badge-option {
+  height: 72px;
+  background-color: #f8fafc;
+}
+
+.option-thumb.badge-thumb {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  padding: 2px;
+  box-sizing: border-box;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.06));
+}
+
+/* Selected state checkmark overlay */
+.option-check,
+.check-icon {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  font-size: 0.8rem;
+  color: var(--admin-accent);
+  background-color: #ffffff;
+  border-radius: 50%;
+  line-height: 1;
+  padding: 2px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+.dropdown-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  background: transparent;
 }
 
 .form-actions {
@@ -658,5 +722,10 @@
 
   .form-row {
     flex-direction: column;
+  }
+
+  .dropdown-panel {
+    min-width: 100%;
+    width: 100%;
   }
 }

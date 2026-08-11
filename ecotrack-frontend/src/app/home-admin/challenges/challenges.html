@@ -223,42 +223,60 @@
           </label>
         </div>
 
-        <!-- Visual Image Pickers -->
-        <div class="image-picker-section">
-          <div class="image-picker-group">
+        <!-- Custom Image Selector Dropdowns -->
+        <div class="form-row image-picker-row">
+          <!-- Card Header Image Picker -->
+          <div class="dropdown-select card-picker" [class.open]="cardPickerOpen()">
             <label class="picker-label">Card Header Image</label>
-            <div class="image-picker-grid card-picker-grid">
+            <button type="button" class="dropdown-trigger" (click)="toggleCardPicker()">
+              <span class="trigger-content">
+                <img [src]="form.cardImageUrl" class="trigger-thumb" alt="" />
+                <span class="trigger-text">{{ getCardImageLabel() }}</span>
+              </span>
+              <i class="fa-solid fa-chevron-down dropdown-caret"></i>
+            </button>
+          
+            <!-- Upward opening image-only grid -->
+            <div class="dropdown-panel" *ngIf="cardPickerOpen()">
               <div
                 *ngFor="let img of cardImages"
-                class="image-picker-item card-item"
+                class="dropdown-option image-only-option"
                 [class.selected]="form.cardImageUrl === img.url"
+                [title]="img.label"
                 (click)="selectCardImage(img.url)">
-                <div class="img-wrapper">
-                  <img [src]="img.url" [alt]="img.label" />
-                  <span class="check-icon" *ngIf="form.cardImageUrl === img.url">✓</span>
-                </div>
-                <span class="item-label">{{ img.label }}</span>
+                <img [src]="img.url" [alt]="img.label" class="option-thumb" />
+                <i class="fa-solid fa-circle-check check-icon" *ngIf="form.cardImageUrl === img.url"></i>
               </div>
             </div>
           </div>
-
-          <div class="image-picker-group">
+        
+          <!-- Badge Image Picker -->
+          <div class="dropdown-select badge-picker" [class.open]="badgePickerOpen()">
             <label class="picker-label">Badge Image</label>
-            <div class="image-picker-grid badge-picker-grid">
+            <button type="button" class="dropdown-trigger" (click)="toggleBadgePicker()">
+              <span class="trigger-content">
+                <img [src]="form.badgeImageUrl" class="trigger-thumb badge-thumb" alt="" />
+                <span class="trigger-text">{{ getBadgeImageLabel() }}</span>
+              </span>
+              <i class="fa-solid fa-chevron-down dropdown-caret"></i>
+            </button>
+          
+            <!-- Upward opening image-only grid -->
+            <div class="dropdown-panel" *ngIf="badgePickerOpen()">
               <div
                 *ngFor="let img of badgeImages"
-                class="image-picker-item badge-item"
+                class="dropdown-option image-only-option badge-option"
                 [class.selected]="form.badgeImageUrl === img.url"
+                [title]="img.label"
                 (click)="selectBadgeImage(img.url)">
-                <div class="img-wrapper">
-                  <img [src]="img.url" [alt]="img.label" />
-                  <span class="check-icon" *ngIf="form.badgeImageUrl === img.url">✓</span>
-                </div>
-                <span class="item-label">{{ img.label }}</span>
+                <img [src]="img.url" [alt]="img.label" class="option-thumb badge-thumb" />
+                <i class="fa-solid fa-circle-check check-icon" *ngIf="form.badgeImageUrl === img.url"></i>
               </div>
             </div>
           </div>
         </div>
+
+        <div class="dropdown-backdrop" *ngIf="cardPickerOpen() || badgePickerOpen()" (click)="closePickers()"></div>
 
         <div class="form-actions">
           <button type="button" class="cancel-form-btn" (click)="closeForm()">Cancel</button>
