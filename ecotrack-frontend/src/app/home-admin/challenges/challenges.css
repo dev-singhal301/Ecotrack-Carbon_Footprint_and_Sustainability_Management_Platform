@@ -280,12 +280,6 @@
 }
 
 /* ── Row actions ── pill buttons, matching Users' deactivate/reactivate. */
-/* Fixed two-column grid, not a flex row — with *ngIf removing the Edit
-   button on ACTIVE-status rows, a flex row left-packs whatever's left,
-   so Cancel sits flush-left on some rows and shifted right on others
-   (wherever Edit happened to be). Explicit grid-column placement below
-   keeps Cancel in column 2 always, whether or not column 1 has anything
-   in it. */
 .actions-cell {
   display: grid;
   grid-template-columns: 62px 70px;
@@ -357,10 +351,6 @@
   padding: 26px 30px;
   width: 100%;
   max-width: 640px;
-  /* Fits the whole form within the viewport on typical screen heights
-     (see spacing below) — max-height + overflow-y here is only a safety
-     net for pathological cases (e.g. a phone in landscape), not the
-     primary way this fits. */
   max-height: 94vh;
   overflow-y: auto;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
@@ -436,11 +426,130 @@
   min-width: 0;
 }
 
+/* ── Visual Image Pickers ── */
+.image-picker-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 4px;
+}
+
+.image-picker-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.picker-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--admin-ink-soft);
+}
+
+.image-picker-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.card-picker-grid {
+  grid-template-columns: repeat(auto-fill, minmax(105px, 1fr));
+}
+
+.badge-picker-grid {
+  grid-template-columns: repeat(auto-fill, minmax(75px, 1fr));
+}
+
+.image-picker-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px;
+  border-radius: var(--admin-radius-s);
+  border: 2px solid var(--admin-border);
+  background-color: #ffffff;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease, transform 0.1s ease;
+  user-select: none;
+}
+
+.image-picker-item:hover {
+  border-color: #c7ced2;
+  transform: translateY(-1px);
+}
+
+.image-picker-item.selected {
+  border-color: var(--admin-accent);
+  background-color: var(--admin-accent-soft);
+}
+
+.img-wrapper {
+  position: relative;
+  width: 100%;
+  border-radius: calc(var(--admin-radius-s) - 2px);
+  overflow: hidden;
+  background-color: var(--admin-surface);
+}
+
+.card-item .img-wrapper {
+  aspect-ratio: 16 / 9;
+}
+
+.badge-item .img-wrapper {
+  aspect-ratio: 1 / 1;
+}
+
+.img-wrapper img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.badge-item .img-wrapper img {
+  object-fit: contain;
+  padding: 4px;
+  box-sizing: border-box;
+}
+
+.check-icon {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background-color: var(--admin-accent);
+  color: #ffffff;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  font-weight: 800;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.item-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--admin-ink-soft);
+  margin-top: 6px;
+  text-align: center;
+  width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.image-picker-item.selected .item-label {
+  color: var(--admin-accent);
+  font-weight: 700;
+}
+
 .form-actions {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
-  margin-top: 4px;
+  margin-top: 8px;
 }
 
 .cancel-form-btn {

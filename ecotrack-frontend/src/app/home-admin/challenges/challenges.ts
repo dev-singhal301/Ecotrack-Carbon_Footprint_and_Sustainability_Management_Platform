@@ -245,6 +245,15 @@ export class Challenges implements OnInit {
     });
   }
 
+  // Image Selection Helpers for the visual card and badge image pickers
+  selectCardImage(url: string): void {
+    this.form.cardImageUrl = url;
+  }
+
+  selectBadgeImage(url: string): void {
+    this.form.badgeImageUrl = url;
+  }
+
   openCreateForm(): void {
     this.editingChallengeId.set(null);
     this.form = { ...EMPTY_FORM };

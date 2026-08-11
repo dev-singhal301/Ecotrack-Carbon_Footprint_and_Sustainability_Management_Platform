@@ -223,20 +223,41 @@
           </label>
         </div>
 
-        <div class="form-row">
-          <label>
-            Card Header Image
-            <select [(ngModel)]="form.cardImageUrl" name="cardImageUrl">
-              <option *ngFor="let img of cardImages" [value]="img.url">{{ img.label }}</option>
-            </select>
-          </label>
+        <!-- Visual Image Pickers -->
+        <div class="image-picker-section">
+          <div class="image-picker-group">
+            <label class="picker-label">Card Header Image</label>
+            <div class="image-picker-grid card-picker-grid">
+              <div
+                *ngFor="let img of cardImages"
+                class="image-picker-item card-item"
+                [class.selected]="form.cardImageUrl === img.url"
+                (click)="selectCardImage(img.url)">
+                <div class="img-wrapper">
+                  <img [src]="img.url" [alt]="img.label" />
+                  <span class="check-icon" *ngIf="form.cardImageUrl === img.url">✓</span>
+                </div>
+                <span class="item-label">{{ img.label }}</span>
+              </div>
+            </div>
+          </div>
 
-          <label>
-            Badge Image
-            <select [(ngModel)]="form.badgeImageUrl" name="badgeImageUrl">
-              <option *ngFor="let img of badgeImages" [value]="img.url">{{ img.label }}</option>
-            </select>
-          </label>
+          <div class="image-picker-group">
+            <label class="picker-label">Badge Image</label>
+            <div class="image-picker-grid badge-picker-grid">
+              <div
+                *ngFor="let img of badgeImages"
+                class="image-picker-item badge-item"
+                [class.selected]="form.badgeImageUrl === img.url"
+                (click)="selectBadgeImage(img.url)">
+                <div class="img-wrapper">
+                  <img [src]="img.url" [alt]="img.label" />
+                  <span class="check-icon" *ngIf="form.badgeImageUrl === img.url">✓</span>
+                </div>
+                <span class="item-label">{{ img.label }}</span>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div class="form-actions">
