@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -14,6 +15,10 @@ public interface UserChallengeRepository extends JpaRepository<UserChallenge, Lo
     List<UserChallenge> findByUserId(Long userId);
 
     List<UserChallenge> findByUserIdAndStatus(Long userId, UserChallengeStatus status);
+
+    long countByUserIdAndStatus(Long userId, UserChallengeStatus status);
+
+    long countByUserIdAndStatusIn(Long userId, Collection<UserChallengeStatus> statuses);
 
     // Used by the daily maintenance sweep to settle every participation
     // whose window has closed, regardless of which user owns it.

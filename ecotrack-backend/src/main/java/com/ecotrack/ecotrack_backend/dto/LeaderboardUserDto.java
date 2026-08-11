@@ -4,6 +4,7 @@ public class LeaderboardUserDto {
 
     private Long userId;
     private String name;
+    private String avatarUrl;
     private String userRank;
     private Integer userLevel;
     private Long monthlyXp;
@@ -11,13 +12,18 @@ public class LeaderboardUserDto {
 
     public LeaderboardUserDto() {}
 
-    public LeaderboardUserDto(Long userId, String name, String userRank, Integer userLevel, Long monthlyXp, Long rank) {
+    public LeaderboardUserDto(Long userId, String name, String avatarUrl, String userRank, Integer userLevel, Long monthlyXp, Long rank) {
         this.userId = userId;
         this.name = name;
+        this.avatarUrl = avatarUrl;
         this.userRank = userRank;
         this.userLevel = userLevel;
         this.monthlyXp = monthlyXp;
         this.rank = rank;
+    }
+
+    public LeaderboardUserDto(Long userId, String name, String userRank, Integer userLevel, Long monthlyXp, Long rank) {
+        this(userId, name, null, userRank, userLevel, monthlyXp, rank);
     }
 
     // Getters and Setters
@@ -35,6 +41,14 @@ public class LeaderboardUserDto {
 
     public void setName(String name) { 
         this.name = name; 
+    }
+
+    public String getAvatarUrl() {
+        return avatarUrl;
+    }
+
+    public void setAvatarUrl(String avatarUrl) {
+        this.avatarUrl = avatarUrl;
     }
 
     public String getUserRank() { 
