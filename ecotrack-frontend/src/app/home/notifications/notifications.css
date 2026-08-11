@@ -8,6 +8,13 @@
      pinned at the bottom instead of scrolling away with the list. */
   box-sizing: border-box;
 
+  /* Measures the space actually available after the fixed-width
+     sidebar (see home.css), not the full browser window — a plain
+     @media query here would be misled by the sidebar the same way it
+     was on the tracking page. */
+  container-type: inline-size;
+  container-name: notif-shell;
+
   /* Standardized EcoTrack Tokens (kept in sync with leaderboard.css) */
   --eco-primary: #10b981;
   --eco-primary-dark: #059669;
@@ -22,7 +29,12 @@
   height: 100%;
   display: flex;
   flex-direction: column;
-  max-width: 780px;
+  /* Was capped at 780px, which left large empty gutters on most
+     screens once the sidebar was accounted for. Raised so it fills
+     realistic content widths; still capped (rather than going fully
+     edge-to-edge) so notification text doesn't stretch into
+     unreadably long lines on very wide monitors. */
+  max-width: 1400px;
   margin: 0 auto;
   padding: 16px 20px;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -186,6 +198,24 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+/* At wider container widths, lay cards out two-up instead of one long
+   single column — uses the extra width productively (shorter list to
+   scroll) rather than just leaving it empty or stretching each card's
+   text into overly long lines. Falls back to the single-column layout
+   above on narrower screens. */
+@container notif-shell (min-width: 860px) {
+  .notification-list {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px 16px;
+    align-items: start;
+  }
+
+  .group-header {
+    grid-column: 1 / -1;
+  }
 }
 
 .group-header {
