@@ -161,6 +161,13 @@ export class Challenges implements OnInit {
   isSubmitting = signal(false);
   formError = signal<string | null>(null);
 
+  // Open/closed state for the Card Header / Badge image dropdown-selects.
+  // These render like the native Category/Challenge Type <select>s above
+  // them, but show image thumbnails in the option list, which a native
+  // <select> can't do — see the dropdown-select markup/styles below.
+  cardPickerOpen = signal(false);
+  badgePickerOpen = signal(false);
+
   readonly categories = CHALLENGE_CATEGORIES;
   readonly cardImages = CARD_HEADER_IMAGES;
   readonly badgeImages = CHALLENGE_BADGES;
@@ -245,10 +252,51 @@ export class Challenges implements OnInit {
     });
   }
 
+  // ── Card Header / Badge image dropdown-selects ──
+  // Only one of the two can be open at a time (toggling one closes the
+  // other), matching how a row of native <select>s behaves — opening one
+  // doesn't leave a stray option list from a different field hanging open.
+  toggleCardPicker(): void {
+    this.cardPickerOpen.update(v => !v);
+    this.badgePickerOpen.set(false);
+  }
+
+  toggleBadgePicker(): void {
+    this.badgePickerOpen.update(v => !v);
+    this.cardPickerOpen.set(false);
+  }
+
+  // Bound to a full-screen transparent backdrop that only exists in the DOM
+  // while a picker is open, so a click anywhere outside the panel closes it
+  // — no document-level listener needed.
+  closePickers(): void {
+    this.cardPickerOpen.set(false);
+    this.badgePickerOpen.set(false);
+  }
+
+  selectCardImage(url: string): void {
+    this.form.cardImageUrl = url;
+    this.cardPickerOpen.set(false);
+  }
+
+  selectBadgeImage(url: string): void {
+    this.form.badgeImageUrl = url;
+    this.badgePickerOpen.set(false);
+  }
+
+  getCardImageLabel(): string {
+    return this.cardImages.find(i => i.url === this.form.cardImageUrl)?.label ?? 'Select image';
+  }
+
+  getBadgeImageLabel(): string {
+    return this.badgeImages.find(i => i.url === this.form.badgeImageUrl)?.label ?? 'Select image';
+  }
+
   openCreateForm(): void {
     this.editingChallengeId.set(null);
     this.form = { ...EMPTY_FORM };
     this.formError.set(null);
+    this.closePickers();
     this.showForm.set(true);
   }
 
@@ -277,10 +325,12 @@ export class Challenges implements OnInit {
       endDate: challenge.endDate,
     };
     this.formError.set(null);
+    this.closePickers();
     this.showForm.set(true);
   }
 
   closeForm(): void {
+    this.closePickers();
     this.showForm.set(false);
   }
 
