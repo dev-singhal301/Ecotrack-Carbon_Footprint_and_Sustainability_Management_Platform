@@ -55,6 +55,9 @@ public class User {
     @Column(name = "reward_points", nullable = false)
     private Integer rewardPoints = 0;
 
+    @Column(name = "avatar_url")
+    private String avatarUrl;
+
     @Column(name = "reset_password_token", length = 255)
     private String resetPasswordToken;
 
@@ -191,6 +194,14 @@ public class User {
 
     public void setRewardPoints(Integer rewardPoints) {
         this.rewardPoints = rewardPoints;
+    }
+
+    public String getAvatarUrl() {
+        return avatarUrl;
+    }
+
+    public void setAvatarUrl(String avatarUrl) {
+        this.avatarUrl = avatarUrl;
     }
 
     public String getResetPasswordToken() {
