@@ -1,22 +1,39 @@
 package com.ecotrack.ecotrack_backend.service;
 
+import com.ecotrack.ecotrack_backend.entity.Badge;
 import com.ecotrack.ecotrack_backend.entity.User;
+import com.ecotrack.ecotrack_backend.entity.UserBadge;
 import com.ecotrack.ecotrack_backend.entity.XpTransaction;
+import com.ecotrack.ecotrack_backend.repository.BadgeRepository;
+import com.ecotrack.ecotrack_backend.repository.UserBadgeRepository;
 import com.ecotrack.ecotrack_backend.repository.UserRepository;
 import com.ecotrack.ecotrack_backend.repository.XpTransactionRepository;
 import com.ecotrack.ecotrack_backend.util.GamificationUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 @Service
 public class UserXpService {
 
     private final UserRepository userRepository;
     private final XpTransactionRepository xpTransactionRepository;
+    private final BadgeRepository badgeRepository;
+    private final UserBadgeRepository userBadgeRepository;
 
-    public UserXpService(UserRepository userRepository, XpTransactionRepository xpTransactionRepository) {
+    public UserXpService(
+            UserRepository userRepository,
+            XpTransactionRepository xpTransactionRepository,
+            BadgeRepository badgeRepository,
+            UserBadgeRepository userBadgeRepository) {
         this.userRepository = userRepository;
         this.xpTransactionRepository = xpTransactionRepository;
+        this.badgeRepository = badgeRepository;
+        this.userBadgeRepository = userBadgeRepository;
     }
 
     /**
@@ -24,6 +41,7 @@ public class UserXpService {
      * 1. Accumulates permanent XP & reward points on User entity.
      * 2. Syncs level, target XP, and rank title using GamificationUtils.
      * 3. Creates an XpTransaction record to feed the monthly leaderboard.
+     * 4. Checks and awards level progression badges.
      */
     @Transactional
     public User awardXpAndPoints(Long userId, int xpAmount, int rewardPoints, String sourceType, Long sourceId) {
@@ -42,6 +60,9 @@ public class UserXpService {
             // Save transaction audit row for Monthly Leaderboard calculations
             XpTransaction transaction = new XpTransaction(userId, xpAmount, sourceType, sourceId);
             xpTransactionRepository.save(transaction);
+
+            // Automatically check and award Level badges based on updated XP
+            checkAndAwardLevelBadges(user);
         }
 
         if (rewardPoints > 0) {
@@ -53,20 +74,31 @@ public class UserXpService {
     }
 
     /**
-     * Claws back previously-awarded XP (e.g. an admin cancelling a challenge
-     * a user had already completed). Mirrors awardXpAndPoints's contract —
-     * updates User.currentXp AND writes the matching XpTransaction row —
-     * but the amount is deducted rather than added, and clamped at 0 rather
-     * than allowed to go negative on the running total.
-     *
-     * The actual amount deducted (which may be less than xpAmount if the
-     * clamp kicks in) is what gets written to the ledger, so
-     * SUM(xp_amount) over xp_transactions always reconciles with
-     * User.currentXp — without this, cascadeCancellationToParticipants was
-     * decrementing currentXp directly and skipping the ledger entirely,
-     * so monthly/previous-month leaderboards and XP history (which sum
-     * xp_transactions by date range, not currentXp) never reflected the
-     * clawback.
+     * Automatically unlocks LEVEL badges when user's total XP satisfies required XP.
+     */
+    private void checkAndAwardLevelBadges(User user) {
+        List<Badge> allBadges = badgeRepository.findAll();
+        Set<Long> existingBadgeIds = userBadgeRepository.findByUserId(user.getId())
+                .stream()
+                .map(UserBadge::getBadgeId)
+                .collect(Collectors.toSet());
+
+        for (Badge badge : allBadges) {
+            if ("LEVEL".equalsIgnoreCase(badge.getCategory()) 
+                    && user.getCurrentXp() >= badge.getRequiredXp() 
+                    && !existingBadgeIds.contains(badge.getBadgeId())) {
+
+                UserBadge userBadge = new UserBadge();
+                userBadge.setUserId(user.getId());
+                userBadge.setBadgeId(badge.getBadgeId());
+                userBadge.setAwardedAt(LocalDateTime.now());
+                userBadgeRepository.save(userBadge);
+            }
+        }
+    }
+
+    /**
+     * Claws back previously-awarded XP.
      */
     @Transactional
     public User clawbackXp(Long userId, int xpAmount, String sourceType, Long sourceId) {

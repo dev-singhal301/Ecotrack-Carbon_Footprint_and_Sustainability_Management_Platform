@@ -16,6 +16,9 @@ public interface UserChallengeRepository extends JpaRepository<UserChallenge, Lo
 
     List<UserChallenge> findByUserIdAndStatus(Long userId, UserChallengeStatus status);
 
+    @Query("SELECT uc FROM UserChallenge uc JOIN FETCH uc.challenge WHERE uc.user.id = :userId AND uc.status = :status")
+    List<UserChallenge> findByUserIdAndStatusWithChallenge(@Param("userId") Long userId, @Param("status") UserChallengeStatus status);
+
     long countByUserIdAndStatus(Long userId, UserChallengeStatus status);
 
     long countByUserIdAndStatusIn(Long userId, Collection<UserChallengeStatus> statuses);

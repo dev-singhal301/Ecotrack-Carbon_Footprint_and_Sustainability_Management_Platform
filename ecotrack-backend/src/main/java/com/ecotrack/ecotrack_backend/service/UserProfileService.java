@@ -4,11 +4,13 @@ import com.ecotrack.ecotrack_backend.dto.UserProfileDto;
 import com.ecotrack.ecotrack_backend.entity.Badge;
 import com.ecotrack.ecotrack_backend.entity.User;
 import com.ecotrack.ecotrack_backend.entity.UserBadge;
+import com.ecotrack.ecotrack_backend.entity.UserChallenge;
 import com.ecotrack.ecotrack_backend.entity.UserChallengeStatus;
 import com.ecotrack.ecotrack_backend.repository.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -64,7 +66,7 @@ public class UserProfileService {
         dto.setChallengesAccomplished(challengesAccomplished);
         dto.setChallengesFailed(challengesFailed);
 
-        // Badge Vault Mapping
+        // 1. Fetch System Badges (LEVEL & LEADERBOARD)
         List<Badge> allBadges = badgeRepository.findAll();
         List<UserBadge> unlockedBadges = userBadgeRepository.findByUserId(userId);
         
@@ -86,6 +88,40 @@ public class UserProfileService {
             }
             return bDto;
         }).collect(Collectors.toList());
+
+        // 2. Dynamically Append Accomplished Challenge Badges
+        List<UserChallenge> completedChallenges = userChallengeRepository
+                .findByUserIdAndStatusWithChallenge(userId, UserChallengeStatus.COMPLETED);
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM dd, yyyy");
+
+        for (UserChallenge uc : completedChallenges) {
+            var challenge = uc.getChallenge();
+            String formattedDate = uc.getCompletedAt() != null 
+                    ? uc.getCompletedAt().format(formatter) 
+                    : "recently";
+
+            String challengeDesc = challenge.getDescription() != null ? challenge.getDescription() : "";
+
+            UserProfileDto.BadgeDto cBadge = new UserProfileDto.BadgeDto();
+            cBadge.setBadgeId(10000L + uc.getId()); // Using getId() instead of getUserChallengeId()
+            cBadge.setName(challenge.getTitle() + " Badge");
+            cBadge.setDescription(String.format(
+                    "Badge gained on accomplishing %s on %s. %s",
+                    challenge.getTitle(),
+                    formattedDate,
+                    challengeDesc
+            ).trim());
+            cBadge.setCategory("CHALLENGE");
+            cBadge.setIconUrl(challenge.getBadgeImageUrl() != null && !challenge.getBadgeImageUrl().isBlank()
+                    ? challenge.getBadgeImageUrl() 
+                    : "/assets/badges/ch_1.avif");
+            cBadge.setRequiredXp(challenge.getRewardXp());
+            cBadge.setUnlocked(true);
+            cBadge.setAwardedAt(uc.getCompletedAt());
+
+            badgeDtos.add(cBadge);
+        }
 
         dto.setBadges(badgeDtos);
         return dto;
