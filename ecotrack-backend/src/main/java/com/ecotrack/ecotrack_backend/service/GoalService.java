@@ -79,7 +79,7 @@ public class GoalService {
         
         int rewardPoints = request.getRewardPoints() != null ? request.getRewardPoints() : 50;
         goal.setRewardPoints(rewardPoints);
-        goal.setXpReward(rewardPoints > 0 ? rewardPoints * 2 : 100);
+        goal.setXpReward(rewardPoints);
         goal.setStatus("ACTIVE");
         
         goal.setStartEntryId(maxEntryId);
@@ -135,7 +135,7 @@ public class GoalService {
         goal.setStartEntryId(maxEntryId);
         if (request.getRewardPoints() != null) {
             goal.setRewardPoints(request.getRewardPoints());
-            goal.setXpReward(request.getRewardPoints() * 2);
+            goal.setXpReward(request.getRewardPoints());
         }
 
         Goal saved = goalRepository.save(goal);
