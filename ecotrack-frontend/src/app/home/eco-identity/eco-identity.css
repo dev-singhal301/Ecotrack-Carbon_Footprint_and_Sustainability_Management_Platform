@@ -1,0 +1,214 @@
+/* Hero Card Container */
+.profile-hero-card {
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 1.75rem 2rem;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.03);
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Top Section: Avatar & Info */
+.hero-top-row {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.avatar-container {
+  position: relative;
+  width: 96px;
+  height: 96px;
+  flex-shrink: 0;
+}
+
+.profile-avatar {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #10b981;
+  background-color: #f1f5f9;
+}
+
+.avatar-edit-btn {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  background: #10b981;
+  color: #ffffff;
+  border: 2px solid #ffffff;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.avatar-edit-btn:hover {
+  transform: scale(1.1);
+  background: #059669;
+}
+
+/* User Text Details */
+.user-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.name-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.name-row h2 {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.icon-edit-btn {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 2px;
+  transition: color 0.2s;
+}
+
+.icon-edit-btn:hover {
+  color: #10b981;
+}
+
+.email-text {
+  margin: 2px 0 0 0;
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.member-since {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  margin-top: 4px;
+}
+
+/* Bottom Section: Level & XP Bar */
+.xp-level-row {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  width: 100%;
+}
+
+.level-badge {
+  background: #d1fae5;
+  color: #059669;
+  font-weight: 700;
+  padding: 0.35rem 0.85rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.xp-progress-track {
+  flex: 1;
+  height: 12px;
+  background: #e2e8f0;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.xp-progress-fill {
+  height: 100%;
+  background: #10b981;
+  border-radius: 6px;
+  transition: width 0.4s ease-out;
+}
+
+.xp-text {
+  font-size: 0.85rem;
+  color: #475569;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .xp-level-row {
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+  .xp-progress-track {
+    order: 3;
+    width: 100%;
+    flex: auto;
+  }
+}
+
+/* Quick Stats Grid Styling */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 1.25rem;
+  margin-top: 1rem;
+}
+
+.stat-card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.05);
+}
+
+.stat-icon-wrapper {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.stat-icon-wrapper.rank { background: #eff6ff; color: #2563eb; }
+.stat-icon-wrapper.points { background: #fefce8; color: #ca8a04; }
+.stat-icon-wrapper.success { background: #ecfdf5; color: #16a34a; }
+.stat-icon-wrapper.challenge { background: #fff7ed; color: #ea580c; }
+
+.stat-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-value {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.2;
+}
+
+.stat-label {
+  font-size: 0.8rem;
+  color: #64748b;
+  font-weight: 500;
+  margin-top: 2px;
+}

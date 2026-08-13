@@ -36,9 +36,15 @@ public class UserProfileService {
         this.userChallengeRepository = userChallengeRepository;
     }
 
+    public UserProfileDto getUserProfileByEmail(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with email: " + email));
+        return getUserProfile(user.getId());
+    }
+
     public UserProfileDto getUserProfile(Long userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
+                .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));
 
         UserProfileDto dto = new UserProfileDto();
         dto.setUserId(user.getId());
@@ -70,8 +76,13 @@ public class UserProfileService {
         List<Badge> allBadges = badgeRepository.findAll();
         List<UserBadge> unlockedBadges = userBadgeRepository.findByUserId(userId);
         
+        // Merge function (existing, replacement) -> existing prevents IllegalStateException on duplicate badge IDs
         Map<Long, UserBadge> userBadgeMap = unlockedBadges.stream()
-                .collect(Collectors.toMap(UserBadge::getBadgeId, ub -> ub));
+                .collect(Collectors.toMap(
+                        UserBadge::getBadgeId, 
+                        ub -> ub, 
+                        (existing, replacement) -> existing
+                ));
 
         List<UserProfileDto.BadgeDto> badgeDtos = allBadges.stream().map(badge -> {
             boolean unlocked = userBadgeMap.containsKey(badge.getBadgeId());
@@ -83,7 +94,7 @@ public class UserProfileService {
             bDto.setIconUrl(badge.getIconUrl());
             bDto.setRequiredXp(badge.getRequiredXp());
             bDto.setUnlocked(unlocked);
-            if (unlocked) {
+            if (unlocked && userBadgeMap.get(badge.getBadgeId()) != null) {
                 bDto.setAwardedAt(userBadgeMap.get(badge.getBadgeId()).getAwardedAt());
             }
             return bDto;
@@ -97,6 +108,8 @@ public class UserProfileService {
 
         for (UserChallenge uc : completedChallenges) {
             var challenge = uc.getChallenge();
+            if (challenge == null) continue;
+
             String formattedDate = uc.getCompletedAt() != null 
                     ? uc.getCompletedAt().format(formatter) 
                     : "recently";
@@ -104,7 +117,7 @@ public class UserProfileService {
             String challengeDesc = challenge.getDescription() != null ? challenge.getDescription() : "";
 
             UserProfileDto.BadgeDto cBadge = new UserProfileDto.BadgeDto();
-            cBadge.setBadgeId(10000L + uc.getId()); // Using getId() instead of getUserChallengeId()
+            cBadge.setBadgeId(10000L + (uc.getId() != null ? uc.getId() : 0L));
             cBadge.setName(challenge.getTitle() + " Badge");
             cBadge.setDescription(String.format(
                     "Badge gained on accomplishing %s on %s. %s",
@@ -128,11 +141,36 @@ public class UserProfileService {
     }
 
     @Transactional
-    public String updateAvatar(Long userId, String avatarUrl) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
+    public String updateUsernameByEmail(String email, String newName) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with email: " + email));
+        user.setName(newName);
+        userRepository.save(user);
+        return user.getName();
+    }
+
+    @Transactional
+    public String updateAvatarByEmail(String email, String avatarUrl) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with email: " + email));
         user.setAvatarUrl(avatarUrl);
         userRepository.save(user);
         return user.getAvatarUrl();
+    }
+
+    @Transactional
+    public String updateAvatar(Long userId, String avatarUrl) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));
+        user.setAvatarUrl(avatarUrl);
+        userRepository.save(user);
+        return user.getAvatarUrl();
+    }
+
+    @Transactional
+    public void deleteAccountByEmail(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with email: " + email));
+        userRepository.delete(user);
     }
 }
