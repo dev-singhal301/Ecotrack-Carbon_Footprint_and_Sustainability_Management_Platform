@@ -41,6 +41,7 @@ public class LeaderboardService {
             leaderboard.add(new LeaderboardUserDto(
                     u.getId(),
                     name,
+                    u.getAvatarUrl(),
                     u.getUserRank(),
                     u.getUserLevel(),
                     (long) u.getCurrentXp(),
@@ -62,12 +63,13 @@ public class LeaderboardService {
         for (Object[] row : rawResults) {
             Long userId = ((Number) row[0]).longValue();
             String name = (String) row[1];
-            String userRank = (String) row[2];
-            Integer userLevel = ((Number) row[3]).intValue();
-            Long monthlyXp = ((Number) row[4]).longValue();
-            Long rank = ((Number) row[5]).longValue();
+            String avatarUrl = (String) row[2];
+            String userRank = (String) row[3];
+            Integer userLevel = ((Number) row[4]).intValue();
+            Long monthlyXp = ((Number) row[5]).longValue();
+            Long rank = ((Number) row[6]).longValue();
 
-            leaderboard.add(new LeaderboardUserDto(userId, name, userRank, userLevel, monthlyXp, rank));
+            leaderboard.add(new LeaderboardUserDto(userId, name, avatarUrl, userRank, userLevel, monthlyXp, rank));
         }
 
         return leaderboard;
@@ -85,12 +87,13 @@ public class LeaderboardService {
         for (Object[] row : rawResults) {
             Long userId = ((Number) row[0]).longValue();
             String name = (String) row[1];
-            String userRank = (String) row[2];
-            Integer userLevel = ((Number) row[3]).intValue();
-            Long monthlyXp = ((Number) row[4]).longValue();
-            Long rank = ((Number) row[5]).longValue();
+            String avatarUrl = (String) row[2];
+            String userRank = (String) row[3];
+            Integer userLevel = ((Number) row[4]).intValue();
+            Long monthlyXp = ((Number) row[5]).longValue();
+            Long rank = ((Number) row[6]).longValue();
 
-            leaderboard.add(new LeaderboardUserDto(userId, name, userRank, userLevel, monthlyXp, rank));
+            leaderboard.add(new LeaderboardUserDto(userId, name, avatarUrl, userRank, userLevel, monthlyXp, rank));
         }
 
         return leaderboard;
@@ -98,7 +101,6 @@ public class LeaderboardService {
 
     /**
      * Gets past monthly performance history for a specific user.
-     * Used for "Your Previous Ranks / History" card.
      */
     @Transactional(readOnly = true)
     public List<UserPastHistoryDto> getUserPastHistory(Long userId, int limit) {
@@ -128,6 +130,7 @@ public class LeaderboardService {
         return new LeaderboardUserDto(
                 user.getId(),
                 name,
+                user.getAvatarUrl(),
                 user.getUserRank(),
                 user.getUserLevel(),
                 (long) user.getCurrentXp(),
@@ -136,7 +139,7 @@ public class LeaderboardService {
     }
 
     /**
-     * Delegated wrapper for awarding XP to maintain backward compatibility with any legacy callers.
+     * Delegated wrapper for awarding XP.
      */
     @Transactional
     public void awardXp(Long userId, Integer xpAmount, String sourceType, Long sourceId) {
@@ -144,10 +147,7 @@ public class LeaderboardService {
     }
 
     /**
-     * Claws back previously-awarded XP and records the matching negative
-     * XpTransaction, so monthly/previous-month leaderboards and XP history
-     * (which sum xp_transactions) reconcile with the all-time total on
-     * User.currentXp. See UserXpService.clawbackXp for the full contract.
+     * Claws back previously-awarded XP.
      */
     @Transactional
     public void clawbackXp(Long userId, Integer xpAmount, String sourceType, Long sourceId) {

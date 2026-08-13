@@ -144,9 +144,27 @@ export class Leaderboard implements OnInit, OnDestroy {
     return new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
   }
 
-  getAvatarUrl(userId: number | undefined): string {
-    if (!userId) return 'https://api.dicebear.com/7.x/bottts/svg?seed=guest';
-    return `https://api.dicebear.com/7.x/bottts/svg?seed=${userId}`;
+  /**
+   * Accepts either a LeaderboardUser object or a number ID
+   */
+  getAvatarUrl(userOrId: LeaderboardUser | number | null | undefined): string {
+    if (!userOrId) {
+      return 'https://api.dicebear.com/7.x/bottts/svg?seed=guest';
+    }
+
+    if (typeof userOrId === 'number') {
+      return `https://api.dicebear.com/7.x/bottts/svg?seed=${userOrId}`;
+    }
+
+    const user = userOrId;
+    if (user.avatarUrl && user.avatarUrl.trim() !== '') {
+      if (user.avatarUrl.startsWith('http://') || user.avatarUrl.startsWith('https://')) {
+        return user.avatarUrl;
+      }
+      return `http://localhost:8080${user.avatarUrl.startsWith('/') ? '' : '/'}${user.avatarUrl}`;
+    }
+
+    return `https://api.dicebear.com/7.x/bottts/svg?seed=${user.userId || user.name || 'guest'}`;
   }
 
   formatMonthKey(monthKey: string): string {

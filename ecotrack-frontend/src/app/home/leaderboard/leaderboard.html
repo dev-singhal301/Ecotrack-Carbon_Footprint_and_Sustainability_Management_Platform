@@ -39,7 +39,7 @@
           <div class="podium-spot second-place" *ngIf="secondPlace">
             <div class="avatar-wrapper">
               <span class="medal-badge silver">🥈</span>
-              <img [src]="getAvatarUrl(secondPlace.userId)" [alt]="secondPlace.name" class="podium-avatar">
+              <img [src]="getAvatarUrl(secondPlace)" [alt]="secondPlace.name" class="podium-avatar">
             </div>
             <span class="podium-name">{{ secondPlace.name }}</span>
             <span class="podium-title">{{ getRankTitle(secondPlace) }} • Lvl {{ secondPlace.userLevel }}</span>
@@ -51,7 +51,7 @@
           <div class="podium-spot first-place" *ngIf="firstPlace">
             <div class="avatar-wrapper">
               <span class="crown-badge">👑</span>
-              <img [src]="getAvatarUrl(firstPlace.userId)" [alt]="firstPlace.name" class="podium-avatar gold-ring">
+              <img [src]="getAvatarUrl(firstPlace)" [alt]="firstPlace.name" class="podium-avatar gold-ring">
             </div>
             <span class="podium-name">{{ firstPlace.name }}</span>
             <span class="podium-title">{{ getRankTitle(firstPlace) }} • Lvl {{ firstPlace.userLevel }}</span>
@@ -63,7 +63,7 @@
           <div class="podium-spot third-place" *ngIf="thirdPlace">
             <div class="avatar-wrapper">
               <span class="medal-badge bronze">🥉</span>
-              <img [src]="getAvatarUrl(thirdPlace.userId)" [alt]="thirdPlace.name" class="podium-avatar">
+              <img [src]="getAvatarUrl(thirdPlace)" [alt]="thirdPlace.name" class="podium-avatar">
             </div>
             <span class="podium-name">{{ thirdPlace.name }}</span>
             <span class="podium-title">{{ getRankTitle(thirdPlace) }} • Lvl {{ thirdPlace.userLevel }}</span>
@@ -90,7 +90,7 @@
             
             <div class="rank-number">#{{ i + 4 }}</div>
 
-            <img [src]="getAvatarUrl(user.userId)" [alt]="user.name" class="row-avatar">
+            <img [src]="getAvatarUrl(user)" [alt]="user.name" class="row-avatar">
 
             <div class="user-details">
               <span class="user-name">
@@ -154,7 +154,7 @@
             <span class="champ-place">
               {{ i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉' }}
             </span>
-            <img [src]="getAvatarUrl(champ.userId)" [alt]="champ.name" class="champ-avatar">
+            <img [src]="getAvatarUrl(champ)" [alt]="champ.name" class="champ-avatar">
             <div class="champ-info">
               <span class="champ-name">{{ champ.name }}</span>
               <span class="champ-title">{{ getRankTitle(champ) }}</span>

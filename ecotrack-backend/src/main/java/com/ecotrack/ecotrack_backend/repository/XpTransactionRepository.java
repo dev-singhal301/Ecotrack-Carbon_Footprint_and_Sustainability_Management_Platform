@@ -18,19 +18,19 @@ public interface XpTransactionRepository extends JpaRepository<XpTransaction, Lo
     List<XpTransaction> findByUserIdOrderByCreatedAtDesc(Long userId);
 
     /**
-     * Fetches top N recent XP transactions for a user (used for Dashboard activity list).
-     * Usage: findByUserIdOrderByCreatedAtDesc(userId, PageRequest.of(0, 15));
+     * Fetches top N recent XP transactions for a user.
      */
     List<XpTransaction> findByUserIdOrderByCreatedAtDesc(Long userId, Pageable pageable);
 
     /**
      * Aggregates monthly XP per user for the active month using PostgreSQL date_trunc.
-     * Returns arrays containing [userId, name, userRank, userLevel, monthlyXp, denseRank]
+     * Returns arrays containing [userId, name, avatarUrl, userRank, userLevel, monthlyXp, denseRank]
      */
     @Query(value = """
         SELECT 
             u.id AS userId,
             u.name AS name,
+            u.avatar_url AS avatarUrl,
             u.user_rank AS userRank,
             u.user_level AS userLevel,
             CAST(COALESCE(SUM(x.xp_amount), 0) AS BIGINT) AS monthlyXp,
@@ -40,7 +40,7 @@ public interface XpTransactionRepository extends JpaRepository<XpTransaction, Lo
             ON u.id = x.user_id 
             AND x.created_at >= DATE_TRUNC('month', CURRENT_TIMESTAMP)
         WHERE u.enabled = TRUE
-        GROUP BY u.id, u.name, u.user_rank, u.user_level
+        GROUP BY u.id, u.name, u.avatar_url, u.user_rank, u.user_level
         ORDER BY rank ASC, u.name ASC
         LIMIT :limit
     """, nativeQuery = true)
@@ -90,6 +90,7 @@ public interface XpTransactionRepository extends JpaRepository<XpTransaction, Lo
         SELECT 
             u.id AS userId,
             u.name AS name,
+            u.avatar_url AS avatarUrl,
             u.user_rank AS userRank,
             u.user_level AS userLevel,
             CAST(COALESCE(SUM(x.xp_amount), 0) AS BIGINT) AS monthlyXp,
@@ -100,15 +101,14 @@ public interface XpTransactionRepository extends JpaRepository<XpTransaction, Lo
             AND x.created_at >= DATE_TRUNC('month', CURRENT_TIMESTAMP - INTERVAL '1 month')
             AND x.created_at < DATE_TRUNC('month', CURRENT_TIMESTAMP)
         WHERE u.enabled = TRUE
-        GROUP BY u.id, u.name, u.user_rank, u.user_level
+        GROUP BY u.id, u.name, u.avatar_url, u.user_rank, u.user_level
         ORDER BY rank ASC, u.name ASC
         LIMIT :limit
     """, nativeQuery = true)
     List<Object[]> findPreviousMonthLeaderboardRaw(@Param("limit") int limit);
 
     /**
-     * Fetches a single user's aggregated XP per past month (e.g., [ "2026-07", 420 ]).
-     * Used for "Your Previous Ranks / History" card.
+     * Fetches a single user's aggregated XP per past month.
      */
     @Query(value = """
         SELECT 

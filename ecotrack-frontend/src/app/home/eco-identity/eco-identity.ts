@@ -17,6 +17,9 @@ export class EcoIdentityComponent implements OnInit, OnDestroy {
 
   profile: UserProfileData | null = null;
 
+  // Fallback avatar for missing/broken images
+  defaultAvatar = 'https://api.dicebear.com/7.x/bottts/svg?seed=EcoUser';
+
   // Name Editing State
   isEditingName = false;
   tempName = '';
@@ -43,13 +46,19 @@ export class EcoIdentityComponent implements OnInit, OnDestroy {
     }
   }
 
+  // Calculate XP progress bar percentage
   get xpProgressPercent(): number {
     if (!this.profile || !this.profile.nextLevelXpTarget) return 0;
     const percent = (this.profile.currentXp / this.profile.nextLevelXpTarget) * 100;
     return Math.min(100, Math.max(0, percent));
   }
 
-  // Name Edit Actions
+  // Fallback image handler
+  onImageError(event: Event): void {
+    (event.target as HTMLImageElement).src = this.defaultAvatar;
+  }
+
+  // Name Editing Actions
   startNameEdit(): void {
     if (!this.profile) return;
     this.tempName = this.profile.name;
@@ -80,7 +89,7 @@ export class EcoIdentityComponent implements OnInit, OnDestroy {
     });
   }
 
-  // Avatar Image Upload Action
+  // Avatar Upload Handler
   onAvatarFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (!input.files || input.files.length === 0) return;
@@ -91,10 +100,12 @@ export class EcoIdentityComponent implements OnInit, OnDestroy {
     this.ecoIdentityService.uploadAvatar(file).subscribe({
       next: () => {
         this.isUploadingAvatar = false;
+        input.value = ''; // Reset input so same file can be re-selected if needed
       },
       error: (err) => {
         console.error('Failed to upload avatar image:', err);
         this.isUploadingAvatar = false;
+        input.value = '';
       },
     });
   }

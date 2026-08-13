@@ -1,10 +1,12 @@
 <!-- Profile Hero Card -->
 <section class="profile-hero-card" *ngIf="profile">
+  <!-- Top Row: Avatar & User Info -->
   <div class="hero-top-row">
     <!-- Avatar Section with Hidden File Upload -->
     <div class="avatar-container">
       <img 
-        [src]="profile.avatarUrl || 'assets/avatars/avatar_1.png'" 
+        [src]="profile.avatarUrl || defaultAvatar" 
+        (error)="onImageError($event)"
         alt="User Avatar" 
         class="profile-avatar" 
       />
@@ -27,7 +29,7 @@
       />
     </div>
 
-    <!-- User Information & Name Editing -->
+    <!-- User Details & Name Editing -->
     <div class="user-details">
       <div class="name-row">
         <ng-container *ngIf="!isEditingName; else editNameTemplate">
@@ -62,7 +64,7 @@
     </div>
   </div>
 
-  <!-- Level & XP Progress Row -->
+  <!-- Middle Row: Level & XP Progress Bar -->
   <div class="xp-level-row">
     <span class="level-badge">Level {{ profile.userLevel }}</span>
     <div class="xp-progress-track">
@@ -70,47 +72,57 @@
     </div>
     <span class="xp-text">{{ profile.currentXp }} / {{ profile.nextLevelXpTarget }} XP</span>
   </div>
-</section>
 
-<!-- Quick Stats Grid (Part 2) -->
-<section class="stats-grid" *ngIf="profile">
-  <div class="stat-card">
-    <div class="stat-icon-wrapper rank">
-      <i class="fa-solid fa-chart-line"></i>
+  <!-- Bottom Row: Integrated Stats (Goals & Challenges Status) -->
+  <div class="hero-stats-row">
+    <!-- Goals Passed -->
+    <div class="hero-stat-item">
+      <div class="stat-icon-wrapper success">
+        <i class="fa-solid fa-circle-check"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-value">{{ profile.goalsAccomplished || profile.goalsPassed || 0 }}</span>
+        <span class="stat-label">Goals Passed</span>
+      </div>
     </div>
-    <div class="stat-details">
-      <span class="stat-value">#{{ profile.userRank || '-' }}</span>
-      <span class="stat-label">Global Rank</span>
-    </div>
-  </div>
 
-  <div class="stat-card">
-    <div class="stat-icon-wrapper points">
-      <i class="fa-solid fa-coins"></i>
-    </div>
-    <div class="stat-details">
-      <span class="stat-value">{{ profile.rewardPoints || 0 }}</span>
-      <span class="stat-label">Reward Points</span>
-    </div>
-  </div>
+    <div class="hero-stat-divider"></div>
 
-  <div class="stat-card">
-    <div class="stat-icon-wrapper success">
-      <i class="fa-solid fa-circle-check"></i>
+    <!-- Goals Failed -->
+    <div class="hero-stat-item">
+      <div class="stat-icon-wrapper danger">
+        <i class="fa-solid fa-circle-xmark"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-value">{{ profile.goalsFailed || 0 }}</span>
+        <span class="stat-label">Goals Failed</span>
+      </div>
     </div>
-    <div class="stat-details">
-      <span class="stat-value">{{ profile.goalsAccomplished || 0 }}</span>
-      <span class="stat-label">Goals Met</span>
-    </div>
-  </div>
 
-  <div class="stat-card">
-    <div class="stat-icon-wrapper challenge">
-      <i class="fa-solid fa-fire"></i>
+    <div class="hero-stat-divider"></div>
+
+    <!-- Challenges Passed -->
+    <div class="hero-stat-item">
+      <div class="stat-icon-wrapper challenge">
+        <i class="fa-solid fa-fire"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-value">{{ profile.challengesAccomplished || profile.challengesPassed || 0 }}</span>
+        <span class="stat-label">Challenges Passed</span>
+      </div>
     </div>
-    <div class="stat-details">
-      <span class="stat-value">{{ profile.challengesAccomplished || 0 }}</span>
-      <span class="stat-label">Challenges Won</span>
+
+    <div class="hero-stat-divider"></div>
+
+    <!-- Challenges Failed -->
+    <div class="hero-stat-item">
+      <div class="stat-icon-wrapper challenge-failed">
+        <i class="fa-solid fa-circle-exclamation"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-value">{{ profile.challengesFailed || 0 }}</span>
+        <span class="stat-label">Challenges Failed</span>
+      </div>
     </div>
   </div>
 </section>

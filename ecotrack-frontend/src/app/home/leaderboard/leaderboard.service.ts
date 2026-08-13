@@ -6,6 +6,7 @@ import { environment } from '../../../environments/environment';
 export interface LeaderboardUser {
   userId: number;
   name: string;
+  avatarUrl?: string;
   userRank: string;
   userLevel: number;
   monthlyXp: number;
