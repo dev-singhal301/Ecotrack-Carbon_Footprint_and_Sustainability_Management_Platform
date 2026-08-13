@@ -304,3 +304,129 @@
     flex: auto;
   }
 }
+
+/* ============================= */
+/* Avatar Crop Modal             */
+/* ============================= */
+
+.crop-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+  animation: crop-fade-in 0.15s ease-out;
+}
+
+@keyframes crop-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.crop-modal {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 1.75rem;
+  width: 100%;
+  max-width: 360px;
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.25);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.crop-modal-title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.crop-modal-subtitle {
+  margin: -0.5rem 0 0 0;
+  font-size: 0.82rem;
+  color: #64748b;
+  text-align: center;
+}
+
+.crop-canvas-wrapper {
+  border-radius: 50%;
+  overflow: hidden;
+  width: 280px;
+  height: 280px;
+  background: #f1f5f9;
+  box-shadow: 0 0 0 4px #ecfdf5;
+}
+
+.crop-canvas {
+  touch-action: none;
+  cursor: grab;
+  display: block;
+}
+
+.crop-canvas:active {
+  cursor: grabbing;
+}
+
+.zoom-control {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  color: #94a3b8;
+  font-size: 0.85rem;
+}
+
+.zoom-slider {
+  flex: 1;
+  accent-color: #10b981;
+}
+
+.crop-modal-actions {
+  display: flex;
+  gap: 0.75rem;
+  width: 100%;
+  margin-top: 0.25rem;
+}
+
+.crop-btn {
+  flex: 1;
+  padding: 0.6rem 1rem;
+  border-radius: 10px;
+  border: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  transition: background-color 0.2s ease, opacity 0.2s ease;
+}
+
+.crop-btn.cancel {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.crop-btn.cancel:hover:not(:disabled) {
+  background: #e2e8f0;
+}
+
+.crop-btn.confirm {
+  background: #10b981;
+  color: #ffffff;
+}
+
+.crop-btn.confirm:hover:not(:disabled) {
+  background: #059669;
+}
+
+.crop-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

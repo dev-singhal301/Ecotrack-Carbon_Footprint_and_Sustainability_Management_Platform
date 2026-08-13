@@ -49,10 +49,20 @@
               (keyup.escape)="cancelNameEdit()"
               [disabled]="isSavingName"
             />
-            <button type="button" class="action-btn save" (click)="saveName()" [disabled]="isSavingName">
+            <button 
+              type="button" 
+              class="action-btn save" 
+              (mousedown)="$event.preventDefault()" 
+              (click)="saveName()" 
+              [disabled]="isSavingName">
               <i class="fa-solid fa-check"></i>
             </button>
-            <button type="button" class="action-btn cancel" (click)="cancelNameEdit()" [disabled]="isSavingName">
+            <button 
+              type="button" 
+              class="action-btn cancel" 
+              (mousedown)="$event.preventDefault()" 
+              (click)="cancelNameEdit()" 
+              [disabled]="isSavingName">
               <i class="fa-solid fa-xmark"></i>
             </button>
           </div>
@@ -81,7 +91,7 @@
         <i class="fa-solid fa-circle-check"></i>
       </div>
       <div class="stat-info">
-        <span class="stat-value">{{ profile.goalsAccomplished || profile.goalsPassed || 0 }}</span>
+        <span class="stat-value">{{ profile.goalsPassed ?? profile.goalsAccomplished ?? 0 }}</span>
         <span class="stat-label">Goals Passed</span>
       </div>
     </div>
@@ -94,7 +104,7 @@
         <i class="fa-solid fa-circle-xmark"></i>
       </div>
       <div class="stat-info">
-        <span class="stat-value">{{ profile.goalsFailed || 0 }}</span>
+        <span class="stat-value">{{ profile.goalsFailed ?? 0 }}</span>
         <span class="stat-label">Goals Failed</span>
       </div>
     </div>
@@ -107,7 +117,7 @@
         <i class="fa-solid fa-fire"></i>
       </div>
       <div class="stat-info">
-        <span class="stat-value">{{ profile.challengesAccomplished || profile.challengesPassed || 0 }}</span>
+        <span class="stat-value">{{ profile.challengesPassed ?? profile.challengesAccomplished ?? 0 }}</span>
         <span class="stat-label">Challenges Passed</span>
       </div>
     </div>
@@ -120,9 +130,62 @@
         <i class="fa-solid fa-circle-exclamation"></i>
       </div>
       <div class="stat-info">
-        <span class="stat-value">{{ profile.challengesFailed || 0 }}</span>
+        <span class="stat-value">{{ profile.challengesFailed ?? 0 }}</span>
         <span class="stat-label">Challenges Failed</span>
       </div>
     </div>
   </div>
 </section>
+
+<!-- Avatar Crop Modal (WhatsApp / Google Photos style) -->
+<div class="crop-modal-backdrop" *ngIf="showCropModal">
+  <div class="crop-modal">
+    <h3 class="crop-modal-title">Adjust your photo</h3>
+    <p class="crop-modal-subtitle">Drag to reposition &middot; use the slider to zoom</p>
+
+    <div class="crop-canvas-wrapper">
+      <canvas
+        #cropCanvas
+        class="crop-canvas"
+        [width]="canvasSize"
+        [height]="canvasSize"
+        (pointerdown)="onCanvasPointerDown($event)"
+        (pointermove)="onCanvasPointerMove($event)"
+        (pointerup)="onCanvasPointerUp($event)"
+        (pointerleave)="onCanvasPointerUp($event)"
+      ></canvas>
+    </div>
+
+    <div class="zoom-control">
+      <i class="fa-solid fa-magnifying-glass-minus"></i>
+      <input
+        type="range"
+        class="zoom-slider"
+        [min]="minZoom"
+        [max]="maxZoom"
+        step="0.01"
+        [(ngModel)]="zoom"
+        (input)="onZoomChange()"
+      />
+      <i class="fa-solid fa-magnifying-glass-plus"></i>
+    </div>
+
+    <div class="crop-modal-actions">
+      <button 
+        type="button" 
+        class="crop-btn cancel" 
+        (click)="cancelCrop()" 
+        [disabled]="isUploadingAvatar">
+        Cancel
+      </button>
+      <button 
+        type="button" 
+        class="crop-btn confirm" 
+        (click)="confirmCrop()" 
+        [disabled]="isUploadingAvatar">
+        <i class="fa-solid" [class.fa-check]="!isUploadingAvatar" [class.fa-spinner]="isUploadingAvatar" [class.fa-spin]="isUploadingAvatar"></i>
+        {{ isUploadingAvatar ? 'Saving...' : 'Confirm' }}
+      </button>
+    </div>
+  </div>
+</div>
