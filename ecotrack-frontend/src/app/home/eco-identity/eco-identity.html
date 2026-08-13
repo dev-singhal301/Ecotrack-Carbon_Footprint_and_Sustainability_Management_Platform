@@ -1,80 +1,136 @@
 <!-- Profile Hero Card -->
 <section class="profile-hero-card" *ngIf="profile">
-  <!-- Top Row: Avatar & User Info -->
+  <!-- Top Row: Avatar & Name on Left, 4 Stats on Right -->
   <div class="hero-top-row">
-    <!-- Avatar Section with Hidden File Upload -->
-    <div class="avatar-container">
-      <img 
-        [src]="profile.avatarUrl || defaultAvatar" 
-        (error)="onImageError($event)"
-        alt="User Avatar" 
-        class="profile-avatar" 
-      />
-      <button 
-        type="button"
-        class="avatar-edit-btn" 
-        (click)="fileInput.click()" 
-        [disabled]="isUploadingAvatar"
-        aria-label="Change Avatar">
-        <i class="fa-solid" [class.fa-camera]="!isUploadingAvatar" [class.fa-spinner]="isUploadingAvatar" [class.fa-spin]="isUploadingAvatar"></i>
-      </button>
+    <!-- User Bio Group -->
+    <div class="user-bio-group">
+      <!-- Avatar Section -->
+      <div class="avatar-container">
+        <img 
+          [src]="profile.avatarUrl || defaultAvatar" 
+          (error)="onImageError($event)"
+          alt="User Avatar" 
+          class="profile-avatar" 
+        />
+        <button 
+          type="button"
+          class="avatar-edit-btn" 
+          (click)="fileInput.click()" 
+          [disabled]="isUploadingAvatar"
+          aria-label="Change Avatar">
+          <i class="fa-solid" [class.fa-camera]="!isUploadingAvatar" [class.fa-spinner]="isUploadingAvatar" [class.fa-spin]="isUploadingAvatar"></i>
+        </button>
 
-      <!-- Hidden Native File Input -->
-      <input 
-        #fileInput 
-        type="file" 
-        accept="image/*" 
-        (change)="onAvatarFileSelected($event)" 
-        style="display: none;" 
-      />
-    </div>
-
-    <!-- User Details & Name Editing -->
-    <div class="user-details">
-      <div class="name-row">
-        <ng-container *ngIf="!isEditingName; else editNameTemplate">
-          <h2>{{ profile.name }}</h2>
-          <button type="button" class="icon-edit-btn" (click)="startNameEdit()" title="Edit Name">
-            <i class="fa-solid fa-pen"></i>
-          </button>
-        </ng-container>
-
-        <ng-template #editNameTemplate>
-          <div class="inline-edit-box">
-            <input 
-              type="text" 
-              [(ngModel)]="tempName" 
-              class="name-input" 
-              (keyup.enter)="saveName()" 
-              (keyup.escape)="cancelNameEdit()"
-              [disabled]="isSavingName"
-            />
-            <button 
-              type="button" 
-              class="action-btn save" 
-              (mousedown)="$event.preventDefault()" 
-              (click)="saveName()" 
-              [disabled]="isSavingName">
-              <i class="fa-solid fa-check"></i>
-            </button>
-            <button 
-              type="button" 
-              class="action-btn cancel" 
-              (mousedown)="$event.preventDefault()" 
-              (click)="cancelNameEdit()" 
-              [disabled]="isSavingName">
-              <i class="fa-solid fa-xmark"></i>
-            </button>
-          </div>
-        </ng-template>
+        <!-- Hidden Native File Input -->
+        <input 
+          #fileInput 
+          type="file" 
+          accept="image/*" 
+          (change)="onAvatarFileSelected($event)" 
+          style="display: none;" 
+        />
       </div>
 
-      <p class="email-text">{{ profile.email }}</p>
-      <span class="member-since">Member since {{ profile.memberSince }}</span>
+      <!-- Name & Email Info -->
+      <div class="user-details">
+        <div class="name-row">
+          <ng-container *ngIf="!isEditingName; else editNameTemplate">
+            <h2>{{ profile.name }}</h2>
+            <button type="button" class="icon-edit-btn" (click)="startNameEdit()" title="Edit Name">
+              <i class="fa-solid fa-pen"></i>
+            </button>
+          </ng-container>
+
+          <ng-template #editNameTemplate>
+            <div class="inline-edit-box">
+              <input 
+                type="text" 
+                [(ngModel)]="tempName" 
+                class="name-input" 
+                (keyup.enter)="saveName()" 
+                (keyup.escape)="cancelNameEdit()"
+                [disabled]="isSavingName"
+              />
+              <button 
+                type="button" 
+                class="action-btn save" 
+                (mousedown)="$event.preventDefault()" 
+                (click)="saveName()" 
+                [disabled]="isSavingName">
+                <i class="fa-solid fa-check"></i>
+              </button>
+              <button 
+                type="button" 
+                class="action-btn cancel" 
+                (mousedown)="$event.preventDefault()" 
+                (click)="cancelNameEdit()" 
+                [disabled]="isSavingName">
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+          </ng-template>
+        </div>
+
+        <p class="email-text">{{ profile.email }}</p>
+        <span class="member-since">Member since {{ profile.memberSince }}</span>
+      </div>
+    </div>
+
+    <!-- Stats Pill Container (Top Right) -->
+    <div class="hero-stats-row">
+      <!-- Goals Passed -->
+      <div class="hero-stat-item">
+        <div class="stat-icon-wrapper success">
+          <i class="fa-solid fa-circle-check"></i>
+        </div>
+        <div class="stat-info">
+          <span class="stat-value">{{ profile.goalsPassed ?? profile.goalsAccomplished ?? 0 }}</span>
+          <span class="stat-label">Goals Passed</span>
+        </div>
+      </div>
+
+      <div class="hero-stat-divider"></div>
+
+      <!-- Goals Failed -->
+      <div class="hero-stat-item">
+        <div class="stat-icon-wrapper danger">
+          <i class="fa-solid fa-circle-xmark"></i>
+        </div>
+        <div class="stat-info">
+          <span class="stat-value">{{ profile.goalsFailed ?? 0 }}</span>
+          <span class="stat-label">Goals Failed</span>
+        </div>
+      </div>
+
+      <div class="hero-stat-divider"></div>
+
+      <!-- Challenges Passed -->
+      <div class="hero-stat-item">
+        <div class="stat-icon-wrapper challenge">
+          <i class="fa-solid fa-fire"></i>
+        </div>
+        <div class="stat-info">
+          <span class="stat-value">{{ profile.challengesPassed ?? profile.challengesAccomplished ?? 0 }}</span>
+          <span class="stat-label">Challenges Passed</span>
+        </div>
+      </div>
+
+      <div class="hero-stat-divider"></div>
+
+      <!-- Challenges Failed -->
+      <div class="hero-stat-item">
+        <div class="stat-icon-wrapper challenge-failed">
+          <i class="fa-solid fa-circle-exclamation"></i>
+        </div>
+        <div class="stat-info">
+          <span class="stat-value">{{ profile.challengesFailed ?? 0 }}</span>
+          <span class="stat-label">Challenges Failed</span>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- Middle Row: Level & XP Progress Bar -->
+  <!-- Bottom Row: Level Badge & Progress Track -->
   <div class="xp-level-row">
     <span class="level-badge">Level {{ profile.userLevel }}</span>
     <div class="xp-progress-track">
@@ -82,62 +138,9 @@
     </div>
     <span class="xp-text">{{ profile.currentXp }} / {{ profile.nextLevelXpTarget }} XP</span>
   </div>
-
-  <!-- Bottom Row: Integrated Stats (Goals & Challenges Status) -->
-  <div class="hero-stats-row">
-    <!-- Goals Passed -->
-    <div class="hero-stat-item">
-      <div class="stat-icon-wrapper success">
-        <i class="fa-solid fa-circle-check"></i>
-      </div>
-      <div class="stat-info">
-        <span class="stat-value">{{ profile.goalsPassed ?? profile.goalsAccomplished ?? 0 }}</span>
-        <span class="stat-label">Goals Passed</span>
-      </div>
-    </div>
-
-    <div class="hero-stat-divider"></div>
-
-    <!-- Goals Failed -->
-    <div class="hero-stat-item">
-      <div class="stat-icon-wrapper danger">
-        <i class="fa-solid fa-circle-xmark"></i>
-      </div>
-      <div class="stat-info">
-        <span class="stat-value">{{ profile.goalsFailed ?? 0 }}</span>
-        <span class="stat-label">Goals Failed</span>
-      </div>
-    </div>
-
-    <div class="hero-stat-divider"></div>
-
-    <!-- Challenges Passed -->
-    <div class="hero-stat-item">
-      <div class="stat-icon-wrapper challenge">
-        <i class="fa-solid fa-fire"></i>
-      </div>
-      <div class="stat-info">
-        <span class="stat-value">{{ profile.challengesPassed ?? profile.challengesAccomplished ?? 0 }}</span>
-        <span class="stat-label">Challenges Passed</span>
-      </div>
-    </div>
-
-    <div class="hero-stat-divider"></div>
-
-    <!-- Challenges Failed -->
-    <div class="hero-stat-item">
-      <div class="stat-icon-wrapper challenge-failed">
-        <i class="fa-solid fa-circle-exclamation"></i>
-      </div>
-      <div class="stat-info">
-        <span class="stat-value">{{ profile.challengesFailed ?? 0 }}</span>
-        <span class="stat-label">Challenges Failed</span>
-      </div>
-    </div>
-  </div>
 </section>
 
-<!-- Avatar Crop Modal (WhatsApp / Google Photos style) -->
+<!-- Avatar Crop Modal -->
 <div class="crop-modal-backdrop" *ngIf="showCropModal">
   <div class="crop-modal">
     <h3 class="crop-modal-title">Adjust your photo</h3>

@@ -376,21 +376,21 @@ CREATE TABLE IF NOT EXISTS badges (
 -- Seed baseline badges mapped to exact assets
 INSERT INTO badges (name, description, category, icon_url, required_xp) VALUES
 -- Level Progression Badges (ms_eco_1 to ms_eco_10)
-('Novice Eco', 'Created an account and started your eco journey.', 'LEVEL', '/assets/badges/ms_eco_1.avif', 0),
-('Eco Scout', 'Earned 100 XP and unlocked basic tracking capabilities.', 'LEVEL', '/assets/badges/ms_eco_2.avif', 100),
-('Eco Explorer', 'Earned 250 XP by actively logging eco-friendly activities.', 'LEVEL', '/assets/badges/ms_eco_3.avif', 250),
-('Eco Pioneer', 'Earned 500 XP and established continuous sustainable habits.', 'LEVEL', '/assets/badges/ms_eco_4.avif', 500),
-('Eco Guardian', 'Earned 1,000 XP and actively protected the environment.', 'LEVEL', '/assets/badges/ms_eco_5.avif', 1000),
-('Eco Sentinel', 'Earned 2,000 XP through persistent sustainability efforts.', 'LEVEL', '/assets/badges/ms_eco_6.avif', 2000),
-('Eco Champion', 'Earned 3,500 XP and demonstrated leadership in eco practices.', 'LEVEL', '/assets/badges/ms_eco_7.avif', 3500),
-('Eco Master', 'Earned 5,000 XP and mastered green habits.', 'LEVEL', '/assets/badges/ms_eco_8.avif', 5000),
-('Eco Hero', 'Earned 7,500 XP as an extraordinary advocate for the planet.', 'LEVEL', '/assets/badges/ms_eco_9.avif', 7500),
-('Mythic Eco', 'Earned 10,000 XP and achieved the highest tier of sustainability excellence.', 'LEVEL', '/assets/badges/ms_eco_10.avif', 10000),
+('Novice Eco', 'Created an account and started your eco journey.', 'LEVEL', '/badges/ms_eco_1.avif', 0),
+('Eco Scout', 'Earned 100 XP and unlocked basic tracking capabilities.', 'LEVEL', '/badges/ms_eco_2.avif', 100),
+('Eco Explorer', 'Earned 250 XP by actively logging eco-friendly activities.', 'LEVEL', '/badges/ms_eco_3.avif', 250),
+('Eco Pioneer', 'Earned 500 XP and established continuous sustainable habits.', 'LEVEL', '/badges/ms_eco_4.avif', 500),
+('Eco Guardian', 'Earned 1,000 XP and actively protected the environment.', 'LEVEL', '/badges/ms_eco_5.avif', 1000),
+('Eco Sentinel', 'Earned 2,000 XP through persistent sustainability efforts.', 'LEVEL', '/badges/ms_eco_6.avif', 2000),
+('Eco Champion', 'Earned 3,500 XP and demonstrated leadership in eco practices.', 'LEVEL', '/badges/ms_eco_7.avif', 3500),
+('Eco Master', 'Earned 5,000 XP and mastered green habits.', 'LEVEL', '/badges/ms_eco_8.avif', 5000),
+('Eco Hero', 'Earned 7,500 XP as an extraordinary advocate for the planet.', 'LEVEL', '/badges/ms_eco_9.avif', 7500),
+('Mythic Eco', 'Earned 10,000 XP and achieved the highest tier of sustainability excellence.', 'LEVEL', '/badges/ms_eco_10.avif', 10000),
 
 -- Leaderboard Podiums
-('Leaderboard Champion', 'Finished 1st Place in the global leaderboard.', 'LEADERBOARD', '/assets/badges/lb_gold.avif', 0),
-('Leaderboard Runner-Up', 'Finished 2nd Place in the global leaderboard.', 'LEADERBOARD', '/assets/badges/lb_silver.avif', 0),
-('Leaderboard Elite', 'Finished 3rd Place in the global leaderboard.', 'LEADERBOARD', '/assets/badges/lb_bronze.avif', 0)
+('Leaderboard Champion', 'Finished 1st Place in the global leaderboard.', 'LEADERBOARD', '/badges/lb_gold.avif', 0),
+('Leaderboard Runner-Up', 'Finished 2nd Place in the global leaderboard.', 'LEADERBOARD', '/badges/lb_silver.avif', 0),
+('Leaderboard Elite', 'Finished 3rd Place in the global leaderboard.', 'LEADERBOARD', '/badges/lb_bronze.avif', 0)
 ON CONFLICT (name) DO NOTHING;
 
 
