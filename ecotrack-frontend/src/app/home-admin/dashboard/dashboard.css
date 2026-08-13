@@ -462,6 +462,17 @@
   gap: 5px;
 }
 
+/* Small, low-contrast one-liner under a chart's title explaining what it
+   plots — meant to be readable on a glance, not to compete visually with
+   the title or the chart itself. */
+.chart-desc {
+  margin: -8px 0 14px;
+  font-size: 0.76rem;
+  font-weight: 400;
+  line-height: 1.4;
+  color: #94a3b8;
+}
+
 .chart-canvas-wrap {
   position: relative;
   height: 260px;
@@ -522,36 +533,6 @@
   text-align: center;
   font-size: 0.76rem;
   color: #94a3b8;
-}
-
-/* ── Quick Insights (neutral platform facts, not warnings) ── */
-
-.insight-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.insight-list li {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background-color: #f8f9fa;
-  border: 1px solid #edf0f1;
-  color: #4a6072;
-  padding: 10px 16px;
-  border-radius: 12px;
-  font-size: 0.88rem;
-}
-
-.insight-list li i {
-  color: #2851a3;
-  font-size: 0.95rem;
-  width: 18px;
-  text-align: center;
 }
 
 /* ── Responsive ── */

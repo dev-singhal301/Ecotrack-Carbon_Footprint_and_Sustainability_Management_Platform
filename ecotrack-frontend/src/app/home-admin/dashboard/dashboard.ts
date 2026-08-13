@@ -361,30 +361,6 @@ export class Dashboard implements OnInit {
     return Math.round((current - priorRate) * 10) / 10;
   });
 
-  // "Quick Insights" — compact list reusing data already fetched above,
-  // no new endpoint/audit system. Renamed from "Needs Attention": these
-  // are normal platform statistics, not warnings.
-  quickInsightItems = computed(() => {
-    const s = this.summary();
-    const items: { icon: string; text: string }[] = [];
-
-    items.push({
-      icon: 'fa-hourglass-half',
-      text: `${this.upcomingChallengesCount()} upcoming challenge${this.upcomingChallengesCount() === 1 ? '' : 's'}`,
-    });
-    items.push({
-      icon: 'fa-person-running',
-      text: `${this.inProgressParticipationsCount()} participation${this.inProgressParticipationsCount() === 1 ? '' : 's'} currently in progress`,
-    });
-    if (s) {
-      items.push({
-        icon: 'fa-user-slash',
-        text: `${s.disabledUsers} disabled user${s.disabledUsers === 1 ? '' : 's'}`,
-      });
-    }
-    return items;
-  });
-
   // ── Date-range bucketing (historical sections only) ──
 
   private getRangeBounds(): { start: Date; end: Date; granularity: 'day' | 'week' } {

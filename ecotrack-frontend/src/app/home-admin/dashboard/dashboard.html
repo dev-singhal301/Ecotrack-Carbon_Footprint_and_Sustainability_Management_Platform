@@ -169,6 +169,8 @@
         </div>
       </div>
 
+      <p class="chart-desc">New user registrations over the selected date range.</p>
+
       <div *ngIf="usersLoading()" class="state-message skeleton">Loading registration data…</div>
       <div *ngIf="usersError() && !usersLoading()" class="state-message error">
         {{ usersError() }}
@@ -232,6 +234,8 @@
           </div>
         </div>
 
+        <p class="chart-desc">Challenges created and cancelled by admins over the selected date range.</p>
+
         <div *ngIf="challengesLoading()" class="state-message skeleton">Loading challenge activity…</div>
         <div *ngIf="challengesError() && !challengesLoading()" class="state-message error">
           {{ challengesError() }}
@@ -269,6 +273,8 @@
         </div>
       </div>
 
+      <p class="chart-desc">Challenges started, completed, and expired by users over the selected date range.</p>
+
       <div *ngIf="participationsLoading()" class="state-message skeleton">Loading participation data…</div>
       <div *ngIf="participationsError() && !participationsLoading()" class="state-message error">
         {{ participationsError() }}
@@ -297,6 +303,8 @@
         </div>
       </div>
 
+      <p class="chart-desc">Completed challenges as a share of resolved challenges (completed + expired) per period.</p>
+
       <div *ngIf="participationsLoading()" class="state-message skeleton">Loading completion data…</div>
       <div *ngIf="participationsError() && !participationsLoading()" class="state-message error">
         {{ participationsError() }}
@@ -310,20 +318,6 @@
         <canvas baseChart type="line" [data]="completionRateTrendData()" [options]="completionRateChartOptions" [plugins]="completionRateChartPlugins"></canvas>
       </div>
     </div>
-  </section>
-
-  <!-- ============================= -->
-  <!-- QUICK INSIGHTS — compact, reuses data already fetched above -->
-  <!-- ============================= -->
-  <section class="dashboard-section" *ngIf="!summaryLoading() && !challengesLoading() && !participationsLoading()">
-    <h2 class="section-title">Quick Insights</h2>
-
-    <ul class="insight-list">
-      <li *ngFor="let item of quickInsightItems()">
-        <i class="fa-solid" [ngClass]="item.icon"></i>
-        <span>{{ item.text }}</span>
-      </li>
-    </ul>
   </section>
 
 </div>
