@@ -1,5 +1,6 @@
 package com.ecotrack.ecotrack_backend.controller;
 
+import com.ecotrack.ecotrack_backend.dto.AiRecommendationDetail;
 import com.ecotrack.ecotrack_backend.dto.CategoryBreakdownDto;
 import com.ecotrack.ecotrack_backend.dto.RecommendationResponse;
 import com.ecotrack.ecotrack_backend.dto.TopRecommendationDto;
@@ -71,7 +72,8 @@ class RecommendationControllerTest {
     @Test
     void getRecommendations_authenticated_returns200WithShape() throws Exception {
         RecommendationResponse response = new RecommendationResponse(
-                List.of(new TopRecommendationDto("ELECTRICITY", "tip1 | tip2 | tip3", new BigDecimal("25.00"))),
+                List.of(new TopRecommendationDto("FUEL", BigDecimal.valueOf(38.0), BigDecimal.valueOf(6.2),
+                        new AiRecommendationDetail("title", "why", "action", List.of("alt1", "alt2"), "impact", "RULE_BASED"))),
                 List.of(new CategoryBreakdownDto("ELECTRICITY", new BigDecimal("100.0"))),
                 null
         );
@@ -81,8 +83,8 @@ class RecommendationControllerTest {
         mockMvc.perform(get("/api/recommendations")
                         .with(authentication(auth)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.topRecommendations[0].category").value("ELECTRICITY"))
-                .andExpect(jsonPath("$.topRecommendations[0].impactEstimate").value(25.00))
+                .andExpect(jsonPath("$.topRecommendations[0].category").value("FUEL"))
+                .andExpect(jsonPath("$.topRecommendations[0].impactEstimate").value(6.2))
                 .andExpect(jsonPath("$.allCategoriesSorted[0].category").value("ELECTRICITY"))
                 .andExpect(jsonPath("$.message").doesNotExist());
     }
@@ -115,7 +117,8 @@ class RecommendationControllerTest {
     @Test
     void refreshRecommendations_authenticated_returns200AndCallsService() throws Exception {
         RecommendationResponse response = new RecommendationResponse(
-                List.of(new TopRecommendationDto("FUEL", "tip1 | tip2 | tip3", new BigDecimal("12.00"))),
+                List.of(new TopRecommendationDto("FUEL", BigDecimal.valueOf(38.0), BigDecimal.valueOf(6.2),
+                        new AiRecommendationDetail("title", "why", "action", List.of("alt1", "alt2"), "impact", "RULE_BASED"))),
                 List.of(new CategoryBreakdownDto("FUEL", new BigDecimal("100.0"))),
                 null
         );

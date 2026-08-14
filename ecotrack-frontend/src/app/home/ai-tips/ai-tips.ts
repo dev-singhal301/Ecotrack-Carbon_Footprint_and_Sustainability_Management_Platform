@@ -1,21 +1,33 @@
-import { Component, ChangeDetectorRef } from '@angular/core';
+import { Component, ChangeDetectorRef, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { forkJoin, of, Observable } from 'rxjs';
-import { catchError } from 'rxjs/operators';
-import { RecommendationService } from './recommendation.service';
-import { RecommendationResponse } from './recommendation.model';
-import { GoalService } from './goal.service';
-import { GoalResponse, GoalProgressResponse } from './goal.model';
+import { Subscription } from 'rxjs';
+import { RecommendationService, RecState } from './recommendation.service';
+import { TopRecommendationDto } from './recommendation.model';
+import { GoalInsightService, GoalInsightState } from './goal-insight.service';
+import { GoalInsightResponse } from './goal-insight.model';
 import { FactService } from './fact.service';
-import { getGoalStatus, getGoalInsightMessage, getCategoryForGoalType, GoalStatus } from './goal-insight-messages';
 
 type EcoBotPanel = 'recommendations' | 'goals' | 'facts' | null;
 
-interface GoalWithProgress {
-  goal: GoalResponse;
-  progress: GoalProgressResponse | null;
-}
+const ANALYZING_MESSAGES = [
+  'EcoBot is analyzing your latest activity…',
+  'Comparing your categories…',
+  'Weighing your biggest opportunities…',
+  'Putting together your recommendations…',
+];
+
+// Rotating background palette for the Carbon Facts popup — CSS gradients
+// rather than photos, so there's nothing to fetch/host/attribute and it
+// never breaks. Cycles by fact index (not random), so consecutive
+// refreshes always look visibly different from the last one.
+const FACT_BACKGROUNDS = [
+  'linear-gradient(135deg, #1b4332 0%, #2d6a4f 45%, #60BA75 100%)',
+  'linear-gradient(135deg, #0f766e 0%, #14532d 55%, #166534 100%)',
+  'linear-gradient(135deg, #164e63 0%, #1b4332 60%, #2d6a4f 100%)',
+  'linear-gradient(135deg, #365314 0%, #1b4332 55%, #0f766e 100%)',
+  'linear-gradient(135deg, #052e16 0%, #14532d 50%, #4d7c0f 100%)',
+];
 
 @Component({
   selector: 'app-ai-tips',
@@ -24,25 +36,48 @@ interface GoalWithProgress {
   templateUrl: './ai-tips.html',
   styleUrl: './ai-tips.css',
 })
-export class AiTips {
+export class AiTips implements OnInit, OnDestroy {
   activePanel: EcoBotPanel = null;
 
-  // --- Recommendations state ---
-  recommendations: RecommendationResponse | null = null;
-  recLoading = false;
-  recError: string | null = null;
-  revealedCount = 1;
+  // --- Recommendations state (driven by the shared service) ---
+  recState: RecState = { status: 'idle', data: null, error: null };
+  showAnalyzing = false;
+  analyzingIndex = 0;
+  expandedCategory: string | null = null;
 
-  // --- Goal Insights state ---
-  goalsWithProgress: GoalWithProgress[] = [];
-  goalsLoading = false;
-  goalsError: string | null = null;
+  private recSub?: Subscription;
+  private analyzingTimer?: ReturnType<typeof setInterval>;
+  private analyzingDelayTimer?: ReturnType<typeof setTimeout>;
+  readonly analyzingMessages = ANALYZING_MESSAGES;
+
+  // --- Goal Insights state (driven by GoalInsightService, same pattern) ---
+  goalState: GoalInsightState = { status: 'idle', data: null, error: null };
+  showGoalsAnalyzing = false;
+  goalsAnalyzingIndex = 0;
   expandedGoalIds = new Set<number>();
 
-  // --- Carbon Facts state ---
+  private goalSub?: Subscription;
+  private goalsAnalyzingTimer?: ReturnType<typeof setInterval>;
+  private goalsAnalyzingDelayTimer?: ReturnType<typeof setTimeout>;
+
+  // --- Carbon Facts popup state ---
   currentFact: string | null = null;
   factLoading = false;
   factError: string | null = null;
+  factKey = 0; // bumped on every load/refresh — forces the *ngFor in the
+               // template to recreate its DOM node so the fade-in animation
+               // replays on every refresh, not just the first load
+  readonly factBackgrounds = FACT_BACKGROUNDS;
+
+  get factSlides(): string[] {
+    return this.currentFact ? [this.currentFact] : [];
+  }
+
+  get factBackground(): string {
+    return this.factBackgrounds[this.factKey % this.factBackgrounds.length];
+  }
+
+  trackByFactKey = (): number => this.factKey;
 
   private readonly categoryLabels: Record<string, string> = {
     TRANSPORTATION: 'Transportation',
@@ -53,33 +88,103 @@ export class AiTips {
     FUEL: 'Fuel',
   };
 
-  private readonly categoryUnits: Record<string, string> = {
-    TRANSPORTATION: 'km',
-    ELECTRICITY: 'kWh',
-    FOOD: 'kg CO\u2082',
-    WASTE: 'kg',
-    WATER: 'litres',
-    FUEL: 'litres',
-  };
-
   constructor(
     private router: Router,
     private recommendationService: RecommendationService,
-    private goalService: GoalService,
+    private goalInsightService: GoalInsightService,
     private factService: FactService,
     private cdr: ChangeDetectorRef
   ) {}
 
+  ngOnInit(): void {
+    // Safety net if someone lands directly on ai-tips without visiting the
+    // dashboard first — no-op if the dashboard already kicked these off.
+    this.recommendationService.ensureLoaded();
+    this.goalInsightService.ensureLoaded();
+
+    this.recSub = this.recommendationService.state$.subscribe((state) => {
+      const wasLoading = this.recState.status === 'loading';
+      this.recState = state;
+
+      if (state.status === 'loading' && !wasLoading) {
+        this.startAnalyzingSequence();
+      }
+      if (state.status !== 'loading') {
+        this.stopAnalyzingSequence();
+        this.expandedCategory = null;
+      }
+      this.cdr.detectChanges();
+    });
+
+    this.goalSub = this.goalInsightService.state$.subscribe((state) => {
+      const wasLoading = this.goalState.status === 'loading';
+      this.goalState = state;
+
+      if (state.status === 'loading' && !wasLoading) {
+        this.startGoalsAnalyzingSequence();
+      }
+      if (state.status !== 'loading') {
+        this.stopGoalsAnalyzingSequence();
+      }
+      this.cdr.detectChanges();
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.recSub?.unsubscribe();
+    this.goalSub?.unsubscribe();
+    this.stopAnalyzingSequence();
+    this.stopGoalsAnalyzingSequence();
+  }
+
+  private startAnalyzingSequence(): void {
+    this.showAnalyzing = false;
+    this.analyzingIndex = 0;
+    // Don't show the analyzing UI for a request that resolves fast (the
+    // common case, since it was likely prefetched from the dashboard).
+    this.analyzingDelayTimer = setTimeout(() => {
+      if (this.recState.status === 'loading') {
+        this.showAnalyzing = true;
+        this.analyzingTimer = setInterval(() => {
+          this.analyzingIndex = (this.analyzingIndex + 1) % this.analyzingMessages.length;
+          this.cdr.detectChanges();
+        }, 8000);
+        this.cdr.detectChanges();
+      }
+    }, 400);
+  }
+
+  private stopAnalyzingSequence(): void {
+    this.showAnalyzing = false;
+    if (this.analyzingTimer) clearInterval(this.analyzingTimer);
+    if (this.analyzingDelayTimer) clearTimeout(this.analyzingDelayTimer);
+  }
+
+  // Same delayed-analyzing pattern as Recommendations, independent timers/state
+  // so one panel's loading indicator never depends on the other's.
+  private startGoalsAnalyzingSequence(): void {
+    this.showGoalsAnalyzing = false;
+    this.goalsAnalyzingIndex = 0;
+    this.goalsAnalyzingDelayTimer = setTimeout(() => {
+      if (this.goalState.status === 'loading') {
+        this.showGoalsAnalyzing = true;
+        this.goalsAnalyzingTimer = setInterval(() => {
+          this.goalsAnalyzingIndex = (this.goalsAnalyzingIndex + 1) % this.analyzingMessages.length;
+          this.cdr.detectChanges();
+        }, 8000);
+        this.cdr.detectChanges();
+      }
+    }, 400);
+  }
+
+  private stopGoalsAnalyzingSequence(): void {
+    this.showGoalsAnalyzing = false;
+    if (this.goalsAnalyzingTimer) clearInterval(this.goalsAnalyzingTimer);
+    if (this.goalsAnalyzingDelayTimer) clearTimeout(this.goalsAnalyzingDelayTimer);
+  }
+
   selectPanel(panel: EcoBotPanel): void {
     this.activePanel = this.activePanel === panel ? null : panel;
-
-    if (this.activePanel === 'recommendations' && !this.recommendations && !this.recLoading) {
-      this.loadRecommendations();
-    }
-
-    if (this.activePanel === 'goals' && this.goalsWithProgress.length === 0 && !this.goalsLoading) {
-      this.loadGoalInsights();
-    }
 
     if (this.activePanel === 'facts' && !this.currentFact && !this.factLoading) {
       this.loadFact();
@@ -88,132 +193,60 @@ export class AiTips {
     this.cdr.detectChanges();
   }
 
-  // --- Recommendations logic ---
-
-  loadRecommendations(): void {
-    this.recLoading = true;
-    this.recError = null;
+  closeFactsModal(): void {
+    this.activePanel = null;
     this.cdr.detectChanges();
-
-    this.recommendationService.getRecommendations().subscribe({
-      next: (res) => {
-        this.recommendations = res;
-        this.revealedCount = 1;
-        this.recLoading = false;
-        this.cdr.detectChanges();
-      },
-      error: (err) => {
-        console.error('Failed to load recommendations:', err);
-        this.recError = err.error?.message || 'Could not load your recommendations. Please try again.';
-        this.recLoading = false;
-        this.cdr.detectChanges();
-      },
-    });
   }
 
-  refreshRecommendations(): void {
-    this.recLoading = true;
-    this.recError = null;
-    this.cdr.detectChanges();
+  // --- Unified refresh: fires both in parallel, not chained ---
+  refreshAll(): void {
+    this.recommendationService.refresh();
+    this.goalInsightService.refresh();
+  }
 
-    this.recommendationService.refreshRecommendations().subscribe({
-      next: (res) => {
-        this.recommendations = res;
-        this.revealedCount = 1;
-        this.recLoading = false;
-        this.cdr.detectChanges();
-      },
-      error: (err) => {
-        console.error('Failed to refresh recommendations:', err);
-        this.recError = err.error?.message || 'Could not refresh your recommendations. Please try again.';
-        this.recLoading = false;
-        this.cdr.detectChanges();
-      },
-    });
+  // --- Recommendations logic ---
+
+  refreshRecommendations(): void {
+    this.recommendationService.refresh();
   }
 
   get isZeroEmissionState(): boolean {
-    return !!this.recommendations?.message;
+    return !!this.recState.data?.message;
   }
 
-  get revealedCategories() {
-    if (!this.recommendations) return [];
-    const nonZero = this.recommendations.allCategoriesSorted.filter(c => c.percentage > 0);
-    const topThree = nonZero.slice(0, 3);
-    return topThree.slice(0, this.revealedCount);
+  get topRecommendations(): TopRecommendationDto[] {
+    return this.recState.data?.topRecommendations ?? [];
   }
 
-  get hasMoreToExplore(): boolean {
-    if (!this.recommendations) return false;
-    const nonZero = this.recommendations.allCategoriesSorted.filter(c => c.percentage > 0);
-    const topThree = nonZero.slice(0, 3);
-    return this.revealedCount < topThree.length;
+  get primaryRecommendation(): TopRecommendationDto | null {
+    return this.topRecommendations[0] ?? null;
   }
 
-  get nextCategoryLabel(): string {
-    if (!this.recommendations) return '';
-    const nonZero = this.recommendations.allCategoriesSorted.filter(c => c.percentage > 0);
-    const topThree = nonZero.slice(0, 3);
-    const next = topThree[this.revealedCount];
-    return next ? this.getCategoryLabel(next.category) : '';
+  get secondaryRecommendations(): TopRecommendationDto[] {
+    return this.topRecommendations.slice(1);
   }
 
-  exploreNext(): void {
-    if (this.hasMoreToExplore) {
-      this.revealedCount++;
-      this.cdr.detectChanges();
-    }
+  toggleCategoryExpand(category: string): void {
+    this.expandedCategory = this.expandedCategory === category ? null : category;
+    this.cdr.detectChanges();
   }
 
-  getTipFor(category: string) {
-    return this.recommendations?.topRecommendations.find((r) => r.category === category) ?? null;
+  isCategoryExpanded(category: string): boolean {
+    return this.expandedCategory === category;
+  }
+
+  trackByCategory(index: number, cat: TopRecommendationDto): string {
+    return cat.category;
   }
 
   // --- Goal Insights logic ---
 
-  loadGoalInsights(): void {
-    this.goalsLoading = true;
-    this.goalsError = null;
-    this.cdr.detectChanges();
+  refreshGoalInsights(): void {
+    this.goalInsightService.refresh();
+  }
 
-    this.goalService.getAllGoals().subscribe({
-      next: (goals) => {
-        const active = goals.filter(g => g.status === 'ACTIVE');
-        const ended = goals
-          .filter(g => g.status === 'COMPLETED' || g.status === 'EXPIRED')
-          .sort((a, b) => new Date(b.endDate).getTime() - new Date(a.endDate).getTime())
-          .slice(0, 7);
-
-        const visibleGoals = [...active, ...ended];
-
-        if (visibleGoals.length === 0) {
-          this.goalsWithProgress = [];
-          this.goalsLoading = false;
-          this.cdr.detectChanges();
-          return;
-        }
-
-        const progressCalls = visibleGoals.reduce((acc, goal) => {
-          acc[goal.goalId] = this.goalService.getGoalProgress(goal.goalId).pipe(catchError(() => of(null)));
-          return acc;
-        }, {} as Record<number, Observable<GoalProgressResponse | null>>);
-
-        forkJoin(progressCalls).subscribe((progressMap) => {
-          this.goalsWithProgress = visibleGoals.map((goal) => ({
-            goal,
-            progress: progressMap[goal.goalId],
-          }));
-          this.goalsLoading = false;
-          this.cdr.detectChanges();
-        });
-      },
-      error: (err) => {
-        console.error('Failed to load goals:', err);
-        this.goalsError = err.error?.message || 'Could not load your goals. Please try again.';
-        this.goalsLoading = false;
-        this.cdr.detectChanges();
-      },
-    });
+  get goalInsights(): GoalInsightResponse[] {
+    return this.goalState.data?.insights ?? [];
   }
 
   toggleGoalExpand(goalId: number): void {
@@ -229,43 +262,8 @@ export class AiTips {
     return this.expandedGoalIds.has(goalId);
   }
 
-  getUnitFor(category: string): string {
-    return this.categoryUnits[category] ?? '';
-  }
-
-  getGoalStatusFor(item: GoalWithProgress): GoalStatus | null {
-    if (!item.progress) return null;
-
-    return getGoalStatus(
-      item.goal.startDate,
-      item.goal.endDate,
-      item.progress.completionPercentage,
-      item.progress.completed
-    );
-  }
-
-    getGoalInsightFor(item: GoalWithProgress): string {
-      const status = this.getGoalStatusFor(item);
-      if (!status || !item.progress) {
-        return 'Progress data is temporarily unavailable for this goal.';
-      }
-      const unit = this.getGoalCategoryUnit(item.goal.goalType);
-      const currentDisplay = unit ? `${item.progress.currentValue} ${unit}` : `${item.progress.currentValue}`;
-      const targetDisplay = unit ? `${item.goal.targetValue} ${unit}` : `${item.goal.targetValue}`;
-      const endDateDisplay = new Date(item.goal.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-      const daysRemaining = Math.max(0, Math.ceil((new Date(item.goal.endDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
-
-      return getGoalInsightMessage(item.goal.goalType, status, { currentDisplay, targetDisplay, endDateDisplay, daysRemaining });
-    }
-
-  getGoalCategoryLabel(goalType: string): string {
-    const category = getCategoryForGoalType(goalType);
-    return category ? this.getCategoryLabel(category) : 'Overall';
-  }
-
-  getGoalCategoryUnit(goalType: string): string {
-    const category = getCategoryForGoalType(goalType);
-    return category ? this.getUnitFor(category) : '';
+  trackByGoalId(index: number, entry: GoalInsightResponse): number {
+    return entry.goalId;
   }
 
   // --- Carbon Facts logic ---
@@ -278,6 +276,7 @@ export class AiTips {
     this.factService.getRandomFact().subscribe({
       next: (res) => {
         this.currentFact = res.fact;
+        this.factKey++;
         this.factLoading = false;
         this.cdr.detectChanges();
       },

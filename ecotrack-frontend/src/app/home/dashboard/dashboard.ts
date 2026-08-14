@@ -8,6 +8,8 @@ import { CarbonEntryService } from '../tracking/carbon-entry.service';
 import { DashboardSummary, CategoryImpact, GoalSnapshot, XpActivityItem } from './dashboard.model';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
+import { RecommendationService } from '../ai-tips/recommendation.service';
+import { GoalInsightService } from '../ai-tips/goal-insight.service';
 
 interface ActiveCategoryLegend {
   name: string;
@@ -117,11 +119,15 @@ export class Dashboard implements OnInit {
     private dashboardService: DashboardService,
     private carbonEntryService: CarbonEntryService,
     private router: Router,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private recommendationService: RecommendationService,
+    private goalInsightService: GoalInsightService
   ) {}
 
   ngOnInit(): void {
     this.loadData();
+    this.recommendationService.ensureLoaded();
+    this.goalInsightService.ensureLoaded(); // fires in parallel not chained
   }
 
   get greetingText(): string {

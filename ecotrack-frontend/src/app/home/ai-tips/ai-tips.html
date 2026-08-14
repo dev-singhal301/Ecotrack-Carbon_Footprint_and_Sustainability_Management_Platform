@@ -1,12 +1,29 @@
 <div class="ecobot-container">
 
   <div class="ecobot-header">
-    <button class="btn-back" (click)="goToDashboard()">&larr; Dashboard</button>
-    <div class="ecobot-header-title">
-      <i class="fas fa-leaf ecobot-header-icon"></i>
-      <h2>EcoBot</h2>
+    <button class="btn-back" (click)="goToDashboard()">
+      <i class="fas fa-arrow-left"></i> Dashboard
+    </button>
+
+    <div class="ecobot-hero">
+      <div class="ecobot-avatar">
+        <span class="ecobot-avatar-ring"></span>
+        <i class="fas fa-leaf"></i>
+      </div>
+      <div class="ecobot-hero-text">
+        <div class="ecobot-title-row">
+          <h2>EcoBot</h2>
+          <span class="ecobot-live-dot"><span></span>Online</span>
+        </div>
+        <p class="ecobot-header-subtext">Your personalized sustainability assistant &mdash; built from your own tracked data</p>
+      </div>
+      <button
+        class="btn-refresh-fact ecobot-header-refresh"
+        (click)="refreshAll()"
+        [disabled]="recState.status === 'loading' || goalState.status === 'loading'">
+        <i class="fas fa-rotate" [class.fa-spin]="recState.status === 'loading' || goalState.status === 'loading'"></i> Refresh
+      </button>
     </div>
-    <p class="ecobot-header-subtext">Your personalized sustainability assistant</p>
   </div>
 
   <div class="ecobot-panel-buttons">
@@ -14,7 +31,7 @@
       class="panel-btn"
       [class.panel-btn-active]="activePanel === 'recommendations'"
       (click)="selectPanel('recommendations')">
-      <i class="fas fa-chart-line panel-btn-icon"></i>
+      <span class="panel-btn-icon-wrap"><i class="fas fa-chart-line panel-btn-icon"></i></span>
       <span class="panel-btn-label">Top 3 Recommendations</span>
     </button>
 
@@ -22,7 +39,7 @@
       class="panel-btn"
       [class.panel-btn-active]="activePanel === 'goals'"
       (click)="selectPanel('goals')">
-      <i class="fas fa-bullseye panel-btn-icon"></i>
+      <span class="panel-btn-icon-wrap"><i class="fas fa-bullseye panel-btn-icon"></i></span>
       <span class="panel-btn-label">Goal Insights</span>
     </button>
 
@@ -30,103 +47,225 @@
       class="panel-btn"
       [class.panel-btn-active]="activePanel === 'facts'"
       (click)="selectPanel('facts')">
-      <i class="fas fa-globe panel-btn-icon"></i>
+      <span class="panel-btn-icon-wrap"><i class="fas fa-globe panel-btn-icon"></i></span>
       <span class="panel-btn-label">Carbon Facts</span>
     </button>
   </div>
 
-  <div class="ecobot-panel-content" *ngIf="activePanel">
+  <div class="ecobot-panel-content" *ngIf="activePanel === 'recommendations' || activePanel === 'goals'">
 
     <!-- Personalized Recommendations panel -->
-    <div *ngIf="activePanel === 'recommendations'">
-      <div *ngIf="recLoading" class="rec-loading">Loading your recommendations...</div>
-      <div *ngIf="recError" class="rec-error">{{ recError }}</div>
+    <div *ngIf="activePanel === 'recommendations'" class="panel-fade-in">
 
-      <div *ngIf="recommendations && !recLoading" class="rec-list">
+      <div *ngIf="recState.status === 'loading' && showAnalyzing" class="ai-analyzing">
+        <span class="ai-analyzing-sparkle">✦</span>
+        <span class="ai-analyzing-label">{{ analyzingMessages[analyzingIndex] }}</span>
+      </div>
 
-        <button class="btn-refresh-fact" (click)="refreshRecommendations()">
-          <i class="fas fa-rotate"></i> Refresh Tips
-        </button>
+      <div *ngIf="recState.status === 'error'" class="rec-error">
+        <i class="fas fa-triangle-exclamation"></i> {{ recState.error }}
+        <button class="btn-refresh-fact" (click)="refreshRecommendations()">Retry</button>
+      </div>
 
-        <div class="empty-state-goals" *ngIf="isZeroEmissionState">
-          {{ recommendations.message }}
+      <div *ngIf="recState.data && recState.status !== 'error'" class="rec-list">
+
+        <div class="rec-list-toolbar">
+          <span class="ai-badge" *ngIf="primaryRecommendation?.source === 'AI'">
+            <span class="ai-sparkle">✦</span> EcoBot AI Analysis
+          </span>
+          <span class="ai-badge ai-badge-rule" *ngIf="primaryRecommendation?.source === 'STANDARD'">
+            🌿 EcoBot Analysis
+          </span>
         </div>
 
-        <ng-container *ngIf="!isZeroEmissionState">
-          <div class="rec-card" *ngFor="let cat of revealedCategories">
-            <div class="rec-card-header">
-              <span class="rec-card-category">{{ getCategoryLabel(cat.category) }}</span>
-              <span class="rec-card-percentage">{{ cat.percentage }}% of your footprint</span>
+        <div class="empty-state-goals" *ngIf="isZeroEmissionState">
+          {{ recState.data.message }}
+        </div>
+
+        <ng-container *ngIf="!isZeroEmissionState && primaryRecommendation as primary">
+
+          <!-- Primary category: expanded by default -->
+          <div class="ai-primary-card">
+            <div class="ai-primary-header">
+              <span class="ai-primary-eyebrow">AI Analysis</span>
+              <h4 class="ai-primary-title">{{ primary.title }}</h4>
+              <span class="ai-primary-meta">{{ getCategoryLabel(primary.category) }} &mdash; {{ primary.percentage }}% of your footprint</span>
             </div>
 
-            <ng-container *ngIf="getTipFor(cat.category) as tip; else noTip">
-              <p class="rec-card-tip">{{ tip.suggestionText }}</p>
-              <span class="rec-card-impact">Potential impact: {{ tip.impactEstimate }} kg CO&#8322;</span>
-            </ng-container>
-            <ng-template #noTip>
-              <p class="rec-card-no-tip">No specific tip for this category right now — it's a smaller contributor.</p>
-            </ng-template>
+            <div class="rec-card-bar-track">
+              <div class="rec-card-bar-fill" [style.width.%]="primary.percentage"></div>
+            </div>
+
+            <div class="ai-section" *ngIf="primary.why">
+              <span class="ai-section-label">Why EcoBot picked this</span>
+              <p class="ai-section-text">{{ primary.why }}</p>
+            </div>
+
+            <div class="ai-section ai-section-action">
+              <span class="ai-section-label">💡 Next Best Action</span>
+              <p class="ai-section-text">{{ primary.action }}</p>
+            </div>
+
+            <div class="ai-section" *ngIf="primary.alternatives.length">
+              <span class="ai-section-label">Other Options</span>
+              <ul class="ai-alt-list">
+                <li *ngFor="let alt of primary.alternatives">{{ alt }}</li>
+              </ul>
+            </div>
+
+            <div class="ai-section" *ngIf="primary.impact">
+              <span class="ai-section-label">🌱 Expected Impact</span>
+              <p class="ai-section-text">{{ primary.impact }}</p>
+            </div>
           </div>
 
-          <button class="btn-explore" *ngIf="hasMoreToExplore" (click)="exploreNext()">
-            Explore {{ nextCategoryLabel }} &darr;
-          </button>
+          <!-- Secondary categories: collapsed, expand instantly, no request -->
+          <div class="ai-secondary-card" *ngFor="let cat of secondaryRecommendations; trackBy: trackByCategory">
+            <div class="ai-secondary-row" (click)="toggleCategoryExpand(cat.category)">
+              <div class="ai-secondary-main">
+                <span class="ai-secondary-name">{{ getCategoryLabel(cat.category) }}</span>
+                <span class="ai-secondary-percentage">{{ cat.percentage }}% of footprint</span>
+              </div>
+              <span class="goal-card-chevron" [class.expanded]="isCategoryExpanded(cat.category)">
+                <i class="fas fa-chevron-down"></i>
+              </span>
+            </div>
+
+            <div class="ai-secondary-detail" *ngIf="isCategoryExpanded(cat.category)">
+              <span class="ai-primary-eyebrow">AI Analysis</span>
+              <div class="ai-section" *ngIf="cat.why">
+                <span class="ai-section-label">Why EcoBot picked this</span>
+                <p class="ai-section-text">{{ cat.why }}</p>
+              </div>
+              <div class="ai-section ai-section-action">
+                <span class="ai-section-label">💡 Next Best Action</span>
+                <p class="ai-section-text">{{ cat.action }}</p>
+              </div>
+              <div class="ai-section" *ngIf="cat.alternatives.length">
+                <span class="ai-section-label">Other Options</span>
+                <ul class="ai-alt-list">
+                  <li *ngFor="let alt of cat.alternatives">{{ alt }}</li>
+                </ul>
+              </div>
+              <div class="ai-section" *ngIf="cat.impact">
+                <span class="ai-section-label">🌱 Expected Impact</span>
+                <p class="ai-section-text">{{ cat.impact }}</p>
+              </div>
+            </div>
+          </div>
         </ng-container>
       </div>
     </div>
 
     <!-- Goal Insights panel -->
-    <div *ngIf="activePanel === 'goals'">
-      <div *ngIf="goalsLoading" class="rec-loading">Loading your goals...</div>
-      <div *ngIf="goalsError" class="rec-error">{{ goalsError }}</div>
+    <div *ngIf="activePanel === 'goals'" class="panel-fade-in">
+      <div *ngIf="goalState.status === 'loading' && showGoalsAnalyzing" class="ai-analyzing">
+        <span class="ai-analyzing-sparkle">✦</span>
+        <span class="ai-analyzing-label">{{ analyzingMessages[goalsAnalyzingIndex] }}</span>
+      </div>
 
-      <div *ngIf="!goalsLoading && !goalsError && goalsWithProgress.length === 0" class="empty-state-goals">
+      <div *ngIf="goalState.status === 'error'" class="rec-error">
+        <i class="fas fa-triangle-exclamation"></i> {{ goalState.error }}
+        <button class="btn-refresh-fact" (click)="refreshGoalInsights()">Retry</button>
+      </div>
+
+      <div *ngIf="goalState.status === 'ready' && goalInsights.length === 0" class="empty-state-goals">
         No active goals yet. Head to the Goals tab to set one!
       </div>
 
-      <div class="goal-list" *ngIf="!goalsLoading && goalsWithProgress.length > 0">
-        <div class="goal-card" *ngFor="let entry of goalsWithProgress">
+      <ng-container *ngIf="goalInsights.length > 0">
+        <div class="rec-list-toolbar">
+          <span class="ai-badge" *ngIf="goalInsights[0].insight.source === 'AI'">
+            <span class="ai-sparkle">✦</span> EcoBot AI Analysis
+          </span>
+          <span class="ai-badge ai-badge-rule" *ngIf="goalInsights[0].insight.source === 'STANDARD'">
+            🌿 EcoBot Analysis
+          </span>
+        </div>
 
-          <!-- Compact row -->
-          <div class="goal-card-row" (click)="toggleGoalExpand(entry.goal.goalId)">
-            <div class="goal-card-main">
-              <span class="goal-card-name">{{ entry.goal.goalName }}</span>
-            </div>
-            <div class="goal-card-side">
-              <span class="goal-status-badge" *ngIf="entry.progress" [ngClass]="getGoalStatusFor(entry)?.toLowerCase()">
-                {{ getGoalStatusFor(entry) }}
-              </span>
-              <span class="goal-card-percent" *ngIf="entry.progress">
-                {{ entry.progress.completionPercentage | number:'1.0-0' }}%
-              </span>
-              <span class="goal-card-chevron" [class.expanded]="isGoalExpanded(entry.goal.goalId)">&#9662;</span>
-            </div>
-          </div>
+        <div class="goal-list">
+          <div
+            class="goal-card"
+            *ngFor="let entry of goalInsights; let i = index; trackBy: trackByGoalId"
+            [style.animation-delay.ms]="i * 90"
+            [ngClass]="'goal-card-' + entry.insight.status.toLowerCase()">
 
-          <!-- Expanded detail -->
-          <div class="goal-card-detail" *ngIf="isGoalExpanded(entry.goal.goalId) && entry.progress">
-            <p class="goal-insight-text">{{ getGoalInsightFor(entry) }}</p>
-            <div class="goal-detail-row" *ngIf="entry.progress.completed">
-              <span class="goal-detail-complete"><i class="fas fa-circle-check"></i> Goal completed!</span>
+            <!-- Compact row -->
+            <div class="goal-card-row" (click)="toggleGoalExpand(entry.goalId)">
+              <div class="goal-card-ring">
+                <svg viewBox="0 0 72 72">
+                  <circle class="ring-track" cx="36" cy="36" r="28"></circle>
+                  <circle
+                    class="ring-fill"
+                    [ngClass]="'ring-fill-' + entry.insight.status.toLowerCase()"
+                    cx="36" cy="36" r="28"
+                    [attr.stroke-dasharray]="'175.93 175.93'"
+                    [attr.stroke-dashoffset]="175.93 - (175.93 * ((entry.completionPercentage > 100 ? 100 : entry.completionPercentage) / 100))">
+                  </circle>
+                </svg>
+                <span class="goal-card-percent-ring">{{ entry.completionPercentage | number:'1.0-0' }}%</span>
+              </div>
+
+              <div class="goal-card-main">
+                <span class="goal-card-name">{{ entry.goalName }}</span>
+                <span class="goal-status-badge" [ngClass]="entry.insight.status.toLowerCase()">
+                  {{ entry.insight.status }}
+                </span>
+              </div>
+
+              <span class="goal-card-chevron" [class.expanded]="isGoalExpanded(entry.goalId)">
+                <i class="fas fa-chevron-down"></i>
+              </span>
+            </div>
+
+            <!-- Expanded detail: action-first layout -->
+            <div class="goal-card-detail" *ngIf="isGoalExpanded(entry.goalId)">
+              <span class="ai-primary-eyebrow">AI Analysis</span>
+
+              <div class="goal-action-callout">
+                <span class="ai-section-label">💡 Next Best Action</span>
+                <p class="goal-action-text">{{ entry.insight.action }}</p>
+              </div>
+
+              <p class="goal-context-text">{{ entry.insight.message }}</p>
+
+              <div class="goal-detail-row" *ngIf="entry.completed">
+                <span class="goal-detail-complete"><i class="fas fa-circle-check"></i> Goal completed!</span>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </ng-container>
     </div>
 
-    <div *ngIf="activePanel === 'facts'">
-      <div *ngIf="factLoading" class="rec-loading">Loading a fact...</div>
-      <div *ngIf="factError" class="rec-error">{{ factError }}</div>
+  </div>
 
-      <div class="fact-card" *ngIf="currentFact && !factLoading">
-        <i class="fas fa-leaf fact-icon"></i>
-        <p class="fact-text">{{ currentFact }}</p>
-        <button class="btn-refresh-fact" (click)="refreshFact()">
-          <i class="fas fa-rotate"></i> Refresh
+  <!-- Carbon Facts popup: 75% viewport overlay, backdrop-click-to-close,
+       rotating gradient background + fade-in per fact -->
+  <div class="facts-modal-backdrop" *ngIf="activePanel === 'facts'" (click)="closeFactsModal()">
+    <div class="facts-modal" (click)="$event.stopPropagation()" [style.background]="factBackground">
+      <button class="facts-modal-close" (click)="closeFactsModal()" aria-label="Close">
+        <i class="fas fa-xmark"></i>
+      </button>
+
+      <div *ngIf="factLoading && !currentFact" class="ai-thinking facts-modal-thinking">
+        <span class="ai-thinking-dot"></span><span class="ai-thinking-dot"></span><span class="ai-thinking-dot"></span>
+        <span class="ai-thinking-label">Finding a fact&hellip;</span>
+      </div>
+
+      <div *ngIf="factError" class="rec-error facts-modal-error">
+        <i class="fas fa-triangle-exclamation"></i> {{ factError }}
+        <button class="btn-refresh-fact" (click)="refreshFact()">Retry</button>
+      </div>
+
+      <div class="facts-modal-content" *ngFor="let fact of factSlides; trackBy: trackByFactKey">
+        <div class="facts-modal-icon"><i class="fas fa-leaf"></i></div>
+        <p class="facts-modal-text">{{ fact }}</p>
+        <button class="facts-modal-refresh" (click)="refreshFact()" [disabled]="factLoading">
+          <i class="fas fa-rotate" [class.fa-spin]="factLoading"></i> Refresh
         </button>
       </div>
     </div>
-
   </div>
 
 </div>

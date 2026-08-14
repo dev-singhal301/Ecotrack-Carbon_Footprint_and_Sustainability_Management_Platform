@@ -453,6 +453,11 @@ CREATE TABLE IF NOT EXISTS recommendations (
         CHECK (impact_estimate >= 0)
 );
 
+-- Widen suggestion_text to hold the structured AI response as JSON
+-- (title/why/action/alternatives/impact/source), not just a plain sentence.
+-- Safe to rerun: altering to the same type is a no-op in Postgres.
+ALTER TABLE recommendations ALTER COLUMN suggestion_text TYPE VARCHAR(2000);
+
 -- Supports both RecommendationRepository query methods: findByUserId... and
 -- deleteByUserId both filter on user_id first; impact_estimate included so
 -- the ORDER BY impact_estimate DESC in findByUserIdOrderByImpactEstimateDesc

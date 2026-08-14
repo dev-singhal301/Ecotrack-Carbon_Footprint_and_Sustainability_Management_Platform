@@ -1,7 +1,13 @@
 export interface TopRecommendationDto {
   category: string;
-  suggestionText: string;
+  percentage: number;
   impactEstimate: number;
+  title: string;
+  why: string;
+  action: string;
+  alternatives: string[];
+  impact: string;
+  source: 'AI' | 'STANDARD';
 }
 
 export interface CategoryBreakdownDto {
@@ -14,3 +20,5 @@ export interface RecommendationResponse {
   allCategoriesSorted: CategoryBreakdownDto[];
   message: string | null;
 }
+
+export type RecStatus = 'idle' | 'loading' | 'ready' | 'error';
