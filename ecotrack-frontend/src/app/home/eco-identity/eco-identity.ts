@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Subscription } from 'rxjs';
-import { EcoIdentityService, UserProfileData } from './eco-identity.service';
+import { EcoIdentityService, UserProfileData, BadgeItem } from './eco-identity.service';
 
 @Component({
   selector: 'app-eco-identity',
@@ -23,6 +23,12 @@ export class EcoIdentityComponent implements OnInit, OnDestroy {
 
   // Fallback avatar for missing/broken images
   defaultAvatar = 'https://api.dicebear.com/7.x/bottts/svg?seed=EcoUser';
+
+  // --- Badge Gallery State ---
+  private rawBadges: BadgeItem[] = [];
+  badges: BadgeItem[] = [];
+  isLoadingBadges = true;
+  defaultBadgeIcon = '/badges/ch_1.avif'; // Fallback icon path if badge image fails to load
 
   // Name Editing State
   isEditingName = false;
@@ -59,6 +65,8 @@ export class EcoIdentityComponent implements OnInit, OnDestroy {
     // Keep profile in sync with shared state across components
     this.profileSub = this.ecoIdentityService.profile$.subscribe((data) => {
       this.profile = data;
+      // Re-apply badge filters whenever user profile data (e.g. userLevel) arrives or updates
+      this.applyBadgeFilters();
       this.cdr.markForCheck();
     });
 
@@ -67,11 +75,82 @@ export class EcoIdentityComponent implements OnInit, OnDestroy {
       next: () => this.cdr.markForCheck(),
       error: (err: HttpErrorResponse) => console.error('Error fetching user profile:', err),
     });
+
+    // Fetch user's earned badges
+    this.loadBadges();
   }
 
   ngOnDestroy(): void {
     if (this.profileSub) {
       this.profileSub.unsubscribe();
+    }
+  }
+
+  // --- Badges Methods ---
+  loadBadges(): void {
+    this.isLoadingBadges = true;
+    this.ecoIdentityService.getUserBadges().subscribe({
+      next: (badgeList) => {
+        this.rawBadges = badgeList || [];
+        this.applyBadgeFilters();
+        this.isLoadingBadges = false;
+        this.cdr.markForCheck();
+      },
+      error: (err: HttpErrorResponse) => {
+        console.error('Failed to fetch user badges:', err);
+        this.isLoadingBadges = false;
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  /**
+   * Filters out badges that are locked/unearned or exceed the user's current level milestone.
+   */
+  private applyBadgeFilters(): void {
+    if (!this.rawBadges.length) {
+      this.badges = [];
+      return;
+    }
+
+    let filtered = [...this.rawBadges];
+
+    // 1. Keep only unlocked or explicitly awarded badges
+    filtered = filtered.filter((badge) => {
+      return badge.unlocked ?? badge.isUnlocked ?? !!badge.awardedAt;
+    });
+
+    // 2. Safeguard: Filter out level milestone badges that exceed the user's current level
+    if (this.profile?.userLevel !== undefined) {
+      const currentLevel = this.profile.userLevel;
+      filtered = filtered.filter((badge) => {
+        if (badge.category?.toUpperCase() === 'MILESTONE' && badge.requiredLevel !== undefined) {
+          return currentLevel >= badge.requiredLevel;
+        }
+        return true;
+      });
+    }
+
+    this.badges = filtered;
+  }
+
+  formatBadgeSource(category: string): string {
+    switch (category?.toUpperCase()) {
+      case 'CHALLENGE':
+        return 'Challenge';
+      case 'LEADERBOARD':
+        return 'Leaderboard Rank';
+      case 'MILESTONE':
+        return 'Level Milestone';
+      default:
+        return category || 'Achievement';
+    }
+  }
+
+  onBadgeImageError(event: Event): void {
+    const target = event.target as HTMLImageElement;
+    if (target) {
+      target.src = this.defaultBadgeIcon;
     }
   }
 

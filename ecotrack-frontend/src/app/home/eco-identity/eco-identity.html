@@ -153,6 +153,62 @@
   </div>
 </section>
 
+<!-- SECTION 2: BADGE GALLERY -->
+<section class="badge-gallery-card">
+  <div class="gallery-header">
+    <div class="title-group">
+      <h2 class="gallery-title">Badge Gallery</h2>
+      <span class="badge-count-pill">{{ badges.length }} {{ badges.length === 1 ? 'Badge' : 'Badges' }}</span>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoadingBadges" class="badges-loading">
+    <i class="fa-solid fa-spinner fa-spin"></i>
+    <span>Loading gallery...</span>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!isLoadingBadges && badges.length === 0" class="badges-empty">
+    <div class="empty-icon">🎖️</div>
+    <p>No badges earned yet. Complete challenges, climb the leaderboard, or reach new level milestones to unlock badges!</p>
+  </div>
+
+  <!-- Horizontal Scroll Container -->
+  <div *ngIf="!isLoadingBadges && badges.length > 0" class="badge-scroll-row">
+    <div class="badge-item-card" *ngFor="let badge of badges">
+
+      <!-- Circular 1:1 Aspect Frame -->
+      <div class="badge-circle-frame">
+        <img 
+          [src]="badge.iconUrl" 
+          [alt]="badge.name" 
+          (error)="onBadgeImageError($event)" 
+          class="badge-icon-img" 
+        />
+      </div>
+
+      <!-- Badge Title -->
+      <span class="badge-name-label">{{ badge.name }}</span>
+
+      <!-- On-Hover Floating Tooltip/Card -->
+      <div class="badge-hover-tooltip">
+        <div class="tooltip-header">
+          <span class="category-pill" [ngClass]="(badge.category || '').toLowerCase()">
+            {{ formatBadgeSource(badge.category || '') }}
+          </span>
+        </div>
+        <p class="tooltip-description">{{ badge.description }}</p>
+        <div class="tooltip-footer">
+          <span class="date-label">Acquired</span>
+          <span class="date-value">{{ badge.awardedAt | date:'mediumDate' }}</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
 <!-- Avatar Crop Modal -->
 <div class="crop-modal-backdrop" *ngIf="showCropModal">
   <div class="crop-modal">

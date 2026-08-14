@@ -131,18 +131,20 @@ public class UserProfileDto {
         private String category;
         private String iconUrl;
         private Integer requiredXp;
+        private Integer requiredLevel; // <-- Added requiredLevel field
         private boolean unlocked;
         private LocalDateTime awardedAt;
 
         public BadgeDto() {}
 
-        public BadgeDto(Long badgeId, String name, String description, String category, String iconUrl, Integer requiredXp, boolean unlocked, LocalDateTime awardedAt) {
+        public BadgeDto(Long badgeId, String name, String description, String category, String iconUrl, Integer requiredXp, Integer requiredLevel, boolean unlocked, LocalDateTime awardedAt) {
             this.badgeId = badgeId;
             this.name = name;
             this.description = description;
             this.category = category;
             this.iconUrl = iconUrl;
             this.requiredXp = requiredXp;
+            this.requiredLevel = requiredLevel; // <-- Mapped in constructor
             this.unlocked = unlocked;
             this.awardedAt = awardedAt;
         }
@@ -164,6 +166,10 @@ public class UserProfileDto {
 
         public Integer getRequiredXp() { return requiredXp; }
         public void setRequiredXp(Integer requiredXp) { this.requiredXp = requiredXp; }
+
+        // --- Added Getters and Setters for requiredLevel ---
+        public Integer getRequiredLevel() { return requiredLevel; }
+        public void setRequiredLevel(Integer requiredLevel) { this.requiredLevel = requiredLevel; }
 
         public boolean isUnlocked() { return unlocked; }
         public void setUnlocked(boolean unlocked) { this.unlocked = unlocked; }
