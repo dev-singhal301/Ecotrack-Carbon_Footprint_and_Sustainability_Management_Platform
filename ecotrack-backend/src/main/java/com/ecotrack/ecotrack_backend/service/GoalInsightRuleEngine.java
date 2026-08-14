@@ -92,11 +92,14 @@ public class GoalInsightRuleEngine {
     );
 
     public Status getStatus(LocalDate startDate, LocalDate endDate,
-                            BigDecimal completionPercentage, boolean completed) {
+                            BigDecimal completionPercentage, BigDecimal currentValue,
+                            BigDecimal targetValue, boolean completed) {
         if (completed) return Status.COMPLETED;
 
         LocalDate now = LocalDate.now();
-        if (now.isAfter(endDate)) return Status.FAILED;
+        if (now.isAfter(endDate)) {
+            return currentValue.compareTo(targetValue) <= 0 ? Status.COMPLETED : Status.FAILED;
+        }
         if (completionPercentage.compareTo(BigDecimal.valueOf(100)) >= 0) return Status.OVER_BUDGET;
 
         long totalDays = ChronoUnit.DAYS.between(startDate, endDate);
