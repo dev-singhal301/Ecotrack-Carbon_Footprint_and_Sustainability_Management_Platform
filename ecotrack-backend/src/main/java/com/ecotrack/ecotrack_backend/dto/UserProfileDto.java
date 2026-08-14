@@ -1,6 +1,7 @@
 package com.ecotrack.ecotrack_backend.dto;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 public class UserProfileDto {
@@ -16,18 +17,28 @@ public class UserProfileDto {
     private Integer rewardPoints;
     private LocalDateTime memberSince;
 
-    // Stat Quad Counts
-    private long goalsAccomplished;
+    // --- 5 Active Profile Stat Metrics ---
+    private long goalsPassed;
+    private long goalsAccomplished; // Alias for goalsPassed
+    private long activeGoals;
+
+    private long challengesPassed;
+    private long challengesAccomplished; // Alias for challengesPassed
+    private long activeChallenges;
+
+    private long totalEntries;
+    private long dailyLogCount; // Alias for totalEntries
+
+    // Legacy / Optional Stat Counts
     private long goalsFailed;
-    private long challengesAccomplished;
     private long challengesFailed;
 
-    // Badge Vault
-    private List<BadgeDto> badges;
+    // Badge Vault (Initialized to avoid null payloads)
+    private List<BadgeDto> badges = new ArrayList<>();
 
     public UserProfileDto() {}
 
-    // Getters and Setters
+    // --- Standard Getters and Setters ---
     public Long getUserId() { return userId; }
     public void setUserId(Long userId) { this.userId = userId; }
 
@@ -58,22 +69,61 @@ public class UserProfileDto {
     public LocalDateTime getMemberSince() { return memberSince; }
     public void setMemberSince(LocalDateTime memberSince) { this.memberSince = memberSince; }
 
+    // --- Profile Stat Getters & Setters with Dual Sync ---
+    public long getGoalsPassed() { return goalsPassed; }
+    public void setGoalsPassed(long goalsPassed) { 
+        this.goalsPassed = goalsPassed; 
+        this.goalsAccomplished = goalsPassed;
+    }
+
     public long getGoalsAccomplished() { return goalsAccomplished; }
-    public void setGoalsAccomplished(long goalsAccomplished) { this.goalsAccomplished = goalsAccomplished; }
+    public void setGoalsAccomplished(long goalsAccomplished) { 
+        this.goalsAccomplished = goalsAccomplished; 
+        this.goalsPassed = goalsAccomplished;
+    }
+
+    public long getActiveGoals() { return activeGoals; }
+    public void setActiveGoals(long activeGoals) { this.activeGoals = activeGoals; }
+
+    public long getChallengesPassed() { return challengesPassed; }
+    public void setChallengesPassed(long challengesPassed) { 
+        this.challengesPassed = challengesPassed; 
+        this.challengesAccomplished = challengesPassed;
+    }
+
+    public long getChallengesAccomplished() { return challengesAccomplished; }
+    public void setChallengesAccomplished(long challengesAccomplished) { 
+        this.challengesAccomplished = challengesAccomplished; 
+        this.challengesPassed = challengesAccomplished;
+    }
+
+    public long getActiveChallenges() { return activeChallenges; }
+    public void setActiveChallenges(long activeChallenges) { this.activeChallenges = activeChallenges; }
+
+    public long getTotalEntries() { return totalEntries; }
+    public void setTotalEntries(long totalEntries) { 
+        this.totalEntries = totalEntries; 
+        this.dailyLogCount = totalEntries;
+    }
+
+    public long getDailyLogCount() { return dailyLogCount; }
+    public void setDailyLogCount(long dailyLogCount) { 
+        this.dailyLogCount = dailyLogCount; 
+        this.totalEntries = dailyLogCount;
+    }
 
     public long getGoalsFailed() { return goalsFailed; }
     public void setGoalsFailed(long goalsFailed) { this.goalsFailed = goalsFailed; }
-
-    public long getChallengesAccomplished() { return challengesAccomplished; }
-    public void setChallengesAccomplished(long challengesAccomplished) { this.challengesAccomplished = challengesAccomplished; }
 
     public long getChallengesFailed() { return challengesFailed; }
     public void setChallengesFailed(long challengesFailed) { this.challengesFailed = challengesFailed; }
 
     public List<BadgeDto> getBadges() { return badges; }
-    public void setBadges(List<BadgeDto> badges) { this.badges = badges; }
+    public void setBadges(List<BadgeDto> badges) { 
+        this.badges = badges != null ? badges : new ArrayList<>(); 
+    }
 
-    // Nested Badge DTO for profile response
+    // --- Nested Badge DTO for Profile Response ---
     public static class BadgeDto {
         private Long badgeId;
         private String name;

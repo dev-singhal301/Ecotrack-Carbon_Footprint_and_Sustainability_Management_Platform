@@ -12,6 +12,8 @@ import java.util.List;
 
 public interface CarbonEntryRepository extends JpaRepository<CarbonEntry, Long> {
 
+    long countByUserId(Long userId);
+    
     List<CarbonEntry> findByUserId(Long userId);
 
     List<CarbonEntry> findByUserIdAndCategory(Long userId, CarbonCategory category);

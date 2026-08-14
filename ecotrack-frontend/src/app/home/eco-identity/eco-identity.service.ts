@@ -15,12 +15,20 @@ export interface UserProfileData {
   userRank?: string | number;
   memberSince: string;
 
-  // Goal and Challenge Stat Properties
-  goalsAccomplished?: number;
+  // 5 Profile Stat Metrics
   goalsPassed?: number;
-  goalsFailed?: number;
-  challengesAccomplished?: number;
+  goalsAccomplished?: number;
+  activeGoals?: number;          // <--- Added
+  
   challengesPassed?: number;
+  challengesAccomplished?: number;
+  activeChallenges?: number;     // <--- Added
+
+  totalEntries?: number;         // <--- Added
+  dailyLogCount?: number;        // <--- Added
+
+  // Deprecated / Optional
+  goalsFailed?: number;
   challengesFailed?: number;
 }
 

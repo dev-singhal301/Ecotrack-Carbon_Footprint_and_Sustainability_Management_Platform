@@ -1,6 +1,6 @@
 <!-- Profile Hero Card -->
 <section class="profile-hero-card" *ngIf="profile">
-  <!-- Top Row: Avatar & Name on Left, 4 Stats on Right -->
+  <!-- Top Row: Avatar & Name on Left, 5 Stats on Right -->
   <div class="hero-top-row">
     <!-- User Bio Group -->
     <div class="user-bio-group">
@@ -76,9 +76,9 @@
       </div>
     </div>
 
-    <!-- Stats Pill Container (Top Right) -->
+    <!-- Stats Pill Container (Top Right - 5 Metrics) -->
     <div class="hero-stats-row">
-      <!-- Goals Passed -->
+      <!-- 1. Goals Passed -->
       <div class="hero-stat-item">
         <div class="stat-icon-wrapper success">
           <i class="fa-solid fa-circle-check"></i>
@@ -91,20 +91,20 @@
 
       <div class="hero-stat-divider"></div>
 
-      <!-- Goals Failed -->
+      <!-- 2. Active Goals -->
       <div class="hero-stat-item">
-        <div class="stat-icon-wrapper danger">
-          <i class="fa-solid fa-circle-xmark"></i>
+        <div class="stat-icon-wrapper active-goal">
+          <i class="fa-solid fa-bullseye"></i>
         </div>
         <div class="stat-info">
-          <span class="stat-value">{{ profile.goalsFailed ?? 0 }}</span>
-          <span class="stat-label">Goals Failed</span>
+          <span class="stat-value">{{ profile.activeGoals ?? 0 }}</span>
+          <span class="stat-label">Active Goals</span>
         </div>
       </div>
 
       <div class="hero-stat-divider"></div>
 
-      <!-- Challenges Passed -->
+      <!-- 3. Challenges Passed -->
       <div class="hero-stat-item">
         <div class="stat-icon-wrapper challenge">
           <i class="fa-solid fa-fire"></i>
@@ -117,14 +117,27 @@
 
       <div class="hero-stat-divider"></div>
 
-      <!-- Challenges Failed -->
+      <!-- 4. Active Challenges -->
       <div class="hero-stat-item">
-        <div class="stat-icon-wrapper challenge-failed">
-          <i class="fa-solid fa-circle-exclamation"></i>
+        <div class="stat-icon-wrapper active-challenge">
+          <i class="fa-solid fa-trophy"></i>
         </div>
         <div class="stat-info">
-          <span class="stat-value">{{ profile.challengesFailed ?? 0 }}</span>
-          <span class="stat-label">Challenges Failed</span>
+          <span class="stat-value">{{ profile.activeChallenges ?? 0 }}</span>
+          <span class="stat-label">Active Challenges</span>
+        </div>
+      </div>
+
+      <div class="hero-stat-divider"></div>
+
+      <!-- 5. Logged Entries -->
+      <div class="hero-stat-item">
+        <div class="stat-icon-wrapper logs">
+          <i class="fa-solid fa-calendar-check"></i>
+        </div>
+        <div class="stat-info">
+          <span class="stat-value">{{ profile.totalEntries ?? profile.dailyLogCount ?? 0 }}</span>
+          <span class="stat-label">Logged Entries</span>
         </div>
       </div>
     </div>

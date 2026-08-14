@@ -22,26 +22,31 @@ public class UserProfileService {
     private final UserBadgeRepository userBadgeRepository;
     private final GoalRepository goalRepository;
     private final UserChallengeRepository userChallengeRepository;
+    private final CarbonEntryRepository carbonEntryRepository;
 
     public UserProfileService(
             UserRepository userRepository,
             BadgeRepository badgeRepository,
             UserBadgeRepository userBadgeRepository,
             GoalRepository goalRepository,
-            UserChallengeRepository userChallengeRepository) {
+            UserChallengeRepository userChallengeRepository,
+            CarbonEntryRepository carbonEntryRepository) {
         this.userRepository = userRepository;
         this.badgeRepository = badgeRepository;
         this.userBadgeRepository = userBadgeRepository;
         this.goalRepository = goalRepository;
         this.userChallengeRepository = userChallengeRepository;
+        this.carbonEntryRepository = carbonEntryRepository;
     }
 
+    @Transactional(readOnly = true)
     public UserProfileDto getUserProfileByEmail(String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("User not found with email: " + email));
         return getUserProfile(user.getId());
     }
 
+    @Transactional(readOnly = true)
     public UserProfileDto getUserProfile(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));
@@ -58,26 +63,58 @@ public class UserProfileService {
         dto.setRewardPoints(user.getRewardPoints());
         dto.setMemberSince(user.getCreatedAt());
 
-        // Stat Quad Calculations
-        long goalsAccomplished = goalRepository.countByUserIdAndStatus(userId, "COMPLETED");
-        long goalsFailed = goalRepository.countByUserIdAndStatus(userId, "EXPIRED");
-        long challengesAccomplished = userChallengeRepository.countByUserIdAndStatus(userId, UserChallengeStatus.COMPLETED);
+        // --- 5 Profile Stat Calculations ---
+
+        // 1. Goals Stats (Support COMPLETED, PASSED, ACTIVE, IN_PROGRESS, PENDING)
+        long goalsPassed = goalRepository.countByUserIdAndStatusIn(
+                userId, 
+                Arrays.asList("COMPLETED", "completed", "PASSED", "passed")
+        );
+        long activeGoals = goalRepository.countByUserIdAndStatusIn(
+                userId, 
+                Arrays.asList("ACTIVE", "active", "IN_PROGRESS", "in_progress", "PENDING", "pending")
+        );
+        
+        // 2. Challenge Stats
+        long challengesPassed = userChallengeRepository.countByUserIdAndStatus(
+                userId, 
+                UserChallengeStatus.COMPLETED
+        );
+        long activeChallenges = userChallengeRepository.countByUserIdAndStatus(
+                userId, 
+                UserChallengeStatus.IN_PROGRESS
+        );
+        
+        // 3. Carbon/Activity Entries Count
+        long totalEntries = carbonEntryRepository.countByUserId(userId);
+
+        // 4. Failed / Expired Counts
+        long goalsFailed = goalRepository.countByUserIdAndStatusIn(
+                userId, 
+                Arrays.asList("EXPIRED", "expired", "FAILED", "failed", "CANCELLED", "cancelled")
+        );
         long challengesFailed = userChallengeRepository.countByUserIdAndStatusIn(
                 userId, 
                 Arrays.asList(UserChallengeStatus.EXPIRED, UserChallengeStatus.CANCELLED)
         );
 
-        dto.setGoalsAccomplished(goalsAccomplished);
+        // Set Profile Stats on DTO
+        dto.setGoalsPassed(goalsPassed);
+        dto.setActiveGoals(activeGoals);
+        dto.setChallengesPassed(challengesPassed);
+        dto.setActiveChallenges(activeChallenges);
+        dto.setTotalEntries(totalEntries);
+
         dto.setGoalsFailed(goalsFailed);
-        dto.setChallengesAccomplished(challengesAccomplished);
         dto.setChallengesFailed(challengesFailed);
 
+        // --- Badges Section ---
         // 1. Fetch System Badges (LEVEL & LEADERBOARD)
         List<Badge> allBadges = badgeRepository.findAll();
         List<UserBadge> unlockedBadges = userBadgeRepository.findByUserId(userId);
         
-        // Merge function (existing, replacement) -> existing prevents IllegalStateException on duplicate badge IDs
         Map<Long, UserBadge> userBadgeMap = unlockedBadges.stream()
+                .filter(ub -> ub.getBadgeId() != null)
                 .collect(Collectors.toMap(
                         UserBadge::getBadgeId, 
                         ub -> ub, 
@@ -85,7 +122,7 @@ public class UserProfileService {
                 ));
 
         List<UserProfileDto.BadgeDto> badgeDtos = allBadges.stream().map(badge -> {
-            boolean unlocked = userBadgeMap.containsKey(badge.getBadgeId());
+            boolean unlocked = badge.getBadgeId() != null && userBadgeMap.containsKey(badge.getBadgeId());
             UserProfileDto.BadgeDto bDto = new UserProfileDto.BadgeDto();
             bDto.setBadgeId(badge.getBadgeId());
             bDto.setName(badge.getName());

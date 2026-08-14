@@ -44,11 +44,11 @@ public class UserProfileController {
         if (principal == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        String newName = request.get("name");
+        String newName = request != null ? request.get("name") : null;
         if (newName == null || newName.isBlank()) {
             return ResponseEntity.badRequest().body(Map.of("message", "Name cannot be empty"));
         }
-        String updatedName = userProfileService.updateUsernameByEmail(principal.getUsername(), newName);
+        String updatedName = userProfileService.updateUsernameByEmail(principal.getUsername(), newName.trim());
         return ResponseEntity.ok(Map.of("name", updatedName));
     }
 
@@ -63,8 +63,11 @@ public class UserProfileController {
         if (principal == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        String avatarUrl = request.get("avatarUrl");
-        String updatedUrl = userProfileService.updateAvatarByEmail(principal.getUsername(), avatarUrl);
+        String avatarUrl = request != null ? request.get("avatarUrl") : null;
+        if (avatarUrl == null || avatarUrl.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Avatar URL cannot be empty"));
+        }
+        String updatedUrl = userProfileService.updateAvatarByEmail(principal.getUsername(), avatarUrl.trim());
         return ResponseEntity.ok(Map.of("avatarUrl", updatedUrl));
     }
 
@@ -93,8 +96,11 @@ public class UserProfileController {
     public ResponseEntity<Map<String, String>> updateAvatar(
             @PathVariable Long userId,
             @RequestBody Map<String, String> request) {
-        String avatarUrl = request.get("avatarUrl");
-        String updatedUrl = userProfileService.updateAvatar(userId, avatarUrl);
+        String avatarUrl = request != null ? request.get("avatarUrl") : null;
+        if (avatarUrl == null || avatarUrl.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Avatar URL cannot be empty"));
+        }
+        String updatedUrl = userProfileService.updateAvatar(userId, avatarUrl.trim());
         return ResponseEntity.ok(Map.of("avatarUrl", updatedUrl));
     }
 }

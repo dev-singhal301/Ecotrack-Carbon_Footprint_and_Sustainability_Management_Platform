@@ -13,6 +13,8 @@ public interface GoalRepository extends JpaRepository<Goal, Long> {
 
     long countByUserIdAndStatus(Long userId, String status);
 
+    long countByUserIdAndStatusIn(Long userId, List<String> statuses);
+
     // Used by the daily maintenance sweep to settle every goal whose
     // window has closed, regardless of which user owns it.
     List<Goal> findByStatus(String status);
