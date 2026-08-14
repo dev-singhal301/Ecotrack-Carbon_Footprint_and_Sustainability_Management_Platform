@@ -423,6 +423,7 @@ public class GoalService {
                 goal.getTargetValue(),
                 goal.getBaselineValue(),
                 goal.getRewardPoints(),
+                goal.getXpReward(),
                 goal.getStatus(),
                 goal.getStartDate(),
                 goal.getEndDate());
