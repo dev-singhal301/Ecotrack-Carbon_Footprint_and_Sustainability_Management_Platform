@@ -80,7 +80,9 @@ public class GoalInsightService {
 
             GoalInsightRuleEngine.Status status = ruleEngine.getStatus(
                     goal.getStartDate(), goal.getEndDate(),
-                    progress.getCompletionPercentage(), progress.isCompleted());
+                    progress.getCompletionPercentage(),
+                    progress.getCurrentValue(), progress.getTargetValue(),
+                    progress.isCompleted());
 
             String currentDisplay = formatValue(progress.getCurrentValue());
             String targetDisplay = formatValue(progress.getTargetValue());
