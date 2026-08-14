@@ -18,16 +18,15 @@ export interface UserProfileData {
   // 5 Profile Stat Metrics
   goalsPassed?: number;
   goalsAccomplished?: number;
-  activeGoals?: number;          // <--- Added
-  
+  activeGoals?: number;
+
   challengesPassed?: number;
   challengesAccomplished?: number;
-  activeChallenges?: number;     // <--- Added
+  activeChallenges?: number;
 
-  totalEntries?: number;         // <--- Added
-  dailyLogCount?: number;        // <--- Added
+  totalEntries?: number;
+  dailyLogCount?: number;
 
-  // Deprecated / Optional
   goalsFailed?: number;
   challengesFailed?: number;
 }
@@ -47,7 +46,11 @@ export class EcoIdentityService {
   public profile$ = this.profileSubject.asObservable();
 
   private getAuthHeaders(): HttpHeaders {
-    const token = localStorage.getItem('token') || localStorage.getItem('jwt') || '';
+    const token =
+      localStorage.getItem('ecotrack_auth_token') ||
+      localStorage.getItem('token') ||
+      localStorage.getItem('jwt') ||
+      '';
     return new HttpHeaders({
       Authorization: `Bearer ${token}`,
     });
@@ -56,10 +59,17 @@ export class EcoIdentityService {
   fetchProfile(): Observable<UserProfileData> {
     return this.http.get<UserProfileData>(this.baseUrl, { headers: this.getAuthHeaders() }).pipe(
       tap((profile) => {
-        // Resolve backend avatar path relative to backend root URL
         if (profile.avatarUrl && profile.avatarUrl.startsWith('/uploads')) {
           profile.avatarUrl = `${this.apiRoot}${profile.avatarUrl}`;
         }
+
+        // Map fallbacks safely
+        profile.activeGoals = profile.activeGoals ?? 0;
+        profile.activeChallenges = profile.activeChallenges ?? 0;
+        profile.totalEntries = profile.totalEntries ?? profile.dailyLogCount ?? 0;
+        profile.goalsAccomplished = profile.goalsAccomplished ?? profile.goalsPassed ?? 0;
+        profile.challengesAccomplished = profile.challengesAccomplished ?? profile.challengesPassed ?? 0;
+
         this.profileSubject.next(profile);
       })
     );

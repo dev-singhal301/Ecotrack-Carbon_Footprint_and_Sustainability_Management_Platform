@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy, inject, ViewChild, ElementRef, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { HttpErrorResponse } from '@angular/common/http';
 import { Subscription } from 'rxjs';
 import { EcoIdentityService, UserProfileData } from './eco-identity.service';
 
@@ -64,7 +65,7 @@ export class EcoIdentityComponent implements OnInit, OnDestroy {
     // Fetch initial profile data from backend
     this.ecoIdentityService.fetchProfile().subscribe({
       next: () => this.cdr.markForCheck(),
-      error: (err) => console.error('Error fetching user profile:', err),
+      error: (err: HttpErrorResponse) => console.error('Error fetching user profile:', err),
     });
   }
 
@@ -115,7 +116,7 @@ export class EcoIdentityComponent implements OnInit, OnDestroy {
         this.isEditingName = false;
         this.cdr.markForCheck();
       },
-      error: (err) => {
+      error: (err: HttpErrorResponse) => {
         console.error('Failed to update user name:', err);
         this.isSavingName = false;
         this.cdr.markForCheck();
@@ -307,7 +308,7 @@ export class EcoIdentityComponent implements OnInit, OnDestroy {
         this.sourceImage = null;
         this.cdr.markForCheck();
       },
-      error: (err) => {
+      error: (err: HttpErrorResponse) => {
         console.error('Failed to upload avatar image:', err);
         this.isUploadingAvatar = false;
         this.cdr.markForCheck();

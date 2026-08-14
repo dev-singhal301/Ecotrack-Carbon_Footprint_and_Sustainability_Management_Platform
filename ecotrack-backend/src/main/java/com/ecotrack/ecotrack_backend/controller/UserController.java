@@ -2,6 +2,7 @@ package com.ecotrack.ecotrack_backend.controller;
 
 import com.ecotrack.ecotrack_backend.entity.User;
 import com.ecotrack.ecotrack_backend.entity.UserChallengeStatus;
+import com.ecotrack.ecotrack_backend.repository.CarbonEntryRepository;
 import com.ecotrack.ecotrack_backend.repository.GoalRepository;
 import com.ecotrack.ecotrack_backend.repository.UserRepository;
 import com.ecotrack.ecotrack_backend.repository.UserChallengeRepository;
@@ -20,6 +21,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -31,18 +33,20 @@ public class UserController {
     private final UserRepository userRepository;
     private final GoalRepository goalRepository;
     private final UserChallengeRepository userChallengeRepository;
+    private final CarbonEntryRepository carbonEntryRepository; // <--- Injected
 
     public UserController(UserRepository userRepository, 
                           GoalRepository goalRepository, 
-                          UserChallengeRepository userChallengeRepository) {
+                          UserChallengeRepository userChallengeRepository,
+                          CarbonEntryRepository carbonEntryRepository) {
         this.userRepository = userRepository;
         this.goalRepository = goalRepository;
         this.userChallengeRepository = userChallengeRepository;
+        this.carbonEntryRepository = carbonEntryRepository;
     }
 
     /**
      * GET /api/users/me OR /api/users/me/profile
-     * Returns profile info + aggregated stats (Goals Met, Challenges Won)
      */
     @GetMapping({"/me", "/me/profile"})
     public ResponseEntity<Map<String, Object>> getCurrentUserProfile(@AuthenticationPrincipal UserDetails principal) {
@@ -53,11 +57,18 @@ public class UserController {
         User user = userRepository.findByEmail(principal.getUsername())
                 .orElseThrow(() -> new IllegalArgumentException("Authenticated user not found: " + principal.getUsername()));
 
-        // Calculate Goal & Challenge completion stats directly from DB
+        // Accomplished Stats
         long goalsAccomplished = goalRepository.countByUserIdAndStatus(user.getId(), "COMPLETED")
                 + goalRepository.countByUserIdAndStatus(user.getId(), "ACCOMPLISHED");
-
         long challengesAccomplished = userChallengeRepository.countByUserIdAndStatus(user.getId(), UserChallengeStatus.COMPLETED);
+
+        // --- Active Stats & Logged Entries Count ---
+        long activeGoals = goalRepository.countByUserIdAndStatus(user.getId(), "ACTIVE");
+        long activeChallenges = userChallengeRepository.countByUserIdAndStatusIn(
+                user.getId(), 
+                List.of(UserChallengeStatus.JOINED, UserChallengeStatus.IN_PROGRESS)
+        );
+        long totalEntries = carbonEntryRepository.countByUserId(user.getId());
 
         String memberSince = user.getCreatedAt() != null 
                 ? user.getCreatedAt().format(DateTimeFormatter.ofPattern("MMMM yyyy"))
@@ -74,8 +85,18 @@ public class UserController {
         response.put("rewardPoints", user.getRewardPoints());
         response.put("userRank", user.getUserRank());
         response.put("memberSince", memberSince);
+
+        // Stats
         response.put("goalsAccomplished", goalsAccomplished);
+        response.put("goalsPassed", goalsAccomplished);
         response.put("challengesAccomplished", challengesAccomplished);
+        response.put("challengesPassed", challengesAccomplished);
+
+        // Newly linked counts
+        response.put("activeGoals", activeGoals);
+        response.put("activeChallenges", activeChallenges);
+        response.put("totalEntries", totalEntries);
+        response.put("dailyLogCount", totalEntries);
 
         return ResponseEntity.ok(response);
     }
