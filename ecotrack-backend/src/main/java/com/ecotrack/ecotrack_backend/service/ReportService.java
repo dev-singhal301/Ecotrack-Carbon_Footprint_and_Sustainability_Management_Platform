@@ -18,6 +18,7 @@ import com.lowagie.text.Rectangle;
 import com.lowagie.text.pdf.PdfPCell;
 import com.lowagie.text.pdf.PdfPTable;
 import com.lowagie.text.pdf.PdfWriter;
+import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.FillPatternType;
@@ -79,7 +80,16 @@ public class ReportService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + userId));
 
-        List<CarbonEntry> entries = carbonEntryRepository.findByUserIdAndActivityDateBetween(userId, from, to);
+        // Sorted ascending by date so both the Excel "Carbon Entries" sheet
+        // and the CSV "Carbon Entries" section (which both read this same
+        // list) present a chronological log. Grouping-based calculations
+        // downstream (trend buckets, category totals) are order-independent,
+        // so this sort has no effect on any computed figure — only on
+        // display order.
+        List<CarbonEntry> entries = carbonEntryRepository.findByUserIdAndActivityDateBetween(userId, from, to)
+                .stream()
+                .sorted(java.util.Comparator.comparing(CarbonEntry::getActivityDate))
+                .toList();
 
         long periodDays = java.time.temporal.ChronoUnit.DAYS.between(from, to) + 1;
         LocalDate prevTo = from.minusDays(1);
@@ -164,6 +174,13 @@ public class ReportService {
                 recommendations, entries);
     }
 
+    /**
+     * Short periods (<=31 days — which, given generateReport's fixed 30-day
+     * window, is effectively always) are grouped into 5-day buckets rather
+     * than plotted per-day: 30 individual daily points make for a noisy,
+     * spiky line, while 6 five-day buckets read as a much more regular
+     * trend. Weekly/monthly bucketing for longer periods is unchanged.
+     */
     private List<TrendPoint> aggregateTrend(List<CarbonEntry> entries, LocalDate from, LocalDate to) {
         long periodDays = java.time.temporal.ChronoUnit.DAYS.between(from, to) + 1;
 
@@ -171,10 +188,21 @@ public class ReportService {
             Map<LocalDate, BigDecimal> byDay = entries.stream()
                     .collect(Collectors.groupingBy(CarbonEntry::getActivityDate,
                             Collectors.reducing(BigDecimal.ZERO, CarbonEntry::getCarbonEmission, BigDecimal::add)));
-            DateTimeFormatter dayFmt = DateTimeFormatter.ofPattern("d MMM");
-            return from.datesUntil(to.plusDays(1))
-                    .map(d -> new TrendPoint(d.format(dayFmt), byDay.getOrDefault(d, BigDecimal.ZERO)))
-                    .toList();
+            List<TrendPoint> points = new java.util.ArrayList<>();
+            LocalDate bucketStart = from;
+            while (!bucketStart.isAfter(to)) {
+                LocalDate bucketEnd = bucketStart.plusDays(4);
+                if (bucketEnd.isAfter(to)) {
+                    bucketEnd = to;
+                }
+                BigDecimal bucketTotal = BigDecimal.ZERO;
+                for (LocalDate d = bucketStart; !d.isAfter(bucketEnd); d = d.plusDays(1)) {
+                    bucketTotal = bucketTotal.add(byDay.getOrDefault(d, BigDecimal.ZERO));
+                }
+                points.add(new TrendPoint(formatBucketLabel(bucketStart, bucketEnd), bucketTotal));
+                bucketStart = bucketStart.plusDays(5);
+            }
+            return points;
         }
 
         if (periodDays <= 120) {
@@ -212,6 +240,23 @@ public class ReportService {
                 .toList();
     }
 
+    /**
+     * "12 Aug" for a single-day bucket (only the final, possibly-short
+     * bucket at the end of a period), "12-16 Aug" for a same-month 5-day
+     * bucket, "29 Aug - 2 Sep" when a bucket straddles a month boundary.
+     */
+    private String formatBucketLabel(LocalDate start, LocalDate end) {
+        DateTimeFormatter dayOnly = DateTimeFormatter.ofPattern("d");
+        DateTimeFormatter dayMonth = DateTimeFormatter.ofPattern("d MMM");
+        if (start.equals(end)) {
+            return start.format(dayMonth);
+        }
+        if (start.getMonth() == end.getMonth()) {
+            return start.format(dayOnly) + "-" + end.format(dayMonth);
+        }
+        return start.format(dayMonth) + " - " + end.format(dayMonth);
+    }
+
     private List<String> buildInsights(BigDecimal total, List<CategoryRow> categoryRows, BigDecimal percentChange,
             GoalReportData goalData, ChallengeReportData challengeData, List<CarbonEntry> entries, long periodDays) {
         List<String> insights = new java.util.ArrayList<>();
@@ -224,11 +269,6 @@ public class ReportService {
             insights.add("No carbon activity was logged during this reporting period.");
         }
 
-        // Tracking consistency: how many distinct days had at least one
-        // logged activity, out of the period length. Two users with the
-        // same total emissions can look identical elsewhere in the report
-        // (one logging steadily, one in a few large bursts) — this is the
-        // only place that distinction shows up.
         if (!entries.isEmpty() && periodDays > 0) {
             long distinctDays = entries.stream().map(CarbonEntry::getActivityDate).distinct().count();
             if (distinctDays < periodDays) {
@@ -240,8 +280,6 @@ public class ReportService {
             }
         }
 
-        // Daily average, narrated (it already appears as its own KPI card,
-        // but never as a sentence elsewhere in the report).
         if (total.compareTo(BigDecimal.ZERO) > 0 && periodDays > 0) {
             BigDecimal dailyAverage = total.divide(BigDecimal.valueOf(periodDays), 2, RoundingMode.HALF_UP);
             insights.add("Daily average was " + formatKg(dailyAverage) + "/day across the period.");
@@ -274,10 +312,6 @@ public class ReportService {
                     + " goals have been achieved (" + goalData.successRate() + "% success rate).");
         }
 
-        // At-risk goals: in-progress goals that have already burned through
-        // most of their emissions budget. This is real signal that already
-        // exists in GoalReportRow.budgetUsedPercent() but was previously
-        // never surfaced anywhere in the report.
         long atRiskGoals = goalData.rows().stream()
                 .filter(r -> "In Progress".equals(r.outcome()) && r.budgetUsedPercent() != null
                         && r.budgetUsedPercent().compareTo(BigDecimal.valueOf(80)) > 0)
@@ -332,8 +366,6 @@ public class ReportService {
             });
         }
 
-        // Logging consistency: fewer than half the period's days had any
-        // logged activity at all.
         if (!entries.isEmpty() && periodDays > 0) {
             long distinctDays = entries.stream().map(CarbonEntry::getActivityDate).distinct().count();
             if (distinctDays < periodDays / 2.0) {
@@ -342,9 +374,6 @@ public class ReportService {
             }
         }
 
-        // Rising trend flag: a sharp period-over-period increase, separate
-        // from the plain "increased by X%" line already shown next to the
-        // trend chart — this one is a call to action, not just a fact.
         if (percentChange != null && percentChange.compareTo(BigDecimal.valueOf(20)) > 0) {
             recommendations.add("Emissions rose sharply (" + percentChange + "%) compared with the previous "
                     + "period — worth checking what changed before it becomes a pattern.");
@@ -521,7 +550,7 @@ public class ReportService {
             } else {
                 addVectorChart(writer, document, buildOutcomeProgressChart(
                         "Goals", data.goalData().achievedCount(), data.goalData().inProgressCount(),
-                        data.goalData().notAchievedCount()), 500, 90);
+                        data.goalData().notAchievedCount()), 500, 110);
 
                 Paragraph goalStats = new Paragraph(
                         "Total: " + data.goalData().totalGoals() + "   |   Achieved: "
@@ -545,7 +574,7 @@ public class ReportService {
                 long activeCount = data.challengeData().inProgressCount();
                 addVectorChart(writer, document, buildOutcomeProgressChart(
                         "Challenges", data.challengeData().completedCount(), activeCount,
-                        data.challengeData().expiredCount() + data.challengeData().cancelledCount()), 500, 90);
+                        data.challengeData().expiredCount() + data.challengeData().cancelledCount()), 500, 110);
 
                 Paragraph challengeStats = new Paragraph(
                         "Total Joined: " + data.challengeData().totalJoined() + "   |   Completed: "
@@ -751,21 +780,42 @@ public class ReportService {
                 + "goals and completed challenges within this scoped set only.";
     }
 
+    /**
+     * Shared by "Key Insights" and "Recommended Actions". A single "\u2022
+     * text" Phrase in one cell wraps with no hanging indent — the second
+     * line of a long item starts flush at the cell's left edge instead of
+     * lining up under the first line's text, which reads as misaligned/
+     * "weird" for anything longer than one line. Splitting the bullet glyph
+     * and the item text into their own narrow/wide columns fixes this: the
+     * text column has its own fixed left edge, so wrapped lines naturally
+     * stay indented under the first line instead of under the bullet.
+     */
     private PdfPTable bulletList(List<String> items, Font font) {
-        PdfPTable table = new PdfPTable(1);
-        table.setWidthPercentage(100);
         if (items.isEmpty()) {
+            PdfPTable table = new PdfPTable(1);
+            table.setWidthPercentage(100);
             PdfPCell cell = new PdfPCell(new Phrase("Nothing to report yet.", font));
             cell.setBorder(Rectangle.NO_BORDER);
             cell.setPadding(3);
             table.addCell(cell);
             return table;
         }
+
+        PdfPTable table = new PdfPTable(2);
+        table.setWidthPercentage(100);
+        table.setWidths(new float[] { 0.3f, 9.7f });
         for (String item : items) {
-            PdfPCell cell = new PdfPCell(new Phrase("\u2022  " + sanitizeForPdf(item), font));
-            cell.setBorder(Rectangle.NO_BORDER);
-            cell.setPaddingBottom(6);
-            table.addCell(cell);
+            PdfPCell bulletCell = new PdfPCell(new Phrase("\u2022", font));
+            bulletCell.setBorder(Rectangle.NO_BORDER);
+            bulletCell.setPaddingBottom(6);
+            bulletCell.setVerticalAlignment(com.lowagie.text.Element.ALIGN_TOP);
+            table.addCell(bulletCell);
+
+            PdfPCell textCell = new PdfPCell(new Phrase(sanitizeForPdf(item), font));
+            textCell.setBorder(Rectangle.NO_BORDER);
+            textCell.setPaddingBottom(6);
+            textCell.setVerticalAlignment(com.lowagie.text.Element.ALIGN_TOP);
+            table.addCell(textCell);
         }
         return table;
     }
@@ -883,6 +933,7 @@ public class ReportService {
         domainAxis.setTickMarksVisible(false);
 
         org.jfree.chart.axis.NumberAxis rangeAxis = (org.jfree.chart.axis.NumberAxis) plot.getRangeAxis();
+        rangeAxis.setLabelFont(new java.awt.Font("SansSerif", java.awt.Font.PLAIN, 9));
         rangeAxis.setTickLabelFont(new java.awt.Font("SansSerif", java.awt.Font.PLAIN, 9));
         rangeAxis.setAxisLineVisible(false);
         rangeAxis.setTickMarksVisible(false);
@@ -904,6 +955,10 @@ public class ReportService {
         chart.setBorderVisible(false);
         chart.setBackgroundPaint(Color.WHITE);
         chart.getLegend().setItemFont(new java.awt.Font("SansSerif", java.awt.Font.PLAIN, 11));
+        // Extra right-padding after each legend label so consecutive items
+        // ("Achieved / Completed", "In Progress / Active", ...) don't run
+        // into each other with no visual gap between them.
+        chart.getLegend().setItemLabelPadding(new org.jfree.chart.ui.RectangleInsets(2, 4, 2, 18));
 
         CategoryPlot plot = chart.getCategoryPlot();
         plot.setBackgroundPaint(Color.WHITE);
@@ -919,6 +974,37 @@ public class ReportService {
         renderer.setShadowVisible(false);
         renderer.setDrawBarOutline(false);
         renderer.setMaximumBarWidth(0.35);
+
+        // Each segment shows its share of the whole (e.g. "60%") instead of
+        // just a bare color, so the bar reads as actual stats rather than a
+        // purely decorative colored line. Zero-value segments are skipped —
+        // there's no bar width to anchor a "0%" label to.
+        long total = positive + inProgress + negative;
+        renderer.setDefaultItemLabelsVisible(total > 0);
+        renderer.setDefaultItemLabelGenerator(new org.jfree.chart.labels.CategoryItemLabelGenerator() {
+            @Override
+            public String generateRowLabel(org.jfree.data.category.CategoryDataset d, int series) {
+                return null;
+            }
+
+            @Override
+            public String generateColumnLabel(org.jfree.data.category.CategoryDataset d, int category) {
+                return null;
+            }
+
+            @Override
+            public String generateLabel(org.jfree.data.category.CategoryDataset d, int series, int category) {
+                Number value = d.getValue(series, category);
+                if (value == null || total == 0 || value.doubleValue() <= 0) {
+                    return null;
+                }
+                return Math.round(value.doubleValue() * 100.0 / total) + "%";
+            }
+        });
+        renderer.setDefaultItemLabelFont(new java.awt.Font("SansSerif", java.awt.Font.BOLD, 10));
+        renderer.setDefaultItemLabelPaint(Color.WHITE);
+        renderer.setDefaultPositiveItemLabelPosition(new org.jfree.chart.labels.ItemLabelPosition(
+                org.jfree.chart.labels.ItemLabelAnchor.CENTER, org.jfree.chart.ui.TextAnchor.CENTER));
         plot.setRenderer(renderer);
 
         plot.getDomainAxis().setTickLabelFont(new java.awt.Font("SansSerif", java.awt.Font.PLAIN, 12));
@@ -929,6 +1015,12 @@ public class ReportService {
         return chart;
     }
 
+    /**
+     * Excel companion to the PDF: same period, but data-first — every raw
+     * carbon entry, every goal, every joined challenge, across 5 sheets, so
+     * nothing here can drift from what the PDF's aggregate figures show for
+     * the same user/period.
+     */
     private byte[] buildCarbonFootprintExcel(CarbonFootprintReportData data) {
         try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             ExcelStyles styles = createExcelStyles(workbook);
@@ -972,16 +1064,19 @@ public class ReportService {
                 r.createCell(0).setCellValue(prettifyCategory(row.category()));
                 r.createCell(1).setCellValue(row.emissions().setScale(2, RoundingMode.HALF_UP).doubleValue());
                 r.createCell(2).setCellValue(row.percentageShare());
+                for (int i = 0; i < 3; i++) {
+                    r.getCell(i).setCellStyle(styles.borderedStyle());
+                }
             }
             for (int i = 0; i < 3; i++) {
                 analysisSheet.autoSizeColumn(i);
             }
 
             Sheet entriesSheet = workbook.createSheet("Carbon Entries");
-            writeCarbonEntriesTable(entriesSheet, 0, data.entries(), styles.headerStyle());
+            writeCarbonEntriesTable(entriesSheet, 0, data.entries(), styles.headerStyle(), styles.borderedStyle());
 
             Sheet goalsSheet = workbook.createSheet("Goals");
-            writeGoalTable(goalsSheet, 0, data.goalData().rows(), styles.headerStyle());
+            writeGoalTable(goalsSheet, 0, data.goalData().rows(), styles.headerStyle(), styles.borderedStyle());
 
             Sheet challengesSheet = workbook.createSheet("Challenges");
             int chRow = 0;
@@ -990,14 +1085,14 @@ public class ReportService {
             chTitle.getCell(0).setCellStyle(styles.labelStyle());
             chRow++;
             writeActivityChallengeTable(challengesSheet, chRow, data.challengeData().activityRows(),
-                    styles.headerStyle());
+                    styles.headerStyle(), styles.borderedStyle());
             chRow += data.challengeData().activityRows().size() + 3;
             Row carbonChTitle = challengesSheet.createRow(chRow++);
             carbonChTitle.createCell(0).setCellValue("Carbon Reduction Challenges");
             carbonChTitle.getCell(0).setCellStyle(styles.labelStyle());
             chRow++;
             writeCarbonChallengeTable(challengesSheet, chRow, data.challengeData().carbonRows(),
-                    styles.headerStyle());
+                    styles.headerStyle(), styles.borderedStyle());
 
             workbook.write(out);
             return out.toByteArray();
@@ -1291,6 +1386,12 @@ public class ReportService {
         return result.toString();
     }
 
+    /**
+     * Builds the CellStyles the Excel report uses (title, table header,
+     * bold label, plain bordered data cell) exactly once per workbook,
+     * since CellStyle creation isn't free in POI and repeating this block
+     * per sheet would be wasteful.
+     */
     private ExcelStyles createExcelStyles(Workbook workbook) {
         CellStyle titleStyle = workbook.createCellStyle();
         org.apache.poi.ss.usermodel.Font titleFont = workbook.createFont();
@@ -1306,13 +1407,29 @@ public class ReportService {
         headerStyle.setFont(headerFont);
         headerStyle.setFillForegroundColor(IndexedColors.GREEN.getIndex());
         headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        applyThinBorder(headerStyle);
 
         CellStyle labelStyle = workbook.createCellStyle();
         org.apache.poi.ss.usermodel.Font labelFont = workbook.createFont();
         labelFont.setBold(true);
         labelStyle.setFont(labelFont);
 
-        return new ExcelStyles(titleStyle, headerStyle, labelStyle);
+        // Plain thin-bordered style for ordinary data rows across the
+        // Carbon Analysis, Carbon Entries, Goals, and Challenges tables —
+        // Excel doesn't print/display sheet gridlines by default once a
+        // file is opened elsewhere, so explicit cell borders keep these
+        // tables reading as tables rather than loose columns of numbers.
+        CellStyle borderedStyle = workbook.createCellStyle();
+        applyThinBorder(borderedStyle);
+
+        return new ExcelStyles(titleStyle, headerStyle, labelStyle, borderedStyle);
+    }
+
+    private void applyThinBorder(CellStyle style) {
+        style.setBorderTop(BorderStyle.THIN);
+        style.setBorderBottom(BorderStyle.THIN);
+        style.setBorderLeft(BorderStyle.THIN);
+        style.setBorderRight(BorderStyle.THIN);
     }
 
     private void writeHeaderRow(Sheet sheet, int rowIdx, String[] headers, CellStyle headerStyle) {
@@ -1333,7 +1450,8 @@ public class ReportService {
         return rowIdx + 1;
     }
 
-    private void writeGoalTable(Sheet sheet, int startRow, List<GoalReportRow> rows, CellStyle headerStyle) {
+    private void writeGoalTable(Sheet sheet, int startRow, List<GoalReportRow> rows, CellStyle headerStyle,
+            CellStyle dataStyle) {
         String[] headers = { "Goal", "Type", "Outcome", "Budget (Target)", "Emitted", "Budget Used (%)",
                 "XP Earned", "Start Date", "End Date" };
         writeHeaderRow(sheet, startRow, headers, headerStyle);
@@ -1347,6 +1465,9 @@ public class ReportService {
             r.createCell(2).setCellValue(row.outcome());
             r.createCell(3).setCellValue(g.getTargetValue().doubleValue());
 
+            // Genuine "never calculated" (null) vs. a real zero must render
+            // differently — a numeric 0.0 here would silently claim "zero
+            // emissions logged" for a goal that was never assessed at all.
             if (row.currentValue() != null) {
                 r.createCell(4).setCellValue(row.currentValue().doubleValue());
             } else {
@@ -1361,6 +1482,10 @@ public class ReportService {
             r.createCell(6).setCellValue(row.xpEarned());
             r.createCell(7).setCellValue(g.getStartDate().format(DATE_FMT));
             r.createCell(8).setCellValue(g.getEndDate().format(DATE_FMT));
+
+            for (int i = 0; i < headers.length; i++) {
+                r.getCell(i).setCellStyle(dataStyle);
+            }
         }
 
         for (int i = 0; i < headers.length; i++) {
@@ -1369,8 +1494,8 @@ public class ReportService {
     }
 
     private void writeActivityChallengeTable(Sheet sheet, int startRow, List<UserChallengeResponse> rows,
-            CellStyle headerStyle) {
-        String[] headers = { "Challenge", "Category", "Status", "Progress (%)", "Current Value", "Target",
+            CellStyle headerStyle, CellStyle dataStyle) {
+        String[] headers = { "Challenge", "Category", "Status", "Current Value", "Target", "Progress (%)",
                 "Joined At", "Completed/Resolved At" };
         writeHeaderRow(sheet, startRow, headers, headerStyle);
 
@@ -1380,15 +1505,19 @@ public class ReportService {
             r.createCell(0).setCellValue(c.getChallenge().getTitle());
             r.createCell(1).setCellValue(prettifyCategory(c.getChallenge().getCategory()));
             r.createCell(2).setCellValue(c.getUserStatus());
-            r.createCell(3).setCellValue(
-                    c.getCompletionPercentage() != null ? c.getCompletionPercentage().doubleValue() : 0.0);
-            r.createCell(4).setCellValue(c.getCurrentValue() != null ? c.getCurrentValue().doubleValue() : 0.0);
-            r.createCell(5).setCellValue(
+            r.createCell(3).setCellValue(c.getCurrentValue() != null ? c.getCurrentValue().doubleValue() : 0.0);
+            r.createCell(4).setCellValue(
                     c.getChallenge().getTargetValue() != null ? c.getChallenge().getTargetValue().doubleValue() : 0.0);
+            r.createCell(5).setCellValue(
+                    c.getCompletionPercentage() != null ? c.getCompletionPercentage().doubleValue() : 0.0);
             r.createCell(6)
                     .setCellValue(c.getJoinedAt() != null ? c.getJoinedAt().toLocalDate().format(DATE_FMT) : "N/A");
             r.createCell(7).setCellValue(
                     c.getCompletedAt() != null ? c.getCompletedAt().toLocalDate().format(DATE_FMT) : "N/A");
+
+            for (int i = 0; i < headers.length; i++) {
+                r.getCell(i).setCellStyle(dataStyle);
+            }
         }
 
         for (int i = 0; i < headers.length; i++) {
@@ -1397,7 +1526,7 @@ public class ReportService {
     }
 
     private void writeCarbonChallengeTable(Sheet sheet, int startRow, List<UserChallengeResponse> rows,
-            CellStyle headerStyle) {
+            CellStyle headerStyle, CellStyle dataStyle) {
         String[] headers = { "Challenge", "Category", "Status", "Budget (kg CO2e)", "Used (kg CO2e)",
                 "Remaining (kg CO2e)", "Remaining (%)", "Joined At", "Completed/Resolved At" };
         writeHeaderRow(sheet, startRow, headers, headerStyle);
@@ -1418,6 +1547,10 @@ public class ReportService {
                     .setCellValue(c.getJoinedAt() != null ? c.getJoinedAt().toLocalDate().format(DATE_FMT) : "N/A");
             r.createCell(8).setCellValue(
                     c.getCompletedAt() != null ? c.getCompletedAt().toLocalDate().format(DATE_FMT) : "N/A");
+
+            for (int i = 0; i < headers.length; i++) {
+                r.getCell(i).setCellStyle(dataStyle);
+            }
         }
 
         for (int i = 0; i < headers.length; i++) {
@@ -1425,7 +1558,8 @@ public class ReportService {
         }
     }
 
-    private void writeCarbonEntriesTable(Sheet sheet, int startRow, List<CarbonEntry> entries, CellStyle headerStyle) {
+    private void writeCarbonEntriesTable(Sheet sheet, int startRow, List<CarbonEntry> entries, CellStyle headerStyle,
+            CellStyle dataStyle) {
         String[] headers = { "Date", "Category", "Amount", "Unit", "Emission (kg CO2e)" };
         writeHeaderRow(sheet, startRow, headers, headerStyle);
 
@@ -1437,6 +1571,10 @@ public class ReportService {
             r.createCell(2).setCellValue(entry.getAmount().doubleValue());
             r.createCell(3).setCellValue(entry.getUnit());
             r.createCell(4).setCellValue(entry.getCarbonEmission().setScale(2, RoundingMode.HALF_UP).doubleValue());
+
+            for (int i = 0; i < headers.length; i++) {
+                r.getCell(i).setCellStyle(dataStyle);
+            }
         }
 
         for (int i = 0; i < headers.length; i++) {
@@ -1448,12 +1586,14 @@ public class ReportService {
         return value.setScale(2, RoundingMode.HALF_UP).toPlainString() + " kg CO2e";
     }
 
+    /** TRANSPORTATION -> "Transportation" */
     private String prettifyCategory(String rawCategory) {
         String lower = rawCategory.toLowerCase(Locale.ROOT);
         return Character.toUpperCase(lower.charAt(0)) + lower.substring(1);
     }
 
-    private record ExcelStyles(CellStyle titleStyle, CellStyle headerStyle, CellStyle labelStyle) {
+    private record ExcelStyles(CellStyle titleStyle, CellStyle headerStyle, CellStyle labelStyle,
+            CellStyle borderedStyle) {
     }
 
     private record CarbonFootprintReportData(
