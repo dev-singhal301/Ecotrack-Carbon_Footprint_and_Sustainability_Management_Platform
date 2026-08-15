@@ -1,5 +1,7 @@
+<div class="identity-container">
+
 <!-- Profile Hero Card -->
-<section class="profile-hero-card" *ngIf="profile">
+<section class="identity-card profile-hero-card" *ngIf="profile">
   <!-- Top Row: Avatar & Name on Left, 5 Stats on Right -->
   <div class="hero-top-row">
     <!-- User Bio Group -->
@@ -149,12 +151,12 @@
     <div class="xp-progress-track">
       <div class="xp-progress-fill" [style.width.%]="xpProgressPercent"></div>
     </div>
-    <span class="xp-text">{{ profile.currentXp }} / {{ profile.nextLevelXpTarget }} XP</span>
+    <span class="xp-text">{{ currentLevelXpProgress }} / {{ xpForNextLevel }} XP <small class="xp-total-note">(Total: {{ profile.currentXp }} XP)</small></span>
   </div>
 </section>
 
 <!-- SECTION 2: BADGE GALLERY -->
-<section class="badge-gallery-card">
+<section class="identity-card badge-gallery-card">
   <div class="gallery-header">
     <div class="title-group">
       <h2 class="gallery-title">Badge Gallery</h2>
@@ -265,7 +267,7 @@
 <!-- ==========================================================================
    SECTION 3: SIMPLE SETTINGS CARD
    ========================================================================== -->
-<div class="simple-settings-card">
+<div class="identity-card simple-settings-card">
   <h3 class="settings-title">Account & Data</h3>
 
   <!-- Export Row -->
@@ -314,6 +316,8 @@
   </div>
 
 </div>
+
+</div><!-- /.identity-container -->
 
 <!-- Delete Account Confirmation Modal -->
 <div class="danger-modal-backdrop" *ngIf="showDeleteModal">

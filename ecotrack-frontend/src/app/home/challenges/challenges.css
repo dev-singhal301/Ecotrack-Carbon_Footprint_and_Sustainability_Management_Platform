@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap');
+
 /* Layout Container */
 :host {
   display: block;
@@ -16,7 +18,11 @@
   max-width: 1200px;
   margin: 0 auto;
   padding: 24px;
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family: 'Nunito', system-ui, -apple-system, sans-serif;
+}
+
+input, select, button {
+  font-family: inherit;
 }
 
 /* Header Section */
@@ -471,4 +477,36 @@
   width: auto;
   flex-shrink: 0;
   padding: 8px 16px;
+}
+
+/* --- Mobile Overrides --- */
+@media (max-width: 768px) {
+  
+  /* Stack the tab pills and the filter group vertically */
+  .controls-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+    padding: 16px 12px;
+  }
+
+  /* Center the wrapped pills for visual balance */
+  .tab-pills {
+    justify-content: center;
+  }
+
+  /* Remove the 480px limit and stack the select and search inputs */
+  .filter-group {
+    max-width: 100%;
+    flex-direction: column; 
+    width: 100%;
+  }
+
+  /* Ensure the inputs take up the full available width */
+  .category-select,
+  .search-input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px 12px; /* Slightly larger tap targets for mobile */
+  }
 }

@@ -172,11 +172,8 @@ export class Dashboard implements OnInit {
       });
     }
 
-    return [
-      { xpTransactionId: 1, description: 'Cut Electricity Goal Completed', sourceType: 'GOAL', xpEarned: 50, createdAt: new Date().toISOString() },
-      { xpTransactionId: 2, description: 'Logged Daily Travel Entry', sourceType: 'LOG', xpEarned: 10, createdAt: new Date().toISOString() },
-      { xpTransactionId: 3, description: '3-Day Tracking Streak', sourceType: 'STREAK', xpEarned: 15, createdAt: new Date().toISOString() }
-    ];
+    // FIXED: Return empty array so the HTML empty state template is triggered
+    return []; 
   }
 
   private formatLocalDate(d: Date): string {

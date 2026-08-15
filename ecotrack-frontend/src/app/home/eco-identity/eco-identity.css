@@ -1,20 +1,72 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap');
+
 :host {
+  /* ---- Typography (matches dashboard.css / tracking.css) ---- */
+  --eco-font-heading: 'Nunito', 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+  --eco-font-body: 'Nunito', 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+
+  /* ---- Brand Green Ramp (matches dashboard.css) ---- */
+  --eco-green-light: #4ade80;
+  --eco-green: #2d6a4f;
+  --eco-green-dark: #1b4332;
+
+  --eco-white: #ffffff;
+  --eco-red: #ef4444;
+
+  --eco-positive-bg: #dcfce7;
+  --eco-positive-text: #15803d;
+
+  /* ---- Slate & Neutral Colors (matches dashboard.css) ---- */
+  --eco-heading-color: #0f172a;
+  --eco-slate-900: #0f172a;
+  --eco-slate-800: #1e293b;
+  --eco-slate-700: #334155;
+  --eco-slate-400: #94a3b8;
+
+  --eco-input-field-bg: #f8fafc;
+  --eco-input-border: #e2e8f0;
+  --eco-text-main: #1e293b;
+  --eco-text-muted: #64748b;
+  --eco-text-label: #475569;
+
+  --eco-bg-light: #f8fafc;
+
   display: block;
   width: 100%;
+  font-family: var(--eco-font-body);
 }
 
-/* Dashboard-style Clean Container Card */
-.profile-hero-card {
-  width: 100%;
-  box-sizing: border-box;
-  background: #ffffff;
-  border-radius: 20px;
-  padding: 2rem 2.5rem; /* INCREASED: Outer padding for more breathing room */
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.02);
+/* ==========================================================================
+   PAGE CONTAINER & SHARED CARD SYSTEM
+   Matches .dashboard-container / .dashboard-card from dashboard.css so this
+   page sits at the same visual rhythm as Dashboard and Tracking.
+   ========================================================================== */
+.identity-container {
+  padding: 24px;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 20px;
+  box-sizing: border-box;
+  background: var(--eco-bg-light);
+  height: fit-content;
+}
+
+.identity-card {
+  background: var(--eco-white);
+  border: 1.5px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
+  box-sizing: border-box;
+}
+
+/* ==========================================================================
+   SECTION 1: PROFILE HERO CARD
+   ========================================================================== */
+.profile-hero-card {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
 /* Top Section: Avatar/Info Left, Stats Right */
@@ -22,15 +74,17 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 2rem; /* INCREASED: Gap between bio and stats */
+  gap: 20px;
   width: 100%;
+  flex-wrap: wrap;
 }
 
 /* Left Group: Avatar + Details */
 .user-bio-group {
   display: flex;
   align-items: center;
-  gap: 1.25rem;
+  gap: 16px;
+  flex-shrink: 0;
 }
 
 .avatar-container {
@@ -45,17 +99,17 @@
   height: 100%;
   border-radius: 50%;
   object-fit: cover;
-  border: 3px solid #10b981;
-  background-color: #f1f5f9;
+  border: 3px solid var(--eco-green);
+  background-color: var(--eco-input-field-bg);
 }
 
 .avatar-edit-btn {
   position: absolute;
   bottom: 0px;
   right: 0px;
-  background: #10b981;
-  color: #ffffff;
-  border: 2px solid #ffffff;
+  background: var(--eco-green);
+  color: var(--eco-white);
+  border: 2px solid var(--eco-white);
   width: 26px;
   height: 26px;
   border-radius: 50%;
@@ -69,7 +123,7 @@
 
 .avatar-edit-btn:hover {
   transform: scale(1.1);
-  background: #059669;
+  background: var(--eco-green-dark);
 }
 
 /* User Text Details */
@@ -81,20 +135,22 @@
 .name-row {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 8px;
 }
 
 .name-row h2 {
   margin: 0;
+  font-family: var(--eco-font-heading);
   font-size: 1.35rem;
-  font-weight: 700;
-  color: #0f172a;
+  font-weight: 800;
+  color: var(--eco-heading-color);
+  letter-spacing: -0.01em;
 }
 
 .icon-edit-btn {
   background: none;
   border: none;
-  color: #94a3b8;
+  color: var(--eco-slate-400);
   cursor: pointer;
   font-size: 0.85rem;
   padding: 2px;
@@ -102,24 +158,26 @@
 }
 
 .icon-edit-btn:hover {
-  color: #10b981;
+  color: var(--eco-green);
 }
 
 /* Inline Edit Name Box */
 .inline-edit-box {
   display: flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 6px;
 }
 
 .name-input {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #0f172a;
-  padding: 0.2rem 0.5rem;
-  border: 1px solid #10b981;
-  border-radius: 6px;
+  font-family: var(--eco-font-body);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--eco-heading-color);
+  padding: 6px 10px;
+  border: 1.5px solid var(--eco-green);
+  border-radius: 8px;
   outline: none;
+  background: var(--eco-input-field-bg);
 }
 
 .action-btn {
@@ -137,64 +195,68 @@
 }
 
 .action-btn.save {
-  background: #10b981;
-  color: #ffffff;
+  background: var(--eco-green);
+  color: var(--eco-white);
 }
 
 .action-btn.save:hover {
-  background: #059669;
+  background: var(--eco-green-dark);
 }
 
 .action-btn.cancel {
-  background: #f1f5f9;
-  color: #64748b;
+  background: var(--eco-input-field-bg);
+  color: var(--eco-text-muted);
 }
 
 .action-btn.cancel:hover {
   background: #e2e8f0;
-  color: #0f172a;
+  color: var(--eco-heading-color);
 }
 
 .email-text {
   margin: 2px 0 0 0;
-  color: #64748b;
+  color: var(--eco-text-muted);
   font-size: 0.88rem;
+  font-weight: 500;
 }
 
 .member-since {
   font-size: 0.78rem;
-  color: #94a3b8;
+  color: var(--eco-slate-400);
   margin-top: 3px;
 }
 
-/* Stats Container (Right Side Header) */
+/* Stats Container (Right Side Header) — mirrors dashboard's KPI card tone */
 .hero-stats-row {
   display: flex;
   align-items: center;
-  gap: 1.5rem; /* INCREASED: Gap between stats */
-  background: #f8fafc;
-  border: 1px solid #f1f5f9;
-  padding: 1rem 1.75rem; /* INCREASED: Inner padding to make it wider and less cramped */
-  border-radius: 16px;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  background: var(--eco-input-field-bg);
+  border: 1px solid var(--eco-input-border);
+  padding: 12px 20px;
+  border-radius: 12px;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .hero-stat-item {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: 12px;
 }
 
 .hero-stat-divider {
   width: 1px;
-  height: 30px;
-  background-color: #e2e8f0;
+  height: 28px;
+  background-color: var(--eco-input-border);
   flex-shrink: 0;
 }
 
 .stat-icon-wrapper {
   width: 34px;
   height: 34px;
-  border-radius: 8px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -204,8 +266,8 @@
 
 /* Variant Icon Colors */
 .stat-icon-wrapper.success {
-  background: #ecfdf5;
-  color: #10b981;
+  background: var(--eco-positive-bg);
+  color: var(--eco-positive-text);
 }
 
 .stat-icon-wrapper.active-goal {
@@ -230,26 +292,31 @@
 
 .stat-icon-wrapper.danger {
   background: #fef2f2;
-  color: #ef4444;
+  color: var(--eco-red);
 }
 
 .stat-info {
   display: flex;
   flex-direction: column;
+  justify-content: center;
+  gap: 4px;
 }
 
 .stat-value {
+  font-family: var(--eco-font-heading);
   font-size: 1.05rem;
-  font-weight: 700;
-  color: #0f172a;
-  line-height: 1.1;
+  font-weight: 800;
+  color: var(--eco-heading-color);
+  line-height: 1;
 }
 
 .stat-label {
-  font-size: 0.75rem;
-  color: #64748b;
-  font-weight: 500;
-  margin-top: 2px;
+  font-family: var(--eco-font-heading);
+  font-size: 0.7rem;
+  color: var(--eco-text-muted);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
   white-space: nowrap;
 }
 
@@ -257,17 +324,20 @@
 .xp-level-row {
   display: flex;
   align-items: center;
-  gap: 1.25rem;
+  gap: 16px;
   width: 100%;
 }
 
 .level-badge {
-  background: #d1fae5;
-  color: #059669;
-  font-weight: 700;
-  padding: 0.3rem 0.8rem;
-  border-radius: 20px;
-  font-size: 0.82rem;
+  background: var(--eco-green);
+  color: var(--eco-white);
+  font-family: var(--eco-font-heading);
+  font-weight: 800;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
   white-space: nowrap;
 }
 
@@ -275,67 +345,67 @@
   flex: 1;
   height: 10px;
   background: #e2e8f0;
-  border-radius: 5px;
+  border-radius: 999px;
   overflow: hidden;
 }
 
 .xp-progress-fill {
   height: 100%;
-  background: #10b981;
-  border-radius: 5px;
+  background: linear-gradient(90deg, #16a34a 0%, #15803d 100%);
+  border-radius: 999px;
   transition: width 0.4s ease-out;
 }
 
 .xp-text {
-  font-size: 0.82rem;
-  color: #475569;
+  font-family: var(--eco-font-heading);
+  font-size: 0.8rem;
+  color: var(--eco-slate-700);
   font-weight: 700;
   white-space: nowrap;
+}
+
+.xp-total-note {
+  font-weight: 600;
+  color: var(--eco-text-muted);
+  margin-left: 4px;
 }
 
 /* ==========================================================================
    SECTION 2: BADGE GALLERY CARD
    ========================================================================== */
-.badge-gallery-card {
-  width: 100%;
-  box-sizing: border-box;
-  background: #ffffff;
-  border-radius: 20px;
-  padding: 1.5rem 2rem;
-  margin-top: 1.5rem;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.02);
-}
-
 .badge-gallery-card .gallery-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 1.25rem;
+  margin-bottom: 16px;
   position: relative;
-  z-index: 10; /* DECREASED: Ensures header stays below scroll row tooltips */
+  z-index: 10; /* Ensures header stays below scroll row tooltips */
 }
 
 .badge-gallery-card .title-group {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 10px;
 }
 
 .badge-gallery-card .gallery-title {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: #0f172a;
+  font-family: var(--eco-font-heading);
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--eco-heading-color);
   margin: 0;
 }
 
 .badge-gallery-card .badge-count-pill {
+  font-family: var(--eco-font-heading);
   background: #e0f2fe;
   color: #0284c7;
-  font-size: 0.8rem;
-  font-weight: 600;
-  padding: 0.25rem 0.65rem;
-  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .badge-gallery-card .badges-loading,
@@ -344,9 +414,9 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 2rem 1rem;
-  color: #64748b;
-  gap: 0.5rem;
+  padding: 32px 16px;
+  color: var(--eco-text-muted);
+  gap: 8px;
 }
 
 .badge-gallery-card .badges-empty .empty-icon {
@@ -357,21 +427,22 @@
   margin: 0;
   font-size: 0.9rem;
   text-align: center;
+  font-style: italic;
 }
 
 /* Sideways Scroll Container */
 .badge-scroll-row {
   display: flex;
-  gap: 1.5rem;
+  gap: 20px;
   overflow-x: auto;
-  /* HACK: Expanded top padding by 150px to prevent the absolute tooltip from clipping. */
-  /* Pulled it back up visually using margin-top: -150px so the layout doesn't break. */
-  padding: calc(0.75rem + 150px) 0.25rem 1.25rem 0.25rem;
+  /* Expanded top padding to prevent the absolute tooltip from clipping,
+     pulled back up visually with a matching negative margin. */
+  padding: calc(12px + 150px) 4px 16px 4px;
   margin-top: -150px;
   scrollbar-width: thin;
   scrollbar-color: #cbd5e1 transparent;
   position: relative;
-  z-index: 20; /* INCREASED: Higher than header so tooltips appear on top */
+  z-index: 20; /* Higher than header so tooltips appear on top */
 }
 
 .badge-scroll-row::-webkit-scrollbar {
@@ -389,23 +460,23 @@
   flex-direction: column;
   align-items: center;
   flex-shrink: 0;
-  width: 110px; /* INCREASED: Made the badge card wider */
+  width: 100px;
   cursor: pointer;
 }
 
 /* Circular 1:1 Aspect Frame */
 .badge-circle-frame {
-  width: 90px; /* INCREASED: Made the circle frame larger */
-  height: 90px;
+  width: 84px;
+  height: 84px;
   aspect-ratio: 1 / 1;
   border-radius: 50%;
   background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-  border: 3px solid #10b981;
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
+  border: 3px solid var(--eco-green);
+  box-shadow: 0 4px 12px rgba(45, 106, 79, 0.15);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 8px; /* Slightly increased padding to match larger scale */
+  padding: 8px;
   box-sizing: border-box;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
@@ -418,10 +489,11 @@
 }
 
 .badge-name-label {
-  margin-top: 0.6rem;
-  font-size: 0.85rem; /* INCREASED: Slightly larger text to balance the bigger badge */
-  font-weight: 600;
-  color: #334155;
+  margin-top: 10px;
+  font-family: var(--eco-font-heading);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--eco-slate-700);
   text-align: center;
   white-space: nowrap;
   overflow: hidden;
@@ -432,7 +504,7 @@
 /* Hover State & Tooltip Display */
 .badge-item-card:hover .badge-circle-frame {
   transform: translateY(-4px) scale(1.06);
-  box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+  box-shadow: 0 8px 20px rgba(45, 106, 79, 0.3);
 }
 
 .badge-item-card:hover .badge-hover-tooltip {
@@ -448,13 +520,10 @@
   left: 50%;
   transform: translateX(-50%) translateY(8px);
   width: 220px;
-  
-  /* Changed this from solid #0f172a to 80% opaque rgba */
-  background: rgba(15, 23, 42, 0.8); 
-  backdrop-filter: blur(4px); /* Pro-tip: This adds a nice frosted glass effect behind it! */
-  
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(4px);
   color: #f8fafc;
-  padding: 0.85rem;
+  padding: 14px;
   border-radius: 12px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
   opacity: 0;
@@ -472,9 +541,7 @@
   transform: translateX(-50%);
   border-width: 6px;
   border-style: solid;
-  
-  /* Changed the top border color to match the 80% opaque rgba box */
-  border-color: rgba(15, 23, 42, 0.8) transparent transparent transparent;
+  border-color: rgba(15, 23, 42, 0.85) transparent transparent transparent;
 }
 
 /* Fix left clipping for the very first badge in the list */
@@ -484,7 +551,7 @@
 }
 
 .badge-item-card:first-child .badge-hover-tooltip::after {
-  left: 55px;
+  left: 42px;
   transform: translateX(-50%);
 }
 
@@ -497,14 +564,16 @@
 
 .badge-item-card:last-child .badge-hover-tooltip::after {
   left: auto;
-  right: 55px; 
+  right: 42px;
   transform: translateX(50%);
 }
 
 .badge-hover-tooltip .category-pill {
-  font-size: 0.68rem;
-  font-weight: 700;
+  font-family: var(--eco-font-heading);
+  font-size: 0.66rem;
+  font-weight: 800;
   text-transform: uppercase;
+  letter-spacing: 0.04em;
   padding: 2px 7px;
   border-radius: 4px;
   background: #1e293b;
@@ -529,8 +598,8 @@
 .badge-hover-tooltip .tooltip-description {
   font-size: 0.775rem;
   color: #cbd5e1;
-  margin: 0.5rem 0;
-  line-height: 1.35;
+  margin: 8px 0;
+  line-height: 1.4;
 }
 
 .badge-hover-tooltip .tooltip-footer {
@@ -540,15 +609,17 @@
   font-size: 0.7rem;
   color: #94a3b8;
   border-top: 1px solid #1e293b;
-  padding-top: 0.4rem;
+  padding-top: 6px;
 }
 
 .badge-hover-tooltip .date-value {
   color: #f1f5f9;
-  font-weight: 600;
+  font-weight: 700;
 }
 
-/* Crop Modal Styles */
+/* ==========================================================================
+   AVATAR CROP MODAL
+   ========================================================================== */
 .crop-modal-backdrop {
   position: fixed;
   inset: 0;
@@ -558,13 +629,13 @@
   align-items: center;
   justify-content: center;
   z-index: 9999;
-  padding: 1rem;
+  padding: 16px;
 }
 
 .crop-modal {
-  background: #ffffff;
-  border-radius: 20px;
-  padding: 1.75rem;
+  background: var(--eco-white);
+  border-radius: 16px;
+  padding: 24px;
   max-width: 360px;
   width: 100%;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
@@ -575,15 +646,16 @@
 
 .crop-modal-title {
   margin: 0;
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: #0f172a;
+  font-family: var(--eco-font-heading);
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--eco-heading-color);
 }
 
 .crop-modal-subtitle {
-  margin: 0.25rem 0 1.25rem 0;
+  margin: 4px 0 20px 0;
   font-size: 0.8rem;
-  color: #64748b;
+  color: var(--eco-text-muted);
 }
 
 .crop-canvas-wrapper {
@@ -608,42 +680,44 @@
 .zoom-control {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 12px;
   width: 80%;
-  margin-top: 1.25rem;
-  color: #64748b;
+  margin-top: 20px;
+  color: var(--eco-text-muted);
 }
 
 .zoom-slider {
   flex: 1;
-  accent-color: #10b981;
+  accent-color: var(--eco-green);
 }
 
 .crop-modal-actions {
   display: flex;
-  gap: 0.75rem;
+  gap: 12px;
   width: 100%;
-  margin-top: 1.5rem;
+  margin-top: 24px;
 }
 
 .crop-btn {
   flex: 1;
-  padding: 0.65rem 1rem;
-  border-radius: 10px;
-  font-weight: 600;
-  font-size: 0.9rem;
+  padding: 10px 16px;
+  border-radius: 999px;
+  font-family: var(--eco-font-heading);
+  font-weight: 800;
+  font-size: 0.88rem;
   cursor: pointer;
   border: none;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
+  gap: 8px;
   transition: background-color 0.2s ease;
 }
 
 .crop-btn.cancel {
-  background: #f1f5f9;
-  color: #475569;
+  background: var(--eco-input-field-bg);
+  color: var(--eco-text-label);
+  border: 1.5px solid var(--eco-input-border);
 }
 
 .crop-btn.cancel:hover {
@@ -651,126 +725,75 @@
 }
 
 .crop-btn.confirm {
-  background: #10b981;
-  color: #ffffff;
+  background: var(--eco-green);
+  color: var(--eco-white);
 }
 
 .crop-btn.confirm:hover {
-  background: #059669;
-}
-
-/* Responsive Scaling */
-@media (max-width: 900px) {
-  .hero-top-row {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .hero-stats-row {
-    width: 100%;
-    justify-content: space-between;
-    box-sizing: border-box;
-  }
-}
-
-@media (max-width: 640px) {
-  .hero-stats-row {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 0.75rem;
-  }
-
-  /* Span full width for the 5th stat item on small screens */
-  .hero-stat-item:nth-child(9) {
-    grid-column: span 2;
-    justify-content: center;
-  }
-
-  .hero-stat-divider {
-    display: none;
-  }
-
-  .xp-level-row {
-    flex-wrap: wrap;
-    gap: 0.6rem;
-  }
-
-  .xp-progress-track {
-    order: 3;
-    width: 100%;
-    flex: auto;
-  }
-
-  .badge-gallery-card {
-    padding: 1.25rem;
-  }
+  background: var(--eco-green-dark);
 }
 
 /* ==========================================================================
-   SECTION 3: SIMPLE SETTINGS CARD
+   SECTION 3: ACCOUNT & DATA SETTINGS CARD
    ========================================================================== */
-.simple-settings-card {
-  width: 100%;
-  box-sizing: border-box;
-  background: #ffffff;
-  border-radius: 20px;
-  padding: 1.5rem 2rem;
-  margin-top: 1.5rem;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.02);
-}
-
 .settings-title {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: #0f172a;
-  margin: 0 0 1rem 0;
+  font-family: var(--eco-font-heading);
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--eco-heading-color);
+  margin: 0 0 4px 0;
 }
 
 .settings-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1.25rem 0;
-  gap: 1rem;
+  padding: 20px 0;
+  gap: 16px;
 }
 
 .settings-row.border-top {
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid var(--eco-input-border);
 }
 
 .settings-info h4 {
-  margin: 0 0 0.25rem 0;
-  font-size: 1rem;
-  font-weight: 600;
-  color: #1e293b;
+  font-family: var(--eco-font-heading);
+  margin: 0 0 4px 0;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--eco-slate-800);
 }
 
 .settings-info h4.text-danger {
-  color: #ef4444;
+  color: var(--eco-red);
 }
 
 .settings-info p {
   margin: 0;
   font-size: 0.85rem;
-  color: #64748b;
+  color: var(--eco-text-muted);
 }
 
 .settings-actions {
   display: flex;
-  gap: 0.75rem;
+  gap: 12px;
   flex-shrink: 0;
 }
 
-/* Simple Button Styles */
+/* Pill-shaped buttons, matching dashboard's btn-log-entry / btn-ecobot-compact */
 .simple-btn {
-  padding: 0.6rem 1rem;
-  border-radius: 8px;
-  font-weight: 600;
+  font-family: var(--eco-font-heading);
+  height: 40px;
+  padding: 0 20px;
+  border-radius: 999px;
+  font-weight: 800;
   font-size: 0.85rem;
   cursor: pointer;
   border: none;
-  transition: background-color 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease, transform 0.2s ease;
 }
 
 .pdf-btn {
@@ -780,10 +803,10 @@
 .pdf-btn:hover { background: #fecaca; }
 
 .excel-btn {
-  background: #d1fae5;
-  color: #059669;
+  background: var(--eco-positive-bg);
+  color: var(--eco-positive-text);
 }
-.excel-btn:hover { background: #a7f3d0; }
+.excel-btn:hover { background: #bbf7d0; }
 
 .csv-btn {
   background: #dbeafe;
@@ -797,24 +820,10 @@
 }
 
 .delete-btn {
-  background: #ef4444;
-  color: #ffffff;
+  background: var(--eco-red);
+  color: var(--eco-white);
 }
 .delete-btn:hover { background: #dc2626; }
-
-/* Responsive adjustments */
-@media (max-width: 640px) {
-  .settings-row {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  .settings-actions {
-    width: 100%;
-  }
-  .simple-btn {
-    flex: 1; /* Makes buttons full width on small screens */
-  }
-}
 
 /* ==========================================================================
    DELETE ACCOUNT CONFIRMATION MODAL
@@ -828,13 +837,13 @@
   align-items: center;
   justify-content: center;
   z-index: 9999;
-  padding: 1rem;
+  padding: 16px;
 }
 
 .danger-modal {
-  background: #ffffff;
-  border-radius: 20px;
-  padding: 1.75rem;
+  background: var(--eco-white);
+  border-radius: 16px;
+  padding: 24px;
   max-width: 380px;
   width: 100%;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15);
@@ -849,68 +858,70 @@
   height: 56px;
   border-radius: 50%;
   background: #fef2f2;
-  color: #ef4444;
+  color: var(--eco-red);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 1.5rem;
-  margin-bottom: 0.75rem;
+  margin-bottom: 12px;
 }
 
 .danger-modal-title {
   margin: 0;
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: #0f172a;
+  font-family: var(--eco-font-heading);
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--eco-heading-color);
 }
 
 .danger-modal-subtitle {
-  margin: 0.5rem 0 1.25rem 0;
+  margin: 8px 0 20px 0;
   font-size: 0.85rem;
-  color: #64748b;
+  color: var(--eco-text-muted);
   line-height: 1.5;
 }
 
 .danger-modal-label {
   align-self: flex-start;
   font-size: 0.82rem;
-  color: #334155;
-  margin-bottom: 0.4rem;
+  color: var(--eco-slate-700);
+  margin-bottom: 6px;
 }
 
 .danger-modal-label strong {
-  color: #ef4444;
+  color: var(--eco-red);
   letter-spacing: 0.03em;
 }
 
 .danger-confirm-input {
   width: 100%;
   box-sizing: border-box;
-  padding: 0.65rem 0.85rem;
-  border: 1.5px solid #e2e8f0;
+  padding: 10px 14px;
+  border: 1.5px solid var(--eco-input-border);
   border-radius: 10px;
+  font-family: var(--eco-font-body);
   font-size: 0.95rem;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: 0.05em;
-  color: #0f172a;
+  color: var(--eco-heading-color);
   outline: none;
   transition: border-color 0.2s ease;
 }
 
 .danger-confirm-input:focus {
-  border-color: #ef4444;
+  border-color: var(--eco-red);
 }
 
 .danger-confirm-input:disabled {
-  background: #f8fafc;
-  color: #94a3b8;
+  background: var(--eco-input-field-bg);
+  color: var(--eco-slate-400);
 }
 
 .danger-modal-error {
   width: 100%;
   box-sizing: border-box;
-  margin: 0.65rem 0 0 0;
-  padding: 0.5rem 0.75rem;
+  margin: 10px 0 0 0;
+  padding: 8px 12px;
   background: #fef2f2;
   color: #b91c1c;
   border-radius: 8px;
@@ -920,29 +931,30 @@
 
 .danger-modal-actions {
   display: flex;
-  gap: 0.75rem;
+  gap: 12px;
   width: 100%;
-  margin-top: 1.5rem;
+  margin-top: 24px;
 }
 
 .danger-btn {
   flex: 1;
-  padding: 0.65rem 1rem;
-  border-radius: 10px;
-  font-weight: 600;
-  font-size: 0.9rem;
+  padding: 10px 16px;
+  border-radius: 999px;
+  font-family: var(--eco-font-heading);
+  font-weight: 800;
+  font-size: 0.88rem;
   cursor: pointer;
   border: none;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
+  gap: 8px;
   transition: background-color 0.2s ease, opacity 0.2s ease;
 }
 
 .danger-btn.confirm {
-  background: #ef4444;
-  color: #ffffff;
+  background: var(--eco-red);
+  color: var(--eco-white);
 }
 
 .danger-btn.confirm:hover:not(:disabled) {
@@ -953,4 +965,85 @@
   background: #fca5a5;
   cursor: not-allowed;
   opacity: 0.8;
+}
+
+/* ==========================================================================
+   Responsive Rules (matches breakpoints used in dashboard.css/tracking.css)
+   ========================================================================== */
+@media (max-width: 1024px) {
+  :host {
+    height: 100%;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .identity-container {
+    padding: 16px;
+    gap: 16px;
+    overflow-x: hidden;
+  }
+}
+
+@media (max-width: 900px) {
+  .hero-top-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .hero-stats-row {
+    width: 100%;
+    justify-content: space-between;
+    box-sizing: border-box;
+  }
+}
+
+@media (max-width: 640px) {
+  .identity-container {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .identity-card {
+    padding: 16px;
+  }
+
+  .hero-stats-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  /* Span full width for the 5th stat item on small screens */
+  .hero-stat-item:nth-child(9) {
+    grid-column: span 2;
+    justify-content: center;
+  }
+
+  .hero-stat-divider {
+    display: none;
+  }
+
+  .xp-level-row {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .xp-progress-track {
+    order: 3;
+    width: 100%;
+    flex: auto;
+  }
+
+  .settings-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .settings-actions {
+    width: 100%;
+  }
+
+  .simple-btn {
+    flex: 1;
+  }
 }

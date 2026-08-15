@@ -94,20 +94,22 @@
           </div>
         </div>
 
-        <div class="daily-chart-container" *ngIf="hasRecentData; else noRecentDataState">
-          <canvas
-            baseChart
-            [data]="dailyChartData"
-            [options]="dailyChartOptions"
-            [type]="dailyChartType">
-          </canvas>
-        </div>
+        <div class="daily-chart-container">
+          <ng-container *ngIf="hasRecentData; else noRecentDataState">
+            <canvas
+              baseChart
+              [data]="dailyChartData"
+              [options]="dailyChartOptions"
+              [type]="dailyChartType">
+            </canvas>
+          </ng-container>
 
-        <ng-template #noRecentDataState>
-          <div class="empty-state">
-            No recent entries logged. Click "+ Log New Entry" above to get started!
-          </div>
-        </ng-template>
+          <ng-template #noRecentDataState>
+            <div class="empty-state chart-empty-state">
+              No recent entries logged. Click "+ Log New Entry" above to get started!
+            </div>
+          </ng-template>
+        </div>
 
         <!-- Dynamic Legend Chips -->
         <div class="chart-legend-row" *ngIf="activeCategories.length > 0">

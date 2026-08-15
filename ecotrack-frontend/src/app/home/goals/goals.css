@@ -603,4 +603,58 @@ option:disabled {
     grid-template-rows: auto;
     grid-template-columns: 1fr;
   }
+
+  .history-row {
+    flex-direction: column;
+    align-items: flex-start;
+    position: relative; /* Creates an anchor for the delete button */
+    gap: 12px;
+    padding: 16px;
+  }
+
+  .history-row-main {
+    min-width: 0; /* Destroys the desktop 180px min-width constraint */
+    width: 100%;
+    padding-right: 32px; /* Prevents long titles from hitting the delete button */
+    box-sizing: border-box;
+  }
+
+  .history-row-stats {
+    justify-content: flex-start; /* Pushes the stat chips to the left */
+    width: 100%;
+  }
+
+  .history-row .btn-delete {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+  }
+
+  /* Bonus Polish: Centers the pagination bar cleanly on smaller screens */
+  .pagination-bar {
+    flex-direction: column;
+    justify-content: center;
+    gap: 12px;
+  }
+  
+  .pagination-controls {
+    justify-content: center;
+  }
+}
+
+/* --- Smaller Mobile Device Overrides --- */
+@media (max-width: 768px) {
+  
+  /* 1. Tell the container to center all of its flex items */
+  .history-row.failed-row .history-row-stats {
+    justify-content: center;
+  }
+
+  /* 2. Force the main failure chip to span 100% of the top line */
+  .history-row.failed-row .stat-failure {
+    flex: 1 1 100%; 
+    text-align: center; 
+    box-sizing: border-box;
+  }
+  
 }
