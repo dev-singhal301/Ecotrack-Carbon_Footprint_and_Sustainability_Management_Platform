@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy, inject, ViewChild, ElementRef, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { HttpErrorResponse } from '@angular/common/http';
+import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { EcoIdentityService, UserProfileData, BadgeItem } from './eco-identity.service';
@@ -70,6 +70,12 @@ export class EcoIdentityComponent implements OnInit, OnDestroy {
   deleteConfirmText = '';
   isDeletingAccount = false;
   deleteError: string | null = null;
+
+  // --- Report Export State ---
+  isDownloadingPdf = false;
+  isDownloadingExcel = false;
+  isDownloadingCsv = false;
+  downloadError: string | null = null;
 
   ngOnInit(): void {
     // Keep profile in sync with shared state across components
@@ -403,6 +409,75 @@ export class EcoIdentityComponent implements OnInit, OnDestroy {
         this.cdr.markForCheck();
       },
     });
+  }
+
+  // --- Report Export: downloads the 30-day sustainability report (carbon
+  //     footprint, XP, goals, challenges) as a PDF, Excel, or CSV file ---
+  downloadPdf(): void {
+    this.downloadReportAs('pdf');
+  }
+
+  downloadExcel(): void {
+    this.downloadReportAs('xlsx');
+  }
+
+  downloadCsv(): void {
+    this.downloadReportAs('csv');
+  }
+
+  private downloadReportAs(format: 'pdf' | 'xlsx' | 'csv'): void {
+    const loadingFlag = this.loadingFlagFor(format);
+    if (this[loadingFlag]) return; // already downloading this format
+
+    this[loadingFlag] = true;
+    this.downloadError = null;
+    this.cdr.markForCheck();
+
+    this.ecoIdentityService.downloadReport(format).subscribe({
+      next: (response) => this.saveBlobResponse(response, format),
+      error: (err: HttpErrorResponse) => {
+        console.error(`Failed to download ${format} report:`, err);
+        this.downloadError = 'Something went wrong generating your report. Please try again.';
+        this[loadingFlag] = false;
+        this.cdr.markForCheck();
+      },
+      complete: () => {
+        this[loadingFlag] = false;
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  private loadingFlagFor(format: 'pdf' | 'xlsx' | 'csv'): 'isDownloadingPdf' | 'isDownloadingExcel' | 'isDownloadingCsv' {
+    switch (format) {
+      case 'pdf':
+        return 'isDownloadingPdf';
+      case 'xlsx':
+        return 'isDownloadingExcel';
+      case 'csv':
+        return 'isDownloadingCsv';
+    }
+  }
+
+  // Triggers a browser save-as for the blob, naming the file from the
+  // server's Content-Disposition header when present, otherwise falling
+  // back to a sensible default.
+  private saveBlobResponse(response: HttpResponse<Blob>, format: string): void {
+    const body = response.body;
+    if (!body) return;
+
+    const disposition = response.headers.get('Content-Disposition') ?? '';
+    const match = /filename="?([^"]+)"?/i.exec(disposition);
+    const filename = match?.[1] ?? `sustainability-report.${format}`;
+
+    const blobUrl = window.URL.createObjectURL(body);
+    const link = document.createElement('a');
+    link.href = blobUrl;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(blobUrl);
   }
 
   // --- Delete Account: opens a "type DELETE to confirm" modal, then wipes the

@@ -273,10 +273,32 @@
     <div class="settings-info">
       <h4>Export Activity Data</h4>
       <p>Download a complete record of your logged entries, goals, and achievements.</p>
+      @if (downloadError) {
+        <p class="text-danger" style="margin-top: 0.4rem; font-size: 0.85rem;">{{ downloadError }}</p>
+      }
     </div>
     <div class="settings-actions">
-      <button class="simple-btn pdf-btn">Download PDF</button>
-      <button class="simple-btn excel-btn">Download Excel</button>
+      <button
+        class="simple-btn pdf-btn"
+        [disabled]="isDownloadingPdf"
+        (click)="downloadPdf()">
+        <i class="fa-solid" [class.fa-file-pdf]="!isDownloadingPdf" [class.fa-spinner]="isDownloadingPdf" [class.fa-spin]="isDownloadingPdf"></i>
+        {{ isDownloadingPdf ? 'Preparing...' : 'Download PDF' }}
+      </button>
+      <button
+        class="simple-btn excel-btn"
+        [disabled]="isDownloadingExcel"
+        (click)="downloadExcel()">
+        <i class="fa-solid" [class.fa-file-excel]="!isDownloadingExcel" [class.fa-spinner]="isDownloadingExcel" [class.fa-spin]="isDownloadingExcel"></i>
+        {{ isDownloadingExcel ? 'Preparing...' : 'Download Excel' }}
+      </button>
+      <button
+        class="simple-btn csv-btn"
+        [disabled]="isDownloadingCsv"
+        (click)="downloadCsv()">
+        <i class="fa-solid" [class.fa-file-csv]="!isDownloadingCsv" [class.fa-spinner]="isDownloadingCsv" [class.fa-spin]="isDownloadingCsv"></i>
+        {{ isDownloadingCsv ? 'Preparing...' : 'Download CSV' }}
+      </button>
     </div>
   </div>
 

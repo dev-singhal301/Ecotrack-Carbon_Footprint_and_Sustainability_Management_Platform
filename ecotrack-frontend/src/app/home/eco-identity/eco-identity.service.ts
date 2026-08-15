@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpResponse } from '@angular/common/http';
 import { BehaviorSubject, Observable, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { AuthService } from '../../auth.service';
@@ -138,6 +138,22 @@ export class EcoIdentityService {
         }
       })
     );
+  }
+
+  /**
+   * Downloads the sustainability report (past 30 days: carbon footprint, XP,
+   * goals, challenges) in the given format from GET /api/reports?format=...
+   * Requests the raw file bytes as a blob and reads the server-provided
+   * filename off the Content-Disposition header so the saved file matches
+   * whatever the backend named it.
+   */
+  downloadReport(format: 'pdf' | 'xlsx' | 'csv'): Observable<HttpResponse<Blob>> {
+    return this.http.get(`${this.apiRoot}/api/reports`, {
+      params: { format },
+      headers: this.getAuthHeaders(),
+      responseType: 'blob',
+      observe: 'response',
+    });
   }
 
   uploadAvatar(file: File): Observable<{ avatarUrl: string }> {

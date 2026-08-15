@@ -1,11 +1,13 @@
 package com.ecotrack.ecotrack_backend.service;
 
+import com.ecotrack.ecotrack_backend.dto.ChallengeResponse;
 import com.ecotrack.ecotrack_backend.dto.GoalProgressResponse;
 import com.ecotrack.ecotrack_backend.dto.GoalResponse;
 import com.ecotrack.ecotrack_backend.dto.UserChallengeResponse;
 import com.ecotrack.ecotrack_backend.entity.CarbonEntry;
 import com.ecotrack.ecotrack_backend.entity.User;
 import com.ecotrack.ecotrack_backend.repository.CarbonEntryRepository;
+import com.ecotrack.ecotrack_backend.repository.UserChallengeRepository;
 import com.ecotrack.ecotrack_backend.repository.UserRepository;
 import com.lowagie.text.Chunk;
 import com.lowagie.text.Document;
@@ -63,13 +65,16 @@ public class ReportService {
     private final CarbonEntryRepository carbonEntryRepository;
     private final GoalService goalService;
     private final UserChallengeService userChallengeService;
+    private final UserChallengeRepository userChallengeRepository;
 
     public ReportService(UserRepository userRepository, CarbonEntryRepository carbonEntryRepository,
-            GoalService goalService, UserChallengeService userChallengeService) {
+            GoalService goalService, UserChallengeService userChallengeService,
+            UserChallengeRepository userChallengeRepository) {
         this.userRepository = userRepository;
         this.carbonEntryRepository = carbonEntryRepository;
         this.goalService = goalService;
         this.userChallengeService = userChallengeService;
+        this.userChallengeRepository = userChallengeRepository;
     }
 
     @Transactional(readOnly = true)
@@ -106,7 +111,25 @@ public class ReportService {
 
         LocalDateTime periodStart = from.atStartOfDay();
         LocalDateTime periodEnd = to.atTime(23, 59, 59);
-        List<UserChallengeResponse> joined = userChallengeService.getUserChallenges(user.getEmail()).stream()
+
+        // getUserChallenges() starts from the list of non-cancelled Challenge
+        // definitions (see UserChallengeService), so a challenge that gets
+        // admin-cancelled after the user joined/completed it silently drops
+        // out of that list — and with it, out of every report generated
+        // afterwards, even though the user genuinely participated in it
+        // during the period. Reports are a historical record, so those
+        // cancelled-challenge participations are fetched separately, straight
+        // from the repository, and merged back in. This is safe without the
+        // usual refreshAndFinalize pass because that pass is already a no-op
+        // for cancelled challenges (see UserChallengeService.refreshAndFinalize).
+        List<UserChallengeResponse> cancelledChallengeRows = userChallengeRepository.findByUserId(userId).stream()
+                .filter(uc -> uc.getChallenge().isCancelled())
+                .map(uc -> UserChallengeResponse.fromEntity(ChallengeResponse.fromEntity(uc.getChallenge()), uc))
+                .toList();
+
+        List<UserChallengeResponse> joined = java.util.stream.Stream.concat(
+                        userChallengeService.getUserChallenges(user.getEmail()).stream(),
+                        cancelledChallengeRows.stream())
                 .filter(c -> !"NOT_JOINED".equals(c.getUserStatus()))
                 .filter(c -> c.getJoinedAt() != null && !c.getJoinedAt().isAfter(periodEnd))
                 .filter(c -> c.getCompletedAt() == null || !c.getCompletedAt().isBefore(periodStart))
@@ -1157,14 +1180,15 @@ public class ReportService {
         csv.append('\n');
 
         csvRow(csv, "Activity Challenges");
-        csvRow(csv, "Challenge", "Category", "Status", "Progress (%)", "Current Value", "Target", "Joined At",
-                "Completed/Resolved At");
+        csvRow(csv, "Challenge", "Category", "Status", "Progress (%)", "Current Value", "Target", "XP Earned",
+                "Joined At", "Completed/Resolved At");
         for (UserChallengeResponse c : data.challengeData().activityRows()) {
             csvRow(csv, c.getChallenge().getTitle(), prettifyCategory(c.getChallenge().getCategory()),
                     c.getUserStatus(),
                     c.getCompletionPercentage() != null ? c.getCompletionPercentage().toString() : "0",
                     c.getCurrentValue() != null ? c.getCurrentValue().toString() : "0",
                     c.getChallenge().getTargetValue() != null ? c.getChallenge().getTargetValue().toString() : "0",
+                    String.valueOf(xpEarnedForChallenge(c)),
                     c.getJoinedAt() != null ? c.getJoinedAt().toLocalDate().format(DATE_FMT) : "N/A",
                     c.getCompletedAt() != null ? c.getCompletedAt().toLocalDate().format(DATE_FMT) : "N/A");
         }
@@ -1172,7 +1196,7 @@ public class ReportService {
 
         csvRow(csv, "Carbon Reduction Challenges");
         csvRow(csv, "Challenge", "Category", "Status", "Budget (kg CO2e)", "Used (kg CO2e)", "Remaining (kg CO2e)",
-                "Remaining (%)", "Joined At", "Completed/Resolved At");
+                "Remaining (%)", "XP Earned", "Joined At", "Completed/Resolved At");
         for (UserChallengeResponse c : data.challengeData().carbonRows()) {
             BigDecimal remainingKg = remainingBudget(c.getEffectiveTarget(), c.getCurrentValue());
             csvRow(csv, c.getChallenge().getTitle(), prettifyCategory(c.getChallenge().getCategory()),
@@ -1181,6 +1205,7 @@ public class ReportService {
                     c.getCurrentValue() != null ? c.getCurrentValue().toString() : "0",
                     remainingKg != null ? remainingKg.toString() : "0",
                     c.getCompletionPercentage() != null ? c.getCompletionPercentage().toString() : "0",
+                    String.valueOf(xpEarnedForChallenge(c)),
                     c.getJoinedAt() != null ? c.getJoinedAt().toLocalDate().format(DATE_FMT) : "N/A",
                     c.getCompletedAt() != null ? c.getCompletedAt().toLocalDate().format(DATE_FMT) : "N/A");
         }
@@ -1256,6 +1281,17 @@ public class ReportService {
 
         return new GoalReportData(user, total, achievedCount, notAchievedCount, inProgressCount,
                 successRate, totalXpEarned, rows);
+    }
+
+    // Mirrors the totalXpEarned aggregation below: only a COMPLETED challenge
+    // actually banks its reward XP, so every per-row "XP Earned" figure in the
+    // CSV/Excel challenge tables must use this same rule to stay consistent
+    // with the summary total.
+    private int xpEarnedForChallenge(UserChallengeResponse c) {
+        if (!"COMPLETED".equalsIgnoreCase(c.getUserStatus()))
+            return 0;
+        Integer rewardXp = c.getChallenge().getRewardXp();
+        return rewardXp != null ? rewardXp : 0;
     }
 
     private ChallengeReportData buildChallengeReportData(User user, List<UserChallengeResponse> joined) {
@@ -1496,7 +1532,7 @@ public class ReportService {
     private void writeActivityChallengeTable(Sheet sheet, int startRow, List<UserChallengeResponse> rows,
             CellStyle headerStyle, CellStyle dataStyle) {
         String[] headers = { "Challenge", "Category", "Status", "Current Value", "Target", "Progress (%)",
-                "Joined At", "Completed/Resolved At" };
+                "XP Earned", "Joined At", "Completed/Resolved At" };
         writeHeaderRow(sheet, startRow, headers, headerStyle);
 
         int rowIdx = startRow + 1;
@@ -1510,9 +1546,10 @@ public class ReportService {
                     c.getChallenge().getTargetValue() != null ? c.getChallenge().getTargetValue().doubleValue() : 0.0);
             r.createCell(5).setCellValue(
                     c.getCompletionPercentage() != null ? c.getCompletionPercentage().doubleValue() : 0.0);
-            r.createCell(6)
+            r.createCell(6).setCellValue(xpEarnedForChallenge(c));
+            r.createCell(7)
                     .setCellValue(c.getJoinedAt() != null ? c.getJoinedAt().toLocalDate().format(DATE_FMT) : "N/A");
-            r.createCell(7).setCellValue(
+            r.createCell(8).setCellValue(
                     c.getCompletedAt() != null ? c.getCompletedAt().toLocalDate().format(DATE_FMT) : "N/A");
 
             for (int i = 0; i < headers.length; i++) {
@@ -1528,7 +1565,7 @@ public class ReportService {
     private void writeCarbonChallengeTable(Sheet sheet, int startRow, List<UserChallengeResponse> rows,
             CellStyle headerStyle, CellStyle dataStyle) {
         String[] headers = { "Challenge", "Category", "Status", "Budget (kg CO2e)", "Used (kg CO2e)",
-                "Remaining (kg CO2e)", "Remaining (%)", "Joined At", "Completed/Resolved At" };
+                "Remaining (kg CO2e)", "Remaining (%)", "XP Earned", "Joined At", "Completed/Resolved At" };
         writeHeaderRow(sheet, startRow, headers, headerStyle);
 
         int rowIdx = startRow + 1;
@@ -1543,9 +1580,10 @@ public class ReportService {
             r.createCell(5).setCellValue(remainingKg != null ? remainingKg.doubleValue() : 0.0);
             r.createCell(6).setCellValue(
                     c.getCompletionPercentage() != null ? c.getCompletionPercentage().doubleValue() : 0.0);
-            r.createCell(7)
+            r.createCell(7).setCellValue(xpEarnedForChallenge(c));
+            r.createCell(8)
                     .setCellValue(c.getJoinedAt() != null ? c.getJoinedAt().toLocalDate().format(DATE_FMT) : "N/A");
-            r.createCell(8).setCellValue(
+            r.createCell(9).setCellValue(
                     c.getCompletedAt() != null ? c.getCompletedAt().toLocalDate().format(DATE_FMT) : "N/A");
 
             for (int i = 0; i < headers.length; i++) {
