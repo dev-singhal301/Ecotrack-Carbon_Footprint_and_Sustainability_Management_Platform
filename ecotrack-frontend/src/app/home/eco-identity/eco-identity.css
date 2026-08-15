@@ -9,7 +9,7 @@
   box-sizing: border-box;
   background: #ffffff;
   border-radius: 20px;
-  padding: 1.5rem 2rem;
+  padding: 2rem 2.5rem; /* INCREASED: Outer padding for more breathing room */
   border: 1px solid #e2e8f0;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.02);
   display: flex;
@@ -22,7 +22,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1.5rem;
+  gap: 2rem; /* INCREASED: Gap between bio and stats */
   width: 100%;
 }
 
@@ -171,10 +171,10 @@
 .hero-stats-row {
   display: flex;
   align-items: center;
-  gap: 1.25rem;
+  gap: 1.5rem; /* INCREASED: Gap between stats */
   background: #f8fafc;
   border: 1px solid #f1f5f9;
-  padding: 0.6rem 1.25rem;
+  padding: 1rem 1.75rem; /* INCREASED: Inner padding to make it wider and less cramped */
   border-radius: 16px;
 }
 
@@ -312,6 +312,8 @@
   align-items: center;
   justify-content: space-between;
   margin-bottom: 1.25rem;
+  position: relative;
+  z-index: 10; /* DECREASED: Ensures header stays below scroll row tooltips */
 }
 
 .badge-gallery-card .title-group {
@@ -362,9 +364,14 @@
   display: flex;
   gap: 1.5rem;
   overflow-x: auto;
-  padding: 0.75rem 0.25rem 1.25rem 0.25rem;
+  /* HACK: Expanded top padding by 150px to prevent the absolute tooltip from clipping. */
+  /* Pulled it back up visually using margin-top: -150px so the layout doesn't break. */
+  padding: calc(0.75rem + 150px) 0.25rem 1.25rem 0.25rem;
+  margin-top: -150px;
   scrollbar-width: thin;
   scrollbar-color: #cbd5e1 transparent;
+  position: relative;
+  z-index: 20; /* INCREASED: Higher than header so tooltips appear on top */
 }
 
 .badge-scroll-row::-webkit-scrollbar {
@@ -382,14 +389,14 @@
   flex-direction: column;
   align-items: center;
   flex-shrink: 0;
-  width: 95px;
+  width: 110px; /* INCREASED: Made the badge card wider */
   cursor: pointer;
 }
 
 /* Circular 1:1 Aspect Frame */
 .badge-circle-frame {
-  width: 76px;
-  height: 76px;
+  width: 90px; /* INCREASED: Made the circle frame larger */
+  height: 90px;
   aspect-ratio: 1 / 1;
   border-radius: 50%;
   background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
@@ -398,7 +405,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 6px;
+  padding: 8px; /* Slightly increased padding to match larger scale */
   box-sizing: border-box;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
@@ -411,8 +418,8 @@
 }
 
 .badge-name-label {
-  margin-top: 0.5rem;
-  font-size: 0.8rem;
+  margin-top: 0.6rem;
+  font-size: 0.85rem; /* INCREASED: Slightly larger text to balance the bigger badge */
   font-weight: 600;
   color: #334155;
   text-align: center;
@@ -440,8 +447,12 @@
   bottom: calc(100% + 12px);
   left: 50%;
   transform: translateX(-50%) translateY(8px);
-  width: 210px;
-  background: #0f172a;
+  width: 220px;
+  
+  /* Changed this from solid #0f172a to 80% opaque rgba */
+  background: rgba(15, 23, 42, 0.8); 
+  backdrop-filter: blur(4px); /* Pro-tip: This adds a nice frosted glass effect behind it! */
+  
   color: #f8fafc;
   padding: 0.85rem;
   border-radius: 12px;
@@ -449,7 +460,7 @@
   opacity: 0;
   visibility: hidden;
   transition: all 0.2s ease-in-out;
-  z-index: 100;
+  z-index: 9999;
   pointer-events: none;
 }
 
@@ -461,7 +472,33 @@
   transform: translateX(-50%);
   border-width: 6px;
   border-style: solid;
-  border-color: #0f172a transparent transparent transparent;
+  
+  /* Changed the top border color to match the 80% opaque rgba box */
+  border-color: rgba(15, 23, 42, 0.8) transparent transparent transparent;
+}
+
+/* Fix left clipping for the very first badge in the list */
+.badge-item-card:first-child .badge-hover-tooltip {
+  left: 0;
+  transform: translateY(8px);
+}
+
+.badge-item-card:first-child .badge-hover-tooltip::after {
+  left: 55px;
+  transform: translateX(-50%);
+}
+
+/* Fix right clipping for the very last badge in the list */
+.badge-item-card:last-child .badge-hover-tooltip {
+  left: auto;
+  right: 0;
+  transform: translateY(8px);
+}
+
+.badge-item-card:last-child .badge-hover-tooltip::after {
+  left: auto;
+  right: 55px; 
+  transform: translateX(50%);
 }
 
 .badge-hover-tooltip .category-pill {
