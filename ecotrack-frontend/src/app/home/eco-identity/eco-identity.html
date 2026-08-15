@@ -261,3 +261,84 @@
     </div>
   </div>
 </div>
+
+<!-- ==========================================================================
+   SECTION 3: SIMPLE SETTINGS CARD
+   ========================================================================== -->
+<div class="simple-settings-card">
+  <h3 class="settings-title">Account & Data</h3>
+
+  <!-- Export Row -->
+  <div class="settings-row">
+    <div class="settings-info">
+      <h4>Export Activity Data</h4>
+      <p>Download a complete record of your logged entries, goals, and achievements.</p>
+    </div>
+    <div class="settings-actions">
+      <button class="simple-btn pdf-btn">Download PDF</button>
+      <button class="simple-btn excel-btn">Download Excel</button>
+    </div>
+  </div>
+
+  <!-- Danger Row -->
+  <div class="settings-row border-top">
+    <div class="settings-info">
+      <h4 class="text-danger">Delete Account</h4>
+      <p>Permanently remove your profile and all tracked eco-data.</p>
+    </div>
+    <div class="settings-actions">
+      <button class="simple-btn delete-btn" (click)="openDeleteModal()">Delete Account</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- Delete Account Confirmation Modal -->
+<div class="danger-modal-backdrop" *ngIf="showDeleteModal">
+  <div class="danger-modal">
+    <div class="danger-modal-icon">
+      <i class="fa-solid fa-triangle-exclamation"></i>
+    </div>
+
+    <h3 class="danger-modal-title">Delete your account?</h3>
+    <p class="danger-modal-subtitle">
+      This permanently removes your profile, avatar, goals, challenges, logged entries, and badges.
+      This action cannot be undone.
+    </p>
+
+    <label class="danger-modal-label" for="deleteConfirmInput">
+      Type <strong>DELETE</strong> to confirm
+    </label>
+    <input
+      id="deleteConfirmInput"
+      type="text"
+      class="danger-confirm-input"
+      [(ngModel)]="deleteConfirmText"
+      (keyup.enter)="confirmDeleteAccount()"
+      [disabled]="isDeletingAccount"
+      placeholder="DELETE"
+      autocomplete="off"
+      spellcheck="false"
+    />
+
+    <p class="danger-modal-error" *ngIf="deleteError">{{ deleteError }}</p>
+
+    <div class="danger-modal-actions">
+      <button 
+        type="button" 
+        class="crop-btn cancel" 
+        (click)="cancelDeleteModal()" 
+        [disabled]="isDeletingAccount">
+        Cancel
+      </button>
+      <button
+        type="button"
+        class="danger-btn confirm"
+        (click)="confirmDeleteAccount()"
+        [disabled]="!isDeleteConfirmed || isDeletingAccount">
+        <i class="fa-solid" [class.fa-trash]="!isDeletingAccount" [class.fa-spinner]="isDeletingAccount" [class.fa-spin]="isDeletingAccount"></i>
+        {{ isDeletingAccount ? 'Deleting...' : 'Delete Account' }}
+      </button>
+    </div>
+  </div>
+</div>

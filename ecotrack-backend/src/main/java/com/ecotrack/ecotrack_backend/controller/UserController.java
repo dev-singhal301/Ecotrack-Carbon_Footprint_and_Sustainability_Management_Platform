@@ -126,6 +126,40 @@ public class UserController {
         }
     }
 
+    /**
+     * DELETE /api/users/me
+     * Permanently deletes the authenticated user's account and all associated
+     * data (cascades handle carbon entries, goals, challenges, badges, XP
+     * transactions, notifications, and recommendations at the DB level).
+     * Also best-effort removes their uploaded avatar file from disk.
+     */
+    @DeleteMapping("/me")
+    public ResponseEntity<Void> deleteAccount(@AuthenticationPrincipal UserDetails principal) {
+        if (principal == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        User user = userRepository.findByEmail(principal.getUsername())
+                .orElseThrow(() -> new IllegalArgumentException("Authenticated user not found: " + principal.getUsername()));
+
+        String avatarUrl = user.getAvatarUrl();
+
+        userProfileService.deleteAccountByEmail(principal.getUsername());
+
+        // Best-effort cleanup of the user's uploaded avatar file. Not fatal if it
+        // fails — the account record is already gone by this point.
+        if (avatarUrl != null && avatarUrl.startsWith("/uploads/")) {
+            try {
+                Path avatarPath = Paths.get(avatarUrl.substring(1)); // strip leading '/'
+                Files.deleteIfExists(avatarPath);
+            } catch (IOException e) {
+                System.err.println("Failed to delete avatar file during account deletion: " + e.getMessage());
+            }
+        }
+
+        return ResponseEntity.noContent().build();
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, String>> handleBadRequest(IllegalArgumentException ex) {
         return ResponseEntity.badRequest().body(Map.of("message", ex.getMessage()));

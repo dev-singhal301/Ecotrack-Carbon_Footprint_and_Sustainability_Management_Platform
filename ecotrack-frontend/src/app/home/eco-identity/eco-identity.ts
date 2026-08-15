@@ -2,8 +2,10 @@ import { Component, OnInit, OnDestroy, inject, ViewChild, ElementRef, ChangeDete
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
+import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { EcoIdentityService, UserProfileData, BadgeItem } from './eco-identity.service';
+import { AuthService } from '../../auth.service';
 
 @Component({
   selector: 'app-eco-identity',
@@ -14,6 +16,8 @@ import { EcoIdentityService, UserProfileData, BadgeItem } from './eco-identity.s
 })
 export class EcoIdentityComponent implements OnInit, OnDestroy {
   private readonly ecoIdentityService = inject(EcoIdentityService);
+  private readonly authService = inject(AuthService);
+  private readonly router = inject(Router);
   private readonly cdr = inject(ChangeDetectorRef);
   private profileSub!: Subscription;
 
@@ -60,6 +64,12 @@ export class EcoIdentityComponent implements OnInit, OnDestroy {
   private dragStartY = 0;
   private dragStartOffsetX = 0;
   private dragStartOffsetY = 0;
+
+  // --- Delete Account Confirmation Modal State ---
+  showDeleteModal = false;
+  deleteConfirmText = '';
+  isDeletingAccount = false;
+  deleteError: string | null = null;
 
   ngOnInit(): void {
     // Keep profile in sync with shared state across components
@@ -390,6 +400,48 @@ export class EcoIdentityComponent implements OnInit, OnDestroy {
       error: (err: HttpErrorResponse) => {
         console.error('Failed to upload avatar image:', err);
         this.isUploadingAvatar = false;
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  // --- Delete Account: opens a "type DELETE to confirm" modal, then wipes the
+  //     account server-side and sends the user back to the login page ---
+  openDeleteModal(): void {
+    this.deleteConfirmText = '';
+    this.deleteError = null;
+    this.showDeleteModal = true;
+    this.cdr.markForCheck();
+  }
+
+  cancelDeleteModal(): void {
+    if (this.isDeletingAccount) return; // don't allow closing mid-request
+    this.showDeleteModal = false;
+    this.deleteConfirmText = '';
+    this.deleteError = null;
+    this.cdr.markForCheck();
+  }
+
+  get isDeleteConfirmed(): boolean {
+    return this.deleteConfirmText.trim() === 'DELETE';
+  }
+
+  confirmDeleteAccount(): void {
+    if (!this.isDeleteConfirmed || this.isDeletingAccount) return;
+
+    this.isDeletingAccount = true;
+    this.deleteError = null;
+    this.cdr.markForCheck();
+
+    this.ecoIdentityService.deleteAccount().subscribe({
+      next: () => {
+        this.authService.logout();
+        this.router.navigate(['/auth']);
+      },
+      error: (err: HttpErrorResponse) => {
+        console.error('Failed to delete account:', err);
+        this.isDeletingAccount = false;
+        this.deleteError = 'Something went wrong deleting your account. Please try again.';
         this.cdr.markForCheck();
       },
     });

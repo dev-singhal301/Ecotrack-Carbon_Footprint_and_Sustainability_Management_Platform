@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { BehaviorSubject, Observable, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { AuthService } from '../../auth.service';
 
 export interface UserProfileData {
   userId: number;
@@ -52,6 +53,7 @@ export interface BadgeItem {
 })
 export class EcoIdentityService {
   private readonly http = inject(HttpClient);
+  private readonly authService = inject(AuthService);
 
   private readonly apiRoot = environment.apiUrl
     ? environment.apiUrl.replace(/\/api\/?$/, '')
@@ -62,11 +64,10 @@ export class EcoIdentityService {
   public profile$ = this.profileSubject.asObservable();
 
   private getAuthHeaders(): HttpHeaders {
-    const token =
-      localStorage.getItem('ecotrack_auth_token') ||
-      localStorage.getItem('token') ||
-      localStorage.getItem('jwt') ||
-      '';
+    // Single source of truth for the token — always goes through AuthService
+    // so this can never drift out of sync with whatever key login actually
+    // writes to.
+    const token = this.authService.getToken() ?? '';
     return new HttpHeaders({
       Authorization: `Bearer ${token}`,
     });
@@ -118,6 +119,10 @@ export class EcoIdentityService {
         });
       })
     );
+  }
+
+  deleteAccount(): Observable<void> {
+    return this.http.delete<void>(this.baseUrl, { headers: this.getAuthHeaders() });
   }
 
   updateName(newName: string): Observable<UserProfileData> {

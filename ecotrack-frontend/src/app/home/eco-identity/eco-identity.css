@@ -705,3 +705,241 @@
     padding: 1.25rem;
   }
 }
+
+/* ==========================================================================
+   SECTION 3: SIMPLE SETTINGS CARD
+   ========================================================================== */
+.simple-settings-card {
+  width: 100%;
+  box-sizing: border-box;
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 1.5rem 2rem;
+  margin-top: 1.5rem;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.02);
+}
+
+.settings-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 1rem 0;
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 0;
+  gap: 1rem;
+}
+
+.settings-row.border-top {
+  border-top: 1px solid #e2e8f0;
+}
+
+.settings-info h4 {
+  margin: 0 0 0.25rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.settings-info h4.text-danger {
+  color: #ef4444;
+}
+
+.settings-info p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+.settings-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+/* Simple Button Styles */
+.simple-btn {
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  border: none;
+  transition: background-color 0.2s ease;
+}
+
+.pdf-btn {
+  background: #fee2e2;
+  color: #dc2626;
+}
+.pdf-btn:hover { background: #fecaca; }
+
+.excel-btn {
+  background: #d1fae5;
+  color: #059669;
+}
+.excel-btn:hover { background: #a7f3d0; }
+
+.delete-btn {
+  background: #ef4444;
+  color: #ffffff;
+}
+.delete-btn:hover { background: #dc2626; }
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .settings-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .settings-actions {
+    width: 100%;
+  }
+  .simple-btn {
+    flex: 1; /* Makes buttons full width on small screens */
+  }
+}
+
+/* ==========================================================================
+   DELETE ACCOUNT CONFIRMATION MODAL
+   ========================================================================== */
+.danger-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 1rem;
+}
+
+.danger-modal {
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 1.75rem;
+  max-width: 380px;
+  width: 100%;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.danger-modal-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #fef2f2;
+  color: #ef4444;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.danger-modal-title {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.danger-modal-subtitle {
+  margin: 0.5rem 0 1.25rem 0;
+  font-size: 0.85rem;
+  color: #64748b;
+  line-height: 1.5;
+}
+
+.danger-modal-label {
+  align-self: flex-start;
+  font-size: 0.82rem;
+  color: #334155;
+  margin-bottom: 0.4rem;
+}
+
+.danger-modal-label strong {
+  color: #ef4444;
+  letter-spacing: 0.03em;
+}
+
+.danger-confirm-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.65rem 0.85rem;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: #0f172a;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.danger-confirm-input:focus {
+  border-color: #ef4444;
+}
+
+.danger-confirm-input:disabled {
+  background: #f8fafc;
+  color: #94a3b8;
+}
+
+.danger-modal-error {
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0.65rem 0 0 0;
+  padding: 0.5rem 0.75rem;
+  background: #fef2f2;
+  color: #b91c1c;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  text-align: left;
+}
+
+.danger-modal-actions {
+  display: flex;
+  gap: 0.75rem;
+  width: 100%;
+  margin-top: 1.5rem;
+}
+
+.danger-btn {
+  flex: 1;
+  padding: 0.65rem 1rem;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: background-color 0.2s ease, opacity 0.2s ease;
+}
+
+.danger-btn.confirm {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+.danger-btn.confirm:hover:not(:disabled) {
+  background: #dc2626;
+}
+
+.danger-btn.confirm:disabled {
+  background: #fca5a5;
+  cursor: not-allowed;
+  opacity: 0.8;
+}
