@@ -9,7 +9,7 @@
   box-sizing: border-box;
   background: #ffffff;
   border-radius: 20px;
-  padding: 1.5rem 2rem;
+  padding: 2rem 2.5rem; /* INCREASED: Outer padding for more breathing room */
   border: 1px solid #e2e8f0;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.02);
   display: flex;
@@ -22,7 +22,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1.5rem;
+  gap: 2rem; /* INCREASED: Gap between bio and stats */
   width: 100%;
 }
 
@@ -171,10 +171,10 @@
 .hero-stats-row {
   display: flex;
   align-items: center;
-  gap: 1.25rem;
+  gap: 1.5rem; /* INCREASED: Gap between stats */
   background: #f8fafc;
   border: 1px solid #f1f5f9;
-  padding: 0.6rem 1.25rem;
+  padding: 1rem 1.75rem; /* INCREASED: Inner padding to make it wider and less cramped */
   border-radius: 16px;
 }
 
@@ -291,6 +291,261 @@
   color: #475569;
   font-weight: 700;
   white-space: nowrap;
+}
+
+/* ==========================================================================
+   SECTION 2: BADGE GALLERY CARD
+   ========================================================================== */
+.badge-gallery-card {
+  width: 100%;
+  box-sizing: border-box;
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 1.5rem 2rem;
+  margin-top: 1.5rem;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.02);
+}
+
+.badge-gallery-card .gallery-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+  position: relative;
+  z-index: 10; /* DECREASED: Ensures header stays below scroll row tooltips */
+}
+
+.badge-gallery-card .title-group {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.badge-gallery-card .gallery-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.badge-gallery-card .badge-count-pill {
+  background: #e0f2fe;
+  color: #0284c7;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.25rem 0.65rem;
+  border-radius: 12px;
+}
+
+.badge-gallery-card .badges-loading,
+.badge-gallery-card .badges-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  color: #64748b;
+  gap: 0.5rem;
+}
+
+.badge-gallery-card .badges-empty .empty-icon {
+  font-size: 2.5rem;
+}
+
+.badge-gallery-card .badges-empty p {
+  margin: 0;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+/* Sideways Scroll Container */
+.badge-scroll-row {
+  display: flex;
+  gap: 1.5rem;
+  overflow-x: auto;
+  /* HACK: Expanded top padding by 150px to prevent the absolute tooltip from clipping. */
+  /* Pulled it back up visually using margin-top: -150px so the layout doesn't break. */
+  padding: calc(0.75rem + 150px) 0.25rem 1.25rem 0.25rem;
+  margin-top: -150px;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+  position: relative;
+  z-index: 20; /* INCREASED: Higher than header so tooltips appear on top */
+}
+
+.badge-scroll-row::-webkit-scrollbar {
+  height: 6px;
+}
+
+.badge-scroll-row::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 10px;
+}
+
+.badge-item-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  width: 110px; /* INCREASED: Made the badge card wider */
+  cursor: pointer;
+}
+
+/* Circular 1:1 Aspect Frame */
+.badge-circle-frame {
+  width: 90px; /* INCREASED: Made the circle frame larger */
+  height: 90px;
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border: 3px solid #10b981;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px; /* Slightly increased padding to match larger scale */
+  box-sizing: border-box;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.badge-icon-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 50%;
+}
+
+.badge-name-label {
+  margin-top: 0.6rem;
+  font-size: 0.85rem; /* INCREASED: Slightly larger text to balance the bigger badge */
+  font-weight: 600;
+  color: #334155;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+}
+
+/* Hover State & Tooltip Display */
+.badge-item-card:hover .badge-circle-frame {
+  transform: translateY(-4px) scale(1.06);
+  box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+}
+
+.badge-item-card:hover .badge-hover-tooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Hover Tooltip/Card */
+.badge-hover-tooltip {
+  position: absolute;
+  bottom: calc(100% + 12px);
+  left: 50%;
+  transform: translateX(-50%) translateY(8px);
+  width: 220px;
+  
+  /* Changed this from solid #0f172a to 80% opaque rgba */
+  background: rgba(15, 23, 42, 0.8); 
+  backdrop-filter: blur(4px); /* Pro-tip: This adds a nice frosted glass effect behind it! */
+  
+  color: #f8fafc;
+  padding: 0.85rem;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s ease-in-out;
+  z-index: 9999;
+  pointer-events: none;
+}
+
+.badge-hover-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 6px;
+  border-style: solid;
+  
+  /* Changed the top border color to match the 80% opaque rgba box */
+  border-color: rgba(15, 23, 42, 0.8) transparent transparent transparent;
+}
+
+/* Fix left clipping for the very first badge in the list */
+.badge-item-card:first-child .badge-hover-tooltip {
+  left: 0;
+  transform: translateY(8px);
+}
+
+.badge-item-card:first-child .badge-hover-tooltip::after {
+  left: 55px;
+  transform: translateX(-50%);
+}
+
+/* Fix right clipping for the very last badge in the list */
+.badge-item-card:last-child .badge-hover-tooltip {
+  left: auto;
+  right: 0;
+  transform: translateY(8px);
+}
+
+.badge-item-card:last-child .badge-hover-tooltip::after {
+  left: auto;
+  right: 55px; 
+  transform: translateX(50%);
+}
+
+.badge-hover-tooltip .category-pill {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: #1e293b;
+  color: #38bdf8;
+}
+
+.badge-hover-tooltip .category-pill.challenge {
+  background: #065f46;
+  color: #34d399;
+}
+
+.badge-hover-tooltip .category-pill.leaderboard {
+  background: #78350f;
+  color: #fbbf24;
+}
+
+.badge-hover-tooltip .category-pill.milestone {
+  background: #581c87;
+  color: #c084fc;
+}
+
+.badge-hover-tooltip .tooltip-description {
+  font-size: 0.775rem;
+  color: #cbd5e1;
+  margin: 0.5rem 0;
+  line-height: 1.35;
+}
+
+.badge-hover-tooltip .tooltip-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.7rem;
+  color: #94a3b8;
+  border-top: 1px solid #1e293b;
+  padding-top: 0.4rem;
+}
+
+.badge-hover-tooltip .date-value {
+  color: #f1f5f9;
+  font-weight: 600;
 }
 
 /* Crop Modal Styles */
@@ -444,5 +699,9 @@
     order: 3;
     width: 100%;
     flex: auto;
+  }
+
+  .badge-gallery-card {
+    padding: 1.25rem;
   }
 }
