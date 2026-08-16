@@ -1,321 +1,319 @@
 <div class="identity-container">
 
-<!-- Profile Hero Card -->
-<section class="identity-card profile-hero-card" *ngIf="profile">
-  <!-- Top Row: Avatar & Name on Left, 5 Stats on Right -->
-  <div class="hero-top-row">
-    <!-- User Bio Group -->
-    <div class="user-bio-group">
-      <!-- Avatar Section -->
-      <div class="avatar-container">
-        <img 
-          [src]="profile.avatarUrl || defaultAvatar" 
-          (error)="onImageError($event)"
-          alt="User Avatar" 
-          class="profile-avatar" 
+  <!-- Profile Hero Card -->
+  <section class="identity-card profile-hero-card" *ngIf="profile">
+    <!-- Top Row: Avatar & Name on Left, 5 Stats on Right -->
+    <div class="hero-top-row">
+      <!-- User Bio Group -->
+      <div class="user-bio-group">
+        <!-- Avatar Section -->
+        <div class="avatar-container">
+          <img 
+            [src]="profile.avatarUrl || defaultAvatar" 
+            (error)="onImageError($event)"
+            alt="User Avatar" 
+            class="profile-avatar" 
+          />
+          <button 
+            type="button"
+            class="avatar-edit-btn" 
+            (click)="fileInput.click()" 
+            [disabled]="isUploadingAvatar"
+            aria-label="Change Avatar">
+            <i class="fa-solid" [class.fa-camera]="!isUploadingAvatar" [class.fa-spinner]="isUploadingAvatar" [class.fa-spin]="isUploadingAvatar"></i>
+          </button>
+
+          <!-- Hidden Native File Input -->
+          <input 
+            #fileInput 
+            type="file" 
+            accept="image/*" 
+            (change)="onAvatarFileSelected($event)" 
+            style="display: none;" 
+          />
+        </div>
+
+        <!-- Name & Email Info -->
+        <div class="user-details">
+          <div class="name-row">
+            <ng-container *ngIf="!isEditingName; else editNameTemplate">
+              <h2>{{ profile.name }}</h2>
+              <button type="button" class="icon-edit-btn" (click)="startNameEdit()" title="Edit Name">
+                <i class="fa-solid fa-pen"></i>
+              </button>
+            </ng-container>
+
+            <ng-template #editNameTemplate>
+              <div class="inline-edit-box">
+                <input 
+                  type="text" 
+                  [(ngModel)]="tempName" 
+                  class="name-input" 
+                  (keyup.enter)="saveName()" 
+                  (keyup.escape)="cancelNameEdit()"
+                  [disabled]="isSavingName"
+                />
+                <button 
+                  type="button" 
+                  class="action-btn save" 
+                  (mousedown)="$event.preventDefault()" 
+                  (click)="saveName()" 
+                  [disabled]="isSavingName">
+                  <i class="fa-solid fa-check"></i>
+                </button>
+                <button 
+                  type="button" 
+                  class="action-btn cancel" 
+                  (mousedown)="$event.preventDefault()" 
+                  (click)="cancelNameEdit()" 
+                  [disabled]="isSavingName">
+                  <i class="fa-solid fa-xmark"></i>
+                </button>
+              </div>
+            </ng-template>
+          </div>
+
+          <p class="email-text">{{ profile.email }}</p>
+          <span class="member-since">Member since {{ profile.memberSince }}</span>
+        </div>
+      </div>
+
+      <!-- Stats Pill Container (Top Right - 5 Metrics) -->
+      <div class="hero-stats-row">
+        <!-- 1. Goals Passed -->
+        <div class="hero-stat-item">
+          <div class="stat-icon-wrapper success">
+            <i class="fa-solid fa-circle-check"></i>
+          </div>
+          <div class="stat-info">
+            <span class="stat-value">{{ profile.goalsPassed ?? profile.goalsAccomplished ?? 0 }}</span>
+            <span class="stat-label">Goals Passed</span>
+          </div>
+        </div>
+
+        <div class="hero-stat-divider"></div>
+
+        <!-- 2. Active Goals -->
+        <div class="hero-stat-item">
+          <div class="stat-icon-wrapper active-goal">
+            <i class="fa-solid fa-bullseye"></i>
+          </div>
+          <div class="stat-info">
+            <span class="stat-value">{{ profile.activeGoals ?? 0 }}</span>
+            <span class="stat-label">Active Goals</span>
+          </div>
+        </div>
+
+        <div class="hero-stat-divider"></div>
+
+        <!-- 3. Challenges Passed -->
+        <div class="hero-stat-item">
+          <div class="stat-icon-wrapper challenge">
+            <i class="fa-solid fa-fire"></i>
+          </div>
+          <div class="stat-info">
+            <span class="stat-value">{{ profile.challengesPassed ?? profile.challengesAccomplished ?? 0 }}</span>
+            <span class="stat-label">Challenges Passed</span>
+          </div>
+        </div>
+
+        <div class="hero-stat-divider"></div>
+
+        <!-- 4. Active Challenges -->
+        <div class="hero-stat-item">
+          <div class="stat-icon-wrapper active-challenge">
+            <i class="fa-solid fa-trophy"></i>
+          </div>
+          <div class="stat-info">
+            <span class="stat-value">{{ profile.activeChallenges ?? 0 }}</span>
+            <span class="stat-label">Active Challenges</span>
+          </div>
+        </div>
+
+        <div class="hero-stat-divider"></div>
+
+        <!-- 5. Logged Entries -->
+        <div class="hero-stat-item">
+          <div class="stat-icon-wrapper logs">
+            <i class="fa-solid fa-calendar-check"></i>
+          </div>
+          <div class="stat-info">
+            <span class="stat-value">{{ profile.totalEntries ?? profile.dailyLogCount ?? 0 }}</span>
+            <span class="stat-label">Logged Entries</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Row: Level Badge & Progress Track -->
+    <div class="xp-level-row">
+      <span class="level-badge">Level {{ profile.userLevel }}</span>
+      <div class="xp-progress-track">
+        <div class="xp-progress-fill" [style.width.%]="xpProgressPercent"></div>
+      </div>
+      <span class="xp-text">{{ profile.currentXp }} / {{ profile.nextLevelXpTarget }} XP</span>
+    </div>
+  </section>
+
+  <!-- SECTION 2: BADGE GALLERY -->
+  <section class="identity-card badge-gallery-card">
+    <div class="gallery-header">
+      <div class="title-group">
+        <h2 class="gallery-title">Badge Gallery</h2>
+        <span class="badge-count-pill">{{ badges.length }} {{ badges.length === 1 ? 'Badge' : 'Badges' }}</span>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="isLoadingBadges" class="badges-loading">
+      <i class="fa-solid fa-spinner fa-spin"></i>
+      <span>Loading gallery...</span>
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="!isLoadingBadges && badges.length === 0" class="badges-empty">
+      <div class="empty-icon">🎖️</div>
+      <p>No badges earned yet. Complete challenges, climb the leaderboard, or reach new level milestones to unlock badges!</p>
+    </div>
+
+    <!-- Horizontal Scroll Container -->
+    <div *ngIf="!isLoadingBadges && badges.length > 0" class="badge-scroll-row">
+      <div class="badge-item-card" *ngFor="let badge of badges">
+
+        <!-- Circular 1:1 Aspect Frame -->
+        <div class="badge-circle-frame">
+          <img 
+            [src]="badge.iconUrl" 
+            [alt]="badge.name" 
+            (error)="onBadgeImageError($event)" 
+            class="badge-icon-img" 
+          />
+        </div>
+
+        <!-- Badge Title -->
+        <span class="badge-name-label">{{ badge.name }}</span>
+
+        <!-- On-Hover Floating Tooltip/Card -->
+        <div class="badge-hover-tooltip">
+          <div class="tooltip-header">
+            <span class="category-pill" [ngClass]="(badge.category || '').toLowerCase()">
+              {{ formatBadgeSource(badge.category || '') }}
+            </span>
+          </div>
+          <p class="tooltip-description">{{ badge.description }}</p>
+          <div class="tooltip-footer">
+            <span class="date-label">Acquired</span>
+            <span class="date-value">{{ badge.awardedAt | date:'mediumDate' }}</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- Avatar Crop Modal -->
+  <div class="crop-modal-backdrop" *ngIf="showCropModal">
+    <div class="crop-modal">
+      <h3 class="crop-modal-title">Adjust your photo</h3>
+      <p class="crop-modal-subtitle">Drag to reposition &middot; use the slider to zoom</p>
+
+      <div class="crop-canvas-wrapper">
+        <canvas
+          #cropCanvas
+          class="crop-canvas"
+          [width]="canvasSize"
+          [height]="canvasSize"
+          (pointerdown)="onCanvasPointerDown($event)"
+          (pointermove)="onCanvasPointerMove($event)"
+          (pointerup)="onCanvasPointerUp($event)"
+          (pointerleave)="onCanvasPointerUp($event)"
+        ></canvas>
+      </div>
+
+      <div class="zoom-control">
+        <i class="fa-solid fa-magnifying-glass-minus"></i>
+        <input
+          type="range"
+          class="zoom-slider"
+          [min]="minZoom"
+          [max]="maxZoom"
+          step="0.01"
+          [(ngModel)]="zoom"
+          (input)="onZoomChange()"
         />
+        <i class="fa-solid fa-magnifying-glass-plus"></i>
+      </div>
+
+      <div class="crop-modal-actions">
         <button 
-          type="button"
-          class="avatar-edit-btn" 
-          (click)="fileInput.click()" 
-          [disabled]="isUploadingAvatar"
-          aria-label="Change Avatar">
-          <i class="fa-solid" [class.fa-camera]="!isUploadingAvatar" [class.fa-spinner]="isUploadingAvatar" [class.fa-spin]="isUploadingAvatar"></i>
+          type="button" 
+          class="crop-btn cancel" 
+          (click)="cancelCrop()" 
+          [disabled]="isUploadingAvatar">
+          Cancel
         </button>
-
-        <!-- Hidden Native File Input -->
-        <input 
-          #fileInput 
-          type="file" 
-          accept="image/*" 
-          (change)="onAvatarFileSelected($event)" 
-          style="display: none;" 
-        />
-      </div>
-
-      <!-- Name & Email Info -->
-      <div class="user-details">
-        <div class="name-row">
-          <ng-container *ngIf="!isEditingName; else editNameTemplate">
-            <h2>{{ profile.name }}</h2>
-            <button type="button" class="icon-edit-btn" (click)="startNameEdit()" title="Edit Name">
-              <i class="fa-solid fa-pen"></i>
-            </button>
-          </ng-container>
-
-          <ng-template #editNameTemplate>
-            <div class="inline-edit-box">
-              <input 
-                type="text" 
-                [(ngModel)]="tempName" 
-                class="name-input" 
-                (keyup.enter)="saveName()" 
-                (keyup.escape)="cancelNameEdit()"
-                [disabled]="isSavingName"
-              />
-              <button 
-                type="button" 
-                class="action-btn save" 
-                (mousedown)="$event.preventDefault()" 
-                (click)="saveName()" 
-                [disabled]="isSavingName">
-                <i class="fa-solid fa-check"></i>
-              </button>
-              <button 
-                type="button" 
-                class="action-btn cancel" 
-                (mousedown)="$event.preventDefault()" 
-                (click)="cancelNameEdit()" 
-                [disabled]="isSavingName">
-                <i class="fa-solid fa-xmark"></i>
-              </button>
-            </div>
-          </ng-template>
-        </div>
-
-        <p class="email-text">{{ profile.email }}</p>
-        <span class="member-since">Member since {{ profile.memberSince }}</span>
-      </div>
-    </div>
-
-    <!-- Stats Pill Container (Top Right - 5 Metrics) -->
-    <div class="hero-stats-row">
-      <!-- 1. Goals Passed -->
-      <div class="hero-stat-item">
-        <div class="stat-icon-wrapper success">
-          <i class="fa-solid fa-circle-check"></i>
-        </div>
-        <div class="stat-info">
-          <span class="stat-value">{{ profile.goalsPassed ?? profile.goalsAccomplished ?? 0 }}</span>
-          <span class="stat-label">Goals Passed</span>
-        </div>
-      </div>
-
-      <div class="hero-stat-divider"></div>
-
-      <!-- 2. Active Goals -->
-      <div class="hero-stat-item">
-        <div class="stat-icon-wrapper active-goal">
-          <i class="fa-solid fa-bullseye"></i>
-        </div>
-        <div class="stat-info">
-          <span class="stat-value">{{ profile.activeGoals ?? 0 }}</span>
-          <span class="stat-label">Active Goals</span>
-        </div>
-      </div>
-
-      <div class="hero-stat-divider"></div>
-
-      <!-- 3. Challenges Passed -->
-      <div class="hero-stat-item">
-        <div class="stat-icon-wrapper challenge">
-          <i class="fa-solid fa-fire"></i>
-        </div>
-        <div class="stat-info">
-          <span class="stat-value">{{ profile.challengesPassed ?? profile.challengesAccomplished ?? 0 }}</span>
-          <span class="stat-label">Challenges Passed</span>
-        </div>
-      </div>
-
-      <div class="hero-stat-divider"></div>
-
-      <!-- 4. Active Challenges -->
-      <div class="hero-stat-item">
-        <div class="stat-icon-wrapper active-challenge">
-          <i class="fa-solid fa-trophy"></i>
-        </div>
-        <div class="stat-info">
-          <span class="stat-value">{{ profile.activeChallenges ?? 0 }}</span>
-          <span class="stat-label">Active Challenges</span>
-        </div>
-      </div>
-
-      <div class="hero-stat-divider"></div>
-
-      <!-- 5. Logged Entries -->
-      <div class="hero-stat-item">
-        <div class="stat-icon-wrapper logs">
-          <i class="fa-solid fa-calendar-check"></i>
-        </div>
-        <div class="stat-info">
-          <span class="stat-value">{{ profile.totalEntries ?? profile.dailyLogCount ?? 0 }}</span>
-          <span class="stat-label">Logged Entries</span>
-        </div>
+        <button 
+          type="button" 
+          class="crop-btn confirm" 
+          (click)="confirmCrop()" 
+          [disabled]="isUploadingAvatar">
+          <i class="fa-solid" [class.fa-check]="!isUploadingAvatar" [class.fa-spinner]="isUploadingAvatar" [class.fa-spin]="isUploadingAvatar"></i>
+          {{ isUploadingAvatar ? 'Saving...' : 'Confirm' }}
+        </button>
       </div>
     </div>
   </div>
 
-  <!-- Bottom Row: Level Badge & Progress Track -->
-  <div class="xp-level-row">
-    <span class="level-badge">Level {{ profile.userLevel }}</span>
-    <div class="xp-progress-track">
-      <div class="xp-progress-fill" [style.width.%]="xpProgressPercent"></div>
-    </div>
-    <span class="xp-text">{{ currentLevelXpProgress }} / {{ xpForNextLevel }} XP <small class="xp-total-note">(Total: {{ profile.currentXp }} XP)</small></span>
-  </div>
-</section>
+  <!-- SECTION 3: SIMPLE SETTINGS CARD -->
+  <div class="identity-card simple-settings-card">
+    <h3 class="settings-title">Account & Data</h3>
 
-<!-- SECTION 2: BADGE GALLERY -->
-<section class="identity-card badge-gallery-card">
-  <div class="gallery-header">
-    <div class="title-group">
-      <h2 class="gallery-title">Badge Gallery</h2>
-      <span class="badge-count-pill">{{ badges.length }} {{ badges.length === 1 ? 'Badge' : 'Badges' }}</span>
-    </div>
-  </div>
-
-  <!-- Loading State -->
-  <div *ngIf="isLoadingBadges" class="badges-loading">
-    <i class="fa-solid fa-spinner fa-spin"></i>
-    <span>Loading gallery...</span>
-  </div>
-
-  <!-- Empty State -->
-  <div *ngIf="!isLoadingBadges && badges.length === 0" class="badges-empty">
-    <div class="empty-icon">🎖️</div>
-    <p>No badges earned yet. Complete challenges, climb the leaderboard, or reach new level milestones to unlock badges!</p>
-  </div>
-
-  <!-- Horizontal Scroll Container -->
-  <div *ngIf="!isLoadingBadges && badges.length > 0" class="badge-scroll-row">
-    <div class="badge-item-card" *ngFor="let badge of badges">
-
-      <!-- Circular 1:1 Aspect Frame -->
-      <div class="badge-circle-frame">
-        <img 
-          [src]="badge.iconUrl" 
-          [alt]="badge.name" 
-          (error)="onBadgeImageError($event)" 
-          class="badge-icon-img" 
-        />
+    <!-- Export Row -->
+    <div class="settings-row">
+      <div class="settings-info">
+        <h4>Export Activity Data</h4>
+        <p>Download a complete record of your logged entries, goals, and achievements.</p>
+        @if (downloadError) {
+          <p class="text-danger" style="margin-top: 0.4rem; font-size: 0.85rem;">{{ downloadError }}</p>
+        }
       </div>
-
-      <!-- Badge Title -->
-      <span class="badge-name-label">{{ badge.name }}</span>
-
-      <!-- On-Hover Floating Tooltip/Card -->
-      <div class="badge-hover-tooltip">
-        <div class="tooltip-header">
-          <span class="category-pill" [ngClass]="(badge.category || '').toLowerCase()">
-            {{ formatBadgeSource(badge.category || '') }}
-          </span>
-        </div>
-        <p class="tooltip-description">{{ badge.description }}</p>
-        <div class="tooltip-footer">
-          <span class="date-label">Acquired</span>
-          <span class="date-value">{{ badge.awardedAt | date:'mediumDate' }}</span>
-        </div>
+      <div class="settings-actions">
+        <button
+          class="simple-btn pdf-btn"
+          [disabled]="isDownloadingPdf"
+          (click)="downloadPdf()">
+          <i class="fa-solid" [class.fa-file-pdf]="!isDownloadingPdf" [class.fa-spinner]="isDownloadingPdf" [class.fa-spin]="isDownloadingPdf"></i>
+          {{ isDownloadingPdf ? 'Preparing...' : 'Download PDF' }}
+        </button>
+        <button
+          class="simple-btn excel-btn"
+          [disabled]="isDownloadingExcel"
+          (click)="downloadExcel()">
+          <i class="fa-solid" [class.fa-file-excel]="!isDownloadingExcel" [class.fa-spinner]="isDownloadingExcel" [class.fa-spin]="isDownloadingExcel"></i>
+          {{ isDownloadingExcel ? 'Preparing...' : 'Download Excel' }}
+        </button>
+        <button
+          class="simple-btn csv-btn"
+          [disabled]="isDownloadingCsv"
+          (click)="downloadCsv()">
+          <i class="fa-solid" [class.fa-file-csv]="!isDownloadingCsv" [class.fa-spinner]="isDownloadingCsv" [class.fa-spin]="isDownloadingCsv"></i>
+          {{ isDownloadingCsv ? 'Preparing...' : 'Download CSV' }}
+        </button>
       </div>
-
     </div>
+
+    <!-- Danger Row -->
+    <div class="settings-row border-top">
+      <div class="settings-info">
+        <h4 class="text-danger">Delete Account</h4>
+        <p>Permanently remove your profile and all tracked eco-data.</p>
+      </div>
+      <div class="settings-actions">
+        <button class="simple-btn delete-btn" (click)="openDeleteModal()">Delete Account</button>
+      </div>
+    </div>
+
   </div>
-</section>
-
-<!-- Avatar Crop Modal -->
-<div class="crop-modal-backdrop" *ngIf="showCropModal">
-  <div class="crop-modal">
-    <h3 class="crop-modal-title">Adjust your photo</h3>
-    <p class="crop-modal-subtitle">Drag to reposition &middot; use the slider to zoom</p>
-
-    <div class="crop-canvas-wrapper">
-      <canvas
-        #cropCanvas
-        class="crop-canvas"
-        [width]="canvasSize"
-        [height]="canvasSize"
-        (pointerdown)="onCanvasPointerDown($event)"
-        (pointermove)="onCanvasPointerMove($event)"
-        (pointerup)="onCanvasPointerUp($event)"
-        (pointerleave)="onCanvasPointerUp($event)"
-      ></canvas>
-    </div>
-
-    <div class="zoom-control">
-      <i class="fa-solid fa-magnifying-glass-minus"></i>
-      <input
-        type="range"
-        class="zoom-slider"
-        [min]="minZoom"
-        [max]="maxZoom"
-        step="0.01"
-        [(ngModel)]="zoom"
-        (input)="onZoomChange()"
-      />
-      <i class="fa-solid fa-magnifying-glass-plus"></i>
-    </div>
-
-    <div class="crop-modal-actions">
-      <button 
-        type="button" 
-        class="crop-btn cancel" 
-        (click)="cancelCrop()" 
-        [disabled]="isUploadingAvatar">
-        Cancel
-      </button>
-      <button 
-        type="button" 
-        class="crop-btn confirm" 
-        (click)="confirmCrop()" 
-        [disabled]="isUploadingAvatar">
-        <i class="fa-solid" [class.fa-check]="!isUploadingAvatar" [class.fa-spinner]="isUploadingAvatar" [class.fa-spin]="isUploadingAvatar"></i>
-        {{ isUploadingAvatar ? 'Saving...' : 'Confirm' }}
-      </button>
-    </div>
-  </div>
-</div>
-
-<!-- ==========================================================================
-   SECTION 3: SIMPLE SETTINGS CARD
-   ========================================================================== -->
-<div class="identity-card simple-settings-card">
-  <h3 class="settings-title">Account & Data</h3>
-
-  <!-- Export Row -->
-  <div class="settings-row">
-    <div class="settings-info">
-      <h4>Export Activity Data</h4>
-      <p>Download a complete record of your logged entries, goals, and achievements.</p>
-      @if (downloadError) {
-        <p class="text-danger" style="margin-top: 0.4rem; font-size: 0.85rem;">{{ downloadError }}</p>
-      }
-    </div>
-    <div class="settings-actions">
-      <button
-        class="simple-btn pdf-btn"
-        [disabled]="isDownloadingPdf"
-        (click)="downloadPdf()">
-        <i class="fa-solid" [class.fa-file-pdf]="!isDownloadingPdf" [class.fa-spinner]="isDownloadingPdf" [class.fa-spin]="isDownloadingPdf"></i>
-        {{ isDownloadingPdf ? 'Preparing...' : 'Download PDF' }}
-      </button>
-      <button
-        class="simple-btn excel-btn"
-        [disabled]="isDownloadingExcel"
-        (click)="downloadExcel()">
-        <i class="fa-solid" [class.fa-file-excel]="!isDownloadingExcel" [class.fa-spinner]="isDownloadingExcel" [class.fa-spin]="isDownloadingExcel"></i>
-        {{ isDownloadingExcel ? 'Preparing...' : 'Download Excel' }}
-      </button>
-      <button
-        class="simple-btn csv-btn"
-        [disabled]="isDownloadingCsv"
-        (click)="downloadCsv()">
-        <i class="fa-solid" [class.fa-file-csv]="!isDownloadingCsv" [class.fa-spinner]="isDownloadingCsv" [class.fa-spin]="isDownloadingCsv"></i>
-        {{ isDownloadingCsv ? 'Preparing...' : 'Download CSV' }}
-      </button>
-    </div>
-  </div>
-
-  <!-- Danger Row -->
-  <div class="settings-row border-top">
-    <div class="settings-info">
-      <h4 class="text-danger">Delete Account</h4>
-      <p>Permanently remove your profile and all tracked eco-data.</p>
-    </div>
-    <div class="settings-actions">
-      <button class="simple-btn delete-btn" (click)="openDeleteModal()">Delete Account</button>
-    </div>
-  </div>
-
-</div>
 
 </div><!-- /.identity-container -->
 

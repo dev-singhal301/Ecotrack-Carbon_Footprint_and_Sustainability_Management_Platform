@@ -170,10 +170,26 @@ export class EcoIdentityComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Calculate XP progress bar percentage
+  // --- Level & XP Calculations ---
+  get xpForNextLevel(): number {
+    if (!this.profile) return 1000;
+    return this.profile.xpForNextLevel ?? this.profile.nextLevelXpTarget ?? 1000;
+  }
+
+  get currentLevelXpProgress(): number {
+    if (!this.profile) return 0;
+    if (this.profile.currentLevelXpProgress !== undefined) {
+      return this.profile.currentLevelXpProgress;
+    }
+    const target = this.xpForNextLevel;
+    const currentTotal = this.profile.currentXp ?? 0;
+    return target > 0 ? currentTotal % target : currentTotal;
+  }
+
   get xpProgressPercent(): number {
-    if (!this.profile || !this.profile.nextLevelXpTarget) return 0;
-    const percent = (this.profile.currentXp / this.profile.nextLevelXpTarget) * 100;
+    const target = this.xpForNextLevel;
+    if (!target) return 0;
+    const percent = (this.currentLevelXpProgress / target) * 100;
     return Math.min(100, Math.max(0, percent));
   }
 
@@ -411,8 +427,7 @@ export class EcoIdentityComponent implements OnInit, OnDestroy {
     });
   }
 
-  // --- Report Export: downloads the 30-day sustainability report (carbon
-  //     footprint, XP, goals, challenges) as a PDF, Excel, or CSV file ---
+  // --- Report Export ---
   downloadPdf(): void {
     this.downloadReportAs('pdf');
   }
@@ -427,7 +442,7 @@ export class EcoIdentityComponent implements OnInit, OnDestroy {
 
   private downloadReportAs(format: 'pdf' | 'xlsx' | 'csv'): void {
     const loadingFlag = this.loadingFlagFor(format);
-    if (this[loadingFlag]) return; // already downloading this format
+    if (this[loadingFlag]) return;
 
     this[loadingFlag] = true;
     this.downloadError = null;
@@ -459,9 +474,6 @@ export class EcoIdentityComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Triggers a browser save-as for the blob, naming the file from the
-  // server's Content-Disposition header when present, otherwise falling
-  // back to a sensible default.
   private saveBlobResponse(response: HttpResponse<Blob>, format: string): void {
     const body = response.body;
     if (!body) return;
@@ -480,8 +492,7 @@ export class EcoIdentityComponent implements OnInit, OnDestroy {
     window.URL.revokeObjectURL(blobUrl);
   }
 
-  // --- Delete Account: opens a "type DELETE to confirm" modal, then wipes the
-  //     account server-side and sends the user back to the login page ---
+  // --- Delete Account Modal ---
   openDeleteModal(): void {
     this.deleteConfirmText = '';
     this.deleteError = null;
@@ -490,7 +501,7 @@ export class EcoIdentityComponent implements OnInit, OnDestroy {
   }
 
   cancelDeleteModal(): void {
-    if (this.isDeletingAccount) return; // don't allow closing mid-request
+    if (this.isDeletingAccount) return;
     this.showDeleteModal = false;
     this.deleteConfirmText = '';
     this.deleteError = null;
