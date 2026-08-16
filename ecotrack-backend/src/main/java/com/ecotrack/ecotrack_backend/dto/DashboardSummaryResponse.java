@@ -11,6 +11,10 @@ public class DashboardSummaryResponse {
     private String userRank;                // e.g., "Novice Eco"
     private Integer currentXp;
     private Integer nextLevelXpTarget;
+    
+    // --- New Fields for Relative Progress Bar ---
+    private Integer currentLevelXpProgress;
+    private Integer xpForNextLevel;
 
     // --- Section 2: Core KPI Metric Cards ---
     private BigDecimal totalCarbonFootprint; // kg CO2e
@@ -40,6 +44,7 @@ public class DashboardSummaryResponse {
     public DashboardSummaryResponse() {}
 
     public DashboardSummaryResponse(String username, Integer userLevel, String userRank, Integer currentXp, Integer nextLevelXpTarget,
+                                    Integer currentLevelXpProgress, Integer xpForNextLevel,
                                     BigDecimal totalCarbonFootprint, BigDecimal carbonSaved, Double savingsPercentage,
                                     Integer totalRewardPoints, Long monthlyRank, Long monthlyXp,
                                     List<CategoryImpactResponse> categoryImpacts, List<XpActivityResponse> recentActivities,
@@ -50,6 +55,8 @@ public class DashboardSummaryResponse {
         this.userRank = userRank;
         this.currentXp = currentXp;
         this.nextLevelXpTarget = nextLevelXpTarget;
+        this.currentLevelXpProgress = currentLevelXpProgress;
+        this.xpForNextLevel = xpForNextLevel;
         this.totalCarbonFootprint = totalCarbonFootprint;
         this.carbonSaved = carbonSaved;
         this.savingsPercentage = savingsPercentage;
@@ -79,6 +86,12 @@ public class DashboardSummaryResponse {
 
     public Integer getNextLevelXpTarget() { return nextLevelXpTarget; }
     public void setNextLevelXpTarget(Integer nextLevelXpTarget) { this.nextLevelXpTarget = nextLevelXpTarget; }
+
+    public Integer getCurrentLevelXpProgress() { return currentLevelXpProgress; }
+    public void setCurrentLevelXpProgress(Integer currentLevelXpProgress) { this.currentLevelXpProgress = currentLevelXpProgress; }
+
+    public Integer getXpForNextLevel() { return xpForNextLevel; }
+    public void setXpForNextLevel(Integer xpForNextLevel) { this.xpForNextLevel = xpForNextLevel; }
 
     public BigDecimal getTotalCarbonFootprint() { return totalCarbonFootprint; }
     public void setTotalCarbonFootprint(BigDecimal totalCarbonFootprint) { this.totalCarbonFootprint = totalCarbonFootprint; }

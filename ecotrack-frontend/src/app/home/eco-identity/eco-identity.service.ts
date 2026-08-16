@@ -12,6 +12,8 @@ export interface UserProfileData {
   userLevel: number;
   currentXp: number;
   nextLevelXpTarget: number;
+  currentLevelXpProgress?: number;
+  xpForNextLevel?: number;
   rewardPoints: number;
   userRank?: string | number;
   memberSince: string;

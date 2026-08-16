@@ -171,24 +171,19 @@ export class EcoIdentityComponent implements OnInit, OnDestroy {
   }
 
   // --- Level & XP Calculations ---
-  get xpForNextLevel(): number {
-    if (!this.profile) return 1000;
-    return this.profile.xpForNextLevel ?? this.profile.nextLevelXpTarget ?? 1000;
-  }
-
+  
   get currentLevelXpProgress(): number {
-    if (!this.profile) return 0;
-    if (this.profile.currentLevelXpProgress !== undefined) {
-      return this.profile.currentLevelXpProgress;
-    }
-    const target = this.xpForNextLevel;
-    const currentTotal = this.profile.currentXp ?? 0;
-    return target > 0 ? currentTotal % target : currentTotal;
+    return this.profile?.currentLevelXpProgress || 0;
+  }
+  
+  get xpForNextLevel(): number {
+    return this.profile?.xpForNextLevel || 0;
   }
 
   get xpProgressPercent(): number {
     const target = this.xpForNextLevel;
-    if (!target) return 0;
+    if (target <= 0) return 100; // Fallback to prevent division by zero
+    
     const percent = (this.currentLevelXpProgress / target) * 100;
     return Math.min(100, Math.max(0, percent));
   }
@@ -474,6 +469,9 @@ export class EcoIdentityComponent implements OnInit, OnDestroy {
     }
   }
 
+  // Triggers a browser save-as for the blob, naming the file from the
+  // server's Content-Disposition header when present, otherwise falling
+  // back to a sensible default.
   private saveBlobResponse(response: HttpResponse<Blob>, format: string): void {
     const body = response.body;
     if (!body) return;

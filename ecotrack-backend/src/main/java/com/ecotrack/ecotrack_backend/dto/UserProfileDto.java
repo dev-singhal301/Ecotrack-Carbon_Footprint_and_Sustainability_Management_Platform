@@ -14,6 +14,8 @@ public class UserProfileDto {
     private String userRank;
     private Integer currentXp;
     private Integer nextLevelXpTarget;
+    private Integer currentLevelXpProgress; // Relative XP earned in current level
+    private Integer xpForNextLevel;         // Relative XP required to reach next level
     private Integer rewardPoints;
     private LocalDateTime memberSince;
 
@@ -62,6 +64,12 @@ public class UserProfileDto {
 
     public Integer getNextLevelXpTarget() { return nextLevelXpTarget; }
     public void setNextLevelXpTarget(Integer nextLevelXpTarget) { this.nextLevelXpTarget = nextLevelXpTarget; }
+
+    public Integer getCurrentLevelXpProgress() { return currentLevelXpProgress; }
+    public void setCurrentLevelXpProgress(Integer currentLevelXpProgress) { this.currentLevelXpProgress = currentLevelXpProgress; }
+
+    public Integer getXpForNextLevel() { return xpForNextLevel; }
+    public void setXpForNextLevel(Integer xpForNextLevel) { this.xpForNextLevel = xpForNextLevel; }
 
     public Integer getRewardPoints() { return rewardPoints; }
     public void setRewardPoints(Integer rewardPoints) { this.rewardPoints = rewardPoints; }
@@ -131,7 +139,7 @@ public class UserProfileDto {
         private String category;
         private String iconUrl;
         private Integer requiredXp;
-        private Integer requiredLevel; // <-- Added requiredLevel field
+        private Integer requiredLevel;
         private boolean unlocked;
         private LocalDateTime awardedAt;
 
@@ -144,7 +152,7 @@ public class UserProfileDto {
             this.category = category;
             this.iconUrl = iconUrl;
             this.requiredXp = requiredXp;
-            this.requiredLevel = requiredLevel; // <-- Mapped in constructor
+            this.requiredLevel = requiredLevel;
             this.unlocked = unlocked;
             this.awardedAt = awardedAt;
         }
@@ -167,7 +175,6 @@ public class UserProfileDto {
         public Integer getRequiredXp() { return requiredXp; }
         public void setRequiredXp(Integer requiredXp) { this.requiredXp = requiredXp; }
 
-        // --- Added Getters and Setters for requiredLevel ---
         public Integer getRequiredLevel() { return requiredLevel; }
         public void setRequiredLevel(Integer requiredLevel) { this.requiredLevel = requiredLevel; }
 

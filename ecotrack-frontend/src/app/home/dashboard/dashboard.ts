@@ -76,8 +76,6 @@ export class Dashboard implements OnInit {
     }
   };
 
-  private readonly xpPerLevel = 500;
-
   private readonly categoryBgColors: Record<string, string> = {
     FOOD: '#dcfce7',
     WATER: '#e0f2fe',
@@ -136,20 +134,18 @@ export class Dashboard implements OnInit {
 
   // --- XP & Level Calculations ---
   get currentLevelXpProgress(): number {
-    if (!this.summary) return 0;
-    const currentLevel = this.summary.userLevel || 1;
-    const levelBaseXp = (currentLevel - 1) * this.xpPerLevel;
-    return Math.max(0, (this.summary.currentXp || 0) - levelBaseXp);
+    return this.summary?.currentLevelXpProgress || 0;
   }
 
   get xpForNextLevel(): number {
-    return this.xpPerLevel;
+    return this.summary?.xpForNextLevel || 0;
   }
 
   get xpProgressPercent(): number {
     if (!this.summary) return 0;
-    const progress = this.currentLevelXpProgress;
-    return Math.min(100, Math.max(0, (progress / this.xpForNextLevel) * 100));
+    const target = this.xpForNextLevel;
+    if (target <= 0) return 100; // Cap at 100% if user reaches max level
+    return Math.min(100, Math.max(0, (this.currentLevelXpProgress / target) * 100));
   }
 
   get isZeroOrOverBaseline(): boolean {

@@ -134,10 +134,28 @@ public class UserProfileService {
         return getUserProfile(user.getId());
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public UserProfileDto getUserProfile(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));
+
+        // Self-heal: recompute level/rank/target from currentXp via GamificationUtils
+        // (the single source of truth) and persist if the stored columns have drifted.
+        int freshLevel = GamificationUtils.getLevel(user);
+        int freshTarget = GamificationUtils.getNextLevelXpTarget(user);
+        String freshRank = GamificationUtils.getRankTitle(user);
+
+        boolean driftDetected =
+                !Objects.equals(user.getUserLevel(), freshLevel) ||
+                !Objects.equals(user.getNextLevelXpTarget(), freshTarget) ||
+                !Objects.equals(user.getUserRank(), freshRank);
+
+        if (driftDetected) {
+            user.setUserLevel(freshLevel);
+            user.setNextLevelXpTarget(freshTarget);
+            user.setUserRank(freshRank);
+            userRepository.save(user);
+        }
 
         UserProfileDto dto = new UserProfileDto();
         dto.setUserId(user.getId());
@@ -148,6 +166,11 @@ public class UserProfileService {
         dto.setUserRank(user.getUserRank());
         dto.setCurrentXp(user.getCurrentXp());
         dto.setNextLevelXpTarget(user.getNextLevelXpTarget());
+        
+        // --- Populate the new relative XP fields for the frontend progress bar ---
+        dto.setCurrentLevelXpProgress(GamificationUtils.getCurrentLevelXpProgress(user));
+        dto.setXpForNextLevel(GamificationUtils.getXpForNextLevel(user));
+
         dto.setRewardPoints(user.getRewardPoints());
         dto.setMemberSince(user.getCreatedAt());
 

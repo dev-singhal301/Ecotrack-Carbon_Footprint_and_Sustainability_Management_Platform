@@ -10,12 +10,40 @@ import java.util.List;
 
 public class GamificationUtils {
 
-    // Fallback only — used if a User somehow has no persisted userLevel yet.
-    // NOTE: this must stay in sync with whatever awards XP/levels elsewhere in the app.
-    // Prefer user.getUserLevel() (the persisted, authoritative value shown on the
-    // profile XP bar) over recomputing from XP, so badge eligibility never drifts
-    // out of sync with the level the user actually sees on screen.
-    private static final int XP_PER_LEVEL_FALLBACK = 50;
+    public static final int MAX_LEVEL = 50;
+    
+    // Precomputed arrays for O(1) lookups instead of calculating loops repeatedly
+    private static final int[] LEVEL_TOTAL_XP = new int[MAX_LEVEL + 1];
+    private static final int[] LEVEL_XP_REQ = new int[MAX_LEVEL + 1];
+
+    static {
+        LEVEL_TOTAL_XP[1] = 0;
+        LEVEL_XP_REQ[1] = 50; // XP needed to go from Level 1 to 2
+
+        for (int i = 2; i <= MAX_LEVEL; i++) {
+            // Total cumulative XP needed to REACH level i
+            LEVEL_TOTAL_XP[i] = LEVEL_TOTAL_XP[i - 1] + LEVEL_XP_REQ[i - 1];
+
+            if (i == MAX_LEVEL) {
+                LEVEL_XP_REQ[i] = 0; // Max level reached
+                break;
+            }
+
+            // Calculate the XP required to complete level i (i.e., go from i to i+1)
+            int prevReq = LEVEL_XP_REQ[i - 1];
+            if (i < 6) { // Levels 1->6: doubling
+                LEVEL_XP_REQ[i] = prevReq * 2;
+            } else if (i < 16) { // Levels 6->15: 1.3x multiplier
+                LEVEL_XP_REQ[i] = (int) Math.round(prevReq * 1.3);
+            } else if (i < 26) { // Levels 16->25: 1.2x multiplier
+                LEVEL_XP_REQ[i] = (int) Math.round(prevReq * 1.2);
+            } else if (i < 36) { // Levels 26->35: 1.15x multiplier
+                LEVEL_XP_REQ[i] = (int) Math.round(prevReq * 1.15);
+            } else { // Levels 36->50: 1.1x multiplier
+                LEVEL_XP_REQ[i] = (int) Math.round(prevReq * 1.1);
+            }
+        }
+    }
 
     /**
      * Represents a Title Milestone with its associated level requirement, badge name, and icon.
@@ -51,26 +79,49 @@ public class GamificationUtils {
     );
 
     /**
-     * Returns the user's level. Always prefers the persisted user_level column —
-     * the same value shown on the profile XP bar — so badge eligibility can never
-     * disagree with what the user sees elsewhere in the UI.
+     * Returns the user's level based on the non-linear XP curve.
      */
     public static int getLevel(User user) {
-        if (user != null && user.getUserLevel() != null) {
-            return user.getUserLevel();
-        }
         int xp = (user != null && user.getCurrentXp() != null) ? user.getCurrentXp() : 0;
-        return (xp / XP_PER_LEVEL_FALLBACK) + 1;
+        
+        // Find the highest level threshold the user has surpassed
+        for (int i = MAX_LEVEL; i >= 1; i--) {
+            if (xp >= LEVEL_TOTAL_XP[i]) {
+                return i;
+            }
+        }
+        return 1;
     }
 
     /**
-     * Calculates the target XP required for the user to reach the next level.
-     * Only used as a fallback — the profile screen uses the persisted
-     * next_level_xp_target column directly.
+     * Returns the cumulative lifetime XP required to unlock the *next* level.
      */
     public static int getNextLevelXpTarget(User user) {
         int currentLevel = getLevel(user);
-        return currentLevel * XP_PER_LEVEL_FALLBACK;
+        if (currentLevel >= MAX_LEVEL) {
+            return LEVEL_TOTAL_XP[MAX_LEVEL]; // Target stays capped at 50's threshold
+        }
+        return LEVEL_TOTAL_XP[currentLevel + 1];
+    }
+
+    /**
+     * NEW: How much relative XP the user has earned *since hitting their current level*.
+     */
+    public static int getCurrentLevelXpProgress(User user) {
+        int currentLevel = getLevel(user);
+        int xp = (user != null && user.getCurrentXp() != null) ? user.getCurrentXp() : 0;
+        return Math.max(0, xp - LEVEL_TOTAL_XP[currentLevel]);
+    }
+
+    /**
+     * NEW: The isolated XP "cost" to traverse from the current level to the next.
+     */
+    public static int getXpForNextLevel(User user) {
+        int currentLevel = getLevel(user);
+        if (currentLevel >= MAX_LEVEL) {
+            return 0; // Max level reached
+        }
+        return LEVEL_XP_REQ[currentLevel];
     }
 
     /**
@@ -91,8 +142,6 @@ public class GamificationUtils {
 
     /**
      * Returns only the milestone badges earned based on the user's current level.
-     * Every title the user has passed through stays in their badge collection
-     * (e.g. reaching "Eco Pioneer" keeps "Novice Eco", "Eco Scout", "Eco Explorer" too).
      */
     public static List<UserBadgeResponse> getEligibleMilestoneBadges(User user) {
         int level = getLevel(user);
@@ -107,7 +156,8 @@ public class GamificationUtils {
                 badge.setDescription("Reached " + m.getTitle() + " status at Level " + m.getRequiredLevel());
                 badge.setCategory("MILESTONE");
                 badge.setIconUrl(m.getIconUrl());
-                badge.setRequiredXp((m.getRequiredLevel() - 1) * XP_PER_LEVEL_FALLBACK);
+                // Required XP is the cumulative total XP at the start of that level
+                badge.setRequiredXp(LEVEL_TOTAL_XP[m.getRequiredLevel()]); 
                 badge.setRequiredLevel(m.getRequiredLevel());
                 badge.setUnlocked(true);
                 badge.setAwardedAt(user != null ? user.getCreatedAt() : null);

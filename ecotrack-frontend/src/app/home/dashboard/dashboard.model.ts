@@ -32,6 +32,8 @@ export interface DashboardSummary {
   userRank: string;
   currentXp: number;
   nextLevelXpTarget: number;
+  currentLevelXpProgress: number; // <-- Added
+  xpForNextLevel: number;         // <-- Added
   totalCarbonFootprint: number;
   carbonSaved: number;
   savingsPercentage: number;

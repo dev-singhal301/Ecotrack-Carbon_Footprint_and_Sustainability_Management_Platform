@@ -67,6 +67,9 @@ public class DashboardService {
         summary.setCurrentXp(user.getCurrentXp() != null ? user.getCurrentXp() : 0);
         summary.setNextLevelXpTarget(GamificationUtils.getNextLevelXpTarget(user));
 
+        summary.setCurrentLevelXpProgress(GamificationUtils.getCurrentLevelXpProgress(user));
+        summary.setXpForNextLevel(GamificationUtils.getXpForNextLevel(user));
+        
         // ── Section 2: Core KPI Metric Cards ──
         summary.setTotalCarbonFootprint(carbonFootprintService.getTotalCarbonFootprint(userId));
         summary.setCarbonSaved(carbonFootprintService.getCarbonSavedVsBaseline(userId));
