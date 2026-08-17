@@ -177,8 +177,18 @@
     </div>
 
     <!-- Horizontal Scroll Container -->
-    <div *ngIf="!isLoadingBadges && badges.length > 0" class="badge-scroll-row">
-      <div class="badge-item-card" *ngFor="let badge of badges">
+    <div
+      *ngIf="!isLoadingBadges && badges.length > 0"
+      class="badge-scroll-row"
+      [class.single-badge]="badges.length === 1">
+      <div
+        class="badge-item-card"
+        *ngFor="let badge of badges"
+        tabindex="0"
+        role="button"
+        [attr.aria-label]="'View details for ' + badge.name"
+        (click)="openBadgeDetail(badge)"
+        (keyup.enter)="openBadgeDetail(badge)">
 
         <!-- Circular 1:1 Aspect Frame -->
         <div class="badge-circle-frame">
@@ -210,6 +220,41 @@
       </div>
     </div>
   </section>
+
+  <!-- Badge Detail Modal (click-to-expand pop-up) -->
+  <div class="badge-detail-modal-backdrop" *ngIf="selectedBadge" (click)="closeBadgeDetail()">
+    <div class="badge-detail-modal" (click)="$event.stopPropagation()">
+      <button
+        type="button"
+        class="badge-detail-close-btn"
+        (click)="closeBadgeDetail()"
+        aria-label="Close badge details">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <div class="badge-detail-circle-frame">
+        <img
+          [src]="selectedBadge.iconUrl"
+          [alt]="selectedBadge.name"
+          (error)="onBadgeImageError($event)"
+          class="badge-detail-icon-img"
+        />
+      </div>
+
+      <h3 class="badge-detail-name">{{ selectedBadge.name }}</h3>
+
+      <span class="category-pill badge-detail-pill" [ngClass]="(selectedBadge.category || '').toLowerCase()">
+        {{ formatBadgeSource(selectedBadge.category || '') }}
+      </span>
+
+      <p class="badge-detail-description">{{ selectedBadge.description }}</p>
+
+      <div class="badge-detail-footer">
+        <span class="date-label">Acquired</span>
+        <span class="date-value">{{ selectedBadge.awardedAt | date:'mediumDate' }}</span>
+      </div>
+    </div>
+  </div>
 
   <!-- Avatar Crop Modal -->
   <div class="crop-modal-backdrop" *ngIf="showCropModal">

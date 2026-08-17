@@ -445,6 +445,12 @@
   z-index: 20; /* Higher than header so tooltips appear on top */
 }
 
+/* FIX 1: when there's only one badge, center it in the row so the tooltip
+   has breathing room on both sides instead of hugging the container edge. */
+.badge-scroll-row.single-badge {
+  justify-content: center;
+}
+
 .badge-scroll-row::-webkit-scrollbar {
   height: 6px;
 }
@@ -462,6 +468,12 @@
   flex-shrink: 0;
   width: 100px;
   cursor: pointer;
+}
+
+.badge-item-card:focus-visible {
+  outline: 2px solid var(--eco-green);
+  outline-offset: 4px;
+  border-radius: 12px;
 }
 
 /* Circular 1:1 Aspect Frame */
@@ -501,24 +513,21 @@
   width: 100%;
 }
 
-/* Hover State & Tooltip Display */
+/* Hover State */
 .badge-item-card:hover .badge-circle-frame {
   transform: translateY(-4px) scale(1.06);
   box-shadow: 0 8px 20px rgba(45, 106, 79, 0.3);
 }
 
-.badge-item-card:hover .badge-hover-tooltip {
-  opacity: 1;
-  visibility: visible;
-  transform: translateX(-50%) translateY(0);
-}
-
-/* Hover Tooltip/Card */
+/* FIX 2 (bug fix): tooltip horizontal offset is now driven by a CSS variable
+   (--tooltip-x) instead of a hardcoded translateX in the :hover rule. This
+   stops the generic hover transform from fighting with the first/last/only
+   -child positioning variants below. */
 .badge-hover-tooltip {
   position: absolute;
   bottom: calc(100% + 12px);
   left: 50%;
-  transform: translateX(-50%) translateY(8px);
+  --tooltip-x: -50%;
   width: 220px;
   background: rgba(15, 23, 42, 0.85);
   backdrop-filter: blur(4px);
@@ -528,9 +537,16 @@
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
   opacity: 0;
   visibility: hidden;
-  transition: all 0.2s ease-in-out;
+  transform: translateX(var(--tooltip-x)) translateY(8px);
+  transition: opacity 0.2s ease-in-out, visibility 0.2s ease-in-out, transform 0.2s ease-in-out;
   z-index: 9999;
   pointer-events: none;
+}
+
+.badge-item-card:hover .badge-hover-tooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(var(--tooltip-x)) translateY(0);
 }
 
 .badge-hover-tooltip::after {
@@ -544,10 +560,10 @@
   border-color: rgba(15, 23, 42, 0.85) transparent transparent transparent;
 }
 
-/* Fix left clipping for the very first badge in the list */
+/* Fix left clipping for the first badge in a multi-badge list */
 .badge-item-card:first-child .badge-hover-tooltip {
   left: 0;
-  transform: translateY(8px);
+  --tooltip-x: 0%;
 }
 
 .badge-item-card:first-child .badge-hover-tooltip::after {
@@ -555,11 +571,11 @@
   transform: translateX(-50%);
 }
 
-/* Fix right clipping for the very last badge in the list */
+/* Fix right clipping for the last badge in a multi-badge list */
 .badge-item-card:last-child .badge-hover-tooltip {
   left: auto;
   right: 0;
-  transform: translateY(8px);
+  --tooltip-x: 0%;
 }
 
 .badge-item-card:last-child .badge-hover-tooltip::after {
@@ -568,7 +584,25 @@
   transform: translateX(50%);
 }
 
-.badge-hover-tooltip .category-pill {
+/* FIX 1 (continued): when it's the ONLY badge, override the first/last-child
+   rules above (higher specificity via .single-badge wins regardless of source
+   order) and go back to a centered tooltip — safe now that the row itself
+   is centered too. */
+.badge-scroll-row.single-badge .badge-item-card:only-child .badge-hover-tooltip {
+  left: 50%;
+  right: auto;
+  --tooltip-x: -50%;
+}
+
+.badge-scroll-row.single-badge .badge-item-card:only-child .badge-hover-tooltip::after {
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
+}
+
+/* Category pill — shared between the hover tooltip AND the click modal */
+.badge-hover-tooltip .category-pill,
+.badge-detail-modal .category-pill {
   font-family: var(--eco-font-heading);
   font-size: 0.66rem;
   font-weight: 800;
@@ -580,17 +614,20 @@
   color: #38bdf8;
 }
 
-.badge-hover-tooltip .category-pill.challenge {
+.badge-hover-tooltip .category-pill.challenge,
+.badge-detail-modal .category-pill.challenge {
   background: #065f46;
   color: #34d399;
 }
 
-.badge-hover-tooltip .category-pill.leaderboard {
+.badge-hover-tooltip .category-pill.leaderboard,
+.badge-detail-modal .category-pill.leaderboard {
   background: #78350f;
   color: #fbbf24;
 }
 
-.badge-hover-tooltip .category-pill.milestone {
+.badge-hover-tooltip .category-pill.milestone,
+.badge-detail-modal .category-pill.milestone {
   background: #581c87;
   color: #c084fc;
 }
@@ -615,6 +652,134 @@
 .badge-hover-tooltip .date-value {
   color: #f1f5f9;
   font-weight: 700;
+}
+
+/* ==========================================================================
+   BADGE DETAIL MODAL (click-to-expand pop-up)
+   ========================================================================== */
+.badge-detail-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 16px;
+  animation: badgeDetailFadeIn 0.15s ease-out;
+}
+
+.badge-detail-modal {
+  position: relative;
+  background: var(--eco-white);
+  border-radius: 20px;
+  padding: 32px 28px 28px;
+  max-width: 380px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  animation: badgeDetailPopIn 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.badge-detail-close-btn {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: var(--eco-input-field-bg);
+  color: var(--eco-text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.badge-detail-close-btn:hover {
+  background: #e2e8f0;
+  color: var(--eco-heading-color);
+  transform: rotate(90deg);
+}
+
+.badge-detail-circle-frame {
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border: 4px solid var(--eco-green);
+  box-shadow: 0 8px 20px rgba(45, 106, 79, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  box-sizing: border-box;
+  margin-top: 8px;
+}
+
+.badge-detail-icon-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 50%;
+}
+
+.badge-detail-name {
+  margin: 20px 0 0 0;
+  font-family: var(--eco-font-heading);
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--eco-heading-color);
+}
+
+.badge-detail-pill {
+  margin-top: 10px;
+  font-size: 0.72rem;
+  padding: 4px 10px;
+}
+
+.badge-detail-description {
+  margin: 16px 0 0 0;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: var(--eco-text-main);
+}
+
+.badge-detail-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--eco-input-border);
+  width: 100%;
+  justify-content: center;
+  font-size: 0.8rem;
+  color: var(--eco-text-muted);
+}
+
+.badge-detail-footer .date-value {
+  color: var(--eco-heading-color);
+  font-weight: 800;
+}
+
+@keyframes badgeDetailFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes badgeDetailPopIn {
+  from { opacity: 0; transform: scale(0.9) translateY(10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
 }
 
 /* ==========================================================================
@@ -1045,5 +1210,14 @@
 
   .simple-btn {
     flex: 1;
+  }
+
+  .badge-detail-modal {
+    padding: 28px 20px 24px;
+  }
+
+  .badge-detail-circle-frame {
+    width: 120px;
+    height: 120px;
   }
 }

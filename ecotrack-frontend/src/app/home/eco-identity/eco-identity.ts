@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, inject, ViewChild, ElementRef, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, ViewChild, ElementRef, ChangeDetectorRef, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
@@ -33,6 +33,9 @@ export class EcoIdentityComponent implements OnInit, OnDestroy {
   badges: BadgeItem[] = [];
   isLoadingBadges = true;
   defaultBadgeIcon = '/badges/ch_1.avif'; // Fallback icon path if badge image fails to load
+
+  // --- Badge Detail Modal State (click-to-expand pop-up) ---
+  selectedBadge: BadgeItem | null = null;
 
   // Name Editing State
   isEditingName = false;
@@ -170,12 +173,30 @@ export class EcoIdentityComponent implements OnInit, OnDestroy {
     }
   }
 
+  // --- Badge Detail Modal Actions (click-to-expand pop-up) ---
+  openBadgeDetail(badge: BadgeItem): void {
+    this.selectedBadge = badge;
+    this.cdr.markForCheck();
+  }
+
+  closeBadgeDetail(): void {
+    this.selectedBadge = null;
+    this.cdr.markForCheck();
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscapeKey(): void {
+    if (this.selectedBadge) {
+      this.closeBadgeDetail();
+    }
+  }
+
   // --- Level & XP Calculations ---
-  
+
   get currentLevelXpProgress(): number {
     return this.profile?.currentLevelXpProgress || 0;
   }
-  
+
   get xpForNextLevel(): number {
     return this.profile?.xpForNextLevel || 0;
   }
@@ -183,7 +204,7 @@ export class EcoIdentityComponent implements OnInit, OnDestroy {
   get xpProgressPercent(): number {
     const target = this.xpForNextLevel;
     if (target <= 0) return 100; // Fallback to prevent division by zero
-    
+
     const percent = (this.currentLevelXpProgress / target) * 100;
     return Math.min(100, Math.max(0, percent));
   }
