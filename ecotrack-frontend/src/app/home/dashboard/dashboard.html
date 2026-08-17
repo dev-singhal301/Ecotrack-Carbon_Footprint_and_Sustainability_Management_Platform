@@ -25,7 +25,12 @@
           <div class="xp-bar-fill" [style.width.%]="xpProgressPercent"></div>
         </div>
         <div class="xp-bar-caption">
-          {{ currentLevelXpProgress }} / {{ xpForNextLevel }} XP (Total: {{ summary?.currentXp || 0 }} XP)
+          <ng-container *ngIf="!isMaxLevel; else maxLevelCaption">
+            {{ currentLevelXpProgress }} / {{ xpForNextLevel }} XP (Total: {{ summary?.currentXp || 0 }} XP)
+          </ng-container>
+          <ng-template #maxLevelCaption>
+            MAX LEVEL (Total: {{ summary?.currentXp || 0 }} XP)
+          </ng-template>
           <span class="xp-sub-note" style="display: block; font-size: 0.8em; color: #64748b; margin-top: 4px;">
             (Includes daily logs, streaks & goal rewards)
           </span>

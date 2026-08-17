@@ -141,6 +141,13 @@ export class Dashboard implements OnInit {
     return this.summary?.xpForNextLevel || 0;
   }
 
+  // xpForNextLevel of 0 (or less) signals the user has hit the level cap —
+  // there's no "next level" to show progress toward, so the template swaps
+  // the "X / 0 XP" caption for a MAX LEVEL label instead.
+  get isMaxLevel(): boolean {
+    return this.xpForNextLevel <= 0;
+  }
+
   get xpProgressPercent(): number {
     if (!this.summary) return 0;
     const target = this.xpForNextLevel;
@@ -159,20 +166,20 @@ export class Dashboard implements OnInit {
   }
 
   // --- Recent Activities ---
+  // Returns the user's real recent activity only. New accounts genuinely
+  // have no history yet, so this returns [] and lets the template's
+  // #emptyActivities block ("No recent activity logged yet.") take over —
+  // no more placeholder/sample entries standing in for real data.
   get recentActivities(): XpActivityItem[] {
-    if (this.summary?.recentActivities?.length) {
-      return [...this.summary.recentActivities].sort((a, b) => {
-        const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-        const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-        return timeB - timeA; // Descending order: newest entries first
-      });
+    if (!this.summary?.recentActivities?.length) {
+      return [];
     }
 
-    return [
-      { xpTransactionId: 1, description: 'Cut Electricity Goal Completed', sourceType: 'GOAL', xpEarned: 50, createdAt: new Date().toISOString() },
-      { xpTransactionId: 2, description: 'Logged Daily Travel Entry', sourceType: 'LOG', xpEarned: 10, createdAt: new Date().toISOString() },
-      { xpTransactionId: 3, description: '3-Day Tracking Streak', sourceType: 'STREAK', xpEarned: 15, createdAt: new Date().toISOString() }
-    ];
+    return [...this.summary.recentActivities].sort((a, b) => {
+      const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return timeB - timeA; // Descending order: newest entries first
+    });
   }
 
   private formatLocalDate(d: Date): string {
