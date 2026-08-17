@@ -16,6 +16,14 @@
       </button>
     </div>
 
+    <!-- Mobile-only dropdown replacement for the tab pills above -->
+    <select
+      class="tab-select-mobile"
+      [ngModel]="activeTab"
+      (ngModelChange)="setActiveTab($event)">
+      <option *ngFor="let tab of tabs" [value]="tab">{{ tab }}</option>
+    </select>
+
     <div class="filter-group">
       <select [(ngModel)]="selectedCategory" class="category-select">
         <option *ngFor="let cat of categories" [value]="cat">{{ cat }}</option>

@@ -86,6 +86,24 @@ input, select, button {
   border-color: #16a34a;
 }
 
+/* Mobile-only dropdown that replaces .tab-pills below 768px.
+   Hidden on desktop/tablet — see the media query at the bottom. */
+.tab-select-mobile {
+  display: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  font-size: 13px;
+  font-weight: 700;
+  color: #16a34a;
+  background-color: #ffffff;
+  outline: none;
+}
+
+.tab-select-mobile:focus {
+  border-color: #16a34a;
+}
+
 .filter-group {
   display: flex;
   gap: 10px;
@@ -481,32 +499,51 @@ input, select, button {
 
 /* --- Mobile Overrides --- */
 @media (max-width: 768px) {
-  
-  /* Stack the tab pills and the filter group vertically */
+
+  /* controls-bar becomes the single flex/wrap context for everything:
+     tab-pills is hidden, and .filter-group is "unwrapped" via
+     display:contents so its children (category-select, search-input)
+     behave as if they were direct children of controls-bar, sitting
+     alongside tab-select-mobile. That lets us get:
+       Row 1: (tab-select-mobile) (category-select)   -- 50/50
+       Row 2: (search-input)                          -- full width
+     without needing to restructure the desktop markup/layout. */
   .controls-bar {
-    flex-direction: column;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
     align-items: stretch;
-    gap: 16px;
+    gap: 10px;
     padding: 16px 12px;
   }
 
-  /* Center the wrapped pills for visual balance */
+  /* Swap the wrapping pill buttons for a single dropdown on mobile */
   .tab-pills {
-    justify-content: center;
+    display: none;
   }
 
-  /* Remove the 480px limit and stack the select and search inputs */
+  .tab-select-mobile {
+    display: block;
+    flex: 1 1 calc(50% - 5px);
+    box-sizing: border-box;
+    padding: 10px 12px; /* Slightly larger tap target for mobile */
+  }
+
   .filter-group {
-    max-width: 100%;
-    flex-direction: column; 
-    width: 100%;
+    display: contents;
   }
 
-  /* Ensure the inputs take up the full available width */
-  .category-select,
+  .category-select {
+    flex: 1 1 calc(50% - 5px);
+    width: auto;
+    box-sizing: border-box;
+    padding: 10px 12px;
+  }
+
   .search-input {
+    flex: 1 1 100%;
     width: 100%;
     box-sizing: border-box;
-    padding: 10px 12px; /* Slightly larger tap targets for mobile */
+    padding: 10px 12px;
   }
 }
