@@ -1,17 +1,17 @@
 :host {
     /* Centralized Palette */
-    --eco-bg-light: #B1D3B9;       
-    --eco-green: #60BA75;          
-    --eco-green-dark: #0fac34;     
-    --eco-white: #ffffff;          
-    --eco-red: #ef4444;            
-    
+    --eco-bg-light: #B1D3B9;
+    --eco-green: #60BA75;
+    --eco-green-dark: #0fac34;
+    --eco-white: #ffffff;
+    --eco-red: #ef4444;
+
     /* Slate Neutrals */
-    --eco-slate-900: #0f172a;      
-    --eco-slate-800: #1e293b;      
-    --eco-slate-700: #334155;      
-    --eco-slate-400: #94a3b8;      
-    
+    --eco-slate-900: #0f172a;
+    --eco-slate-800: #1e293b;
+    --eco-slate-700: #334155;
+    --eco-slate-400: #94a3b8;
+
     /* Centralized Layer Masks */
     --eco-desktop-mask: linear-gradient(160deg, rgba(20, 48, 32, 0.45) 0%, rgba(15, 23, 42, 0.55) 100%);
     --eco-mobile-mask: rgba(15, 23, 42, 0.65);
@@ -22,7 +22,7 @@
     --eco-text-main: #1e293b;
     --eco-text-muted: #64748b;
     --eco-text-label: #475569;
-    
+
     display: block;
 }
 
@@ -66,8 +66,8 @@
     content: '';
     position: absolute;
     inset: 0;
-    background: var(--eco-desktop-mask); 
-    z-index: 2; 
+    background: var(--eco-desktop-mask);
+    z-index: 2;
 }
 
 /* Layer 3 (Front): Dynamic foreground content graphic */
@@ -77,8 +77,8 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
-    z-index: 3; 
-    pointer-events: none; 
+    z-index: 3;
+    pointer-events: none;
 }
 
 /* ---------------- Right half: form panel ---------------- */
@@ -87,13 +87,13 @@
     align-items: center;
     justify-content: center;
     background: var(--eco-white);
-    padding: 48px;       
+    padding: 48px;
     box-sizing: border-box;
 }
 
 .auth-card {
     width: 100%;
-    max-width: 360px;       
+    max-width: 360px;
 }
 
 .mode-toggle {
@@ -140,6 +140,57 @@ label {
     font-size: 0.85rem;
     color: var(--eco-text-label);
     font-weight: 500;
+}
+
+.password-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-field input {
+  padding-right: 40px; /* room for the icon */
+}
+
+.password-toggle-btn {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--eco-text-muted);
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.password-toggle-btn:hover {
+  color: var(--eco-text-main);
+}
+
+.password-toggle-btn:focus-visible {
+  outline: 2px solid var(--eco-green);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Hide native browser password-reveal/clear icons (Edge/Chrome) so only
+   our custom toggle button shows */
+.password-field input::-ms-reveal,
+.password-field input::-ms-clear {
+  display: none;
+}
+
+.password-field input::-webkit-credentials-auto-fill-button,
+.password-field input::-webkit-strong-password-auto-fill-button {
+  visibility: hidden;
+  pointer-events: none;
+  position: absolute;
+  right: 0;
 }
 
 input {
@@ -243,17 +294,17 @@ input.invalid-input:focus {
     }
 
     .text-overlay-img {
-        display: none; 
+        display: none;
     }
 
     .visual-panel::before {
-        background: var(--eco-mobile-mask); 
+        background: var(--eco-mobile-mask);
         z-index: 1;
     }
 
     .form-panel {
         z-index: 2;
-        background: var(--eco-mobile-glass-bg); 
+        background: var(--eco-mobile-glass-bg);
         backdrop-filter: blur(16px);
         -webkit-backdrop-filter: blur(16px);
         border-radius: 20px;

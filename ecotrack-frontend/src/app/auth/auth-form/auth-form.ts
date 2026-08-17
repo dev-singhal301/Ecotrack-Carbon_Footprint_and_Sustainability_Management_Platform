@@ -32,6 +32,7 @@ export class AuthForm implements AfterViewInit, OnInit {
   isSubmitting = signal(false);
   errorMessage = signal('');
   successMessage = signal('');
+  showPassword = signal(false);
 
   authForm: FormGroup;
 
@@ -134,7 +135,7 @@ this.auth.googleLogin(response.credential).subscribe({
   }
 
   /**
-   * Flips between Sign Up and Log In styles. Clears the form values and resets 
+   * Flips between Sign Up and Log In styles. Clears the form values and resets
    * custom flags so components scale cleanly.
    */
   switchMode(toLogin: boolean): void {
@@ -147,6 +148,10 @@ this.auth.googleLogin(response.credential).subscribe({
     this.successMessage.set('');
     this.authForm.reset();
     this.updateValidators();
+  }
+
+  togglePasswordVisibility(): void {
+    this.showPassword.update(v => !v);
   }
 
   /**
