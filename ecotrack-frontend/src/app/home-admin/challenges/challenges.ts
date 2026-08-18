@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, computed } from '@angular/core';
+import { Component, OnInit, signal, computed, WritableSignal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminService } from '../admin.service';
@@ -25,6 +25,12 @@ interface ChallengeFormModel {
   endDate: string;
 }
 
+interface CalendarCell {
+  date: string;
+  day: number;
+  inMonth: boolean;
+}
+
 const EMPTY_FORM: ChallengeFormModel = {
   title: '', description: '', category: '', challengeType: '', trackingType: '',
   targetValue: null, unit: '', rewardXp: 100,
@@ -46,6 +52,17 @@ const EMPTY_FORM: ChallengeFormModel = {
  * edit only while status is UPCOMING, cancel while UPCOMING or ACTIVE.
  * This is a UI convenience only — the backend re-validates independently
  * and is the actual source of truth (see ChallengeService).
+ *
+ * Category / Challenge Type / Tracking Type / Start Date / End Date are all
+ * custom-built dropdowns rather than native <select>/<input type="date">.
+ * Native form controls' open state (the option list, the OS calendar) is
+ * rendered by the browser/OS as a top-layer popup that sits entirely
+ * outside this page's DOM and CSS — there's no way to size, position, or
+ * style it, which is what was causing it to overflow the modal on mobile.
+ * Card Header/Badge Image already used this custom dropdown-select pattern
+ * (for image thumbnails, which a native <select> can't render at all); the
+ * rest of the form's dropdowns now follow the same approach so every popup
+ * in this form is regular in-DOM content we actually control.
  */
 @Component({
   selector: 'app-challenges',
@@ -161,12 +178,51 @@ export class Challenges implements OnInit {
   isSubmitting = signal(false);
   formError = signal<string | null>(null);
 
-  // Open/closed state for the Card Header / Badge image dropdown-selects.
-  // These render like the native Category/Challenge Type <select>s above
-  // them, but show image thumbnails in the option list, which a native
-  // <select> can't do — see the dropdown-select markup/styles below.
+  // ── Custom dropdown open state ──
+  // Every dropdown/calendar in this form shares one rule: opening one
+  // closes all the others, matching how a row of native <select>s
+  // behaves (you never see two option lists open at once). togglePicker()
+  // below is the single chokepoint for that, so no toggle method has to
+  // remember to close its siblings individually.
   cardPickerOpen = signal(false);
   badgePickerOpen = signal(false);
+  categoryPickerOpen = signal(false);
+  typePickerOpen = signal(false);
+  trackingPickerOpen = signal(false);
+  startPickerOpen = signal(false);
+  endPickerOpen = signal(false);
+
+  // Bound to the full-screen transparent backdrop that only exists in the
+  // DOM while something is open, so a click anywhere outside the open
+  // panel closes it — no document-level listener needed.
+  anyPickerOpen = computed(() =>
+    this.cardPickerOpen() || this.badgePickerOpen() || this.categoryPickerOpen()
+    || this.typePickerOpen() || this.trackingPickerOpen()
+    || this.startPickerOpen() || this.endPickerOpen()
+  );
+
+  private closeAllPickers(): void {
+    this.cardPickerOpen.set(false);
+    this.badgePickerOpen.set(false);
+    this.categoryPickerOpen.set(false);
+    this.typePickerOpen.set(false);
+    this.trackingPickerOpen.set(false);
+    this.startPickerOpen.set(false);
+    this.endPickerOpen.set(false);
+  }
+
+  private togglePicker(openSignal: WritableSignal<boolean>, onOpen?: () => void): void {
+    const opening = !openSignal();
+    this.closeAllPickers();
+    if (opening) {
+      onOpen?.();
+      openSignal.set(true);
+    }
+  }
+
+  closePickers(): void {
+    this.closeAllPickers();
+  }
 
   readonly categories = CHALLENGE_CATEGORIES;
   readonly cardImages = CARD_HEADER_IMAGES;
@@ -176,10 +232,18 @@ export class Challenges implements OnInit {
     { value: 'DISTANCE', label: 'Cumulative Amount (e.g. km cycled, minutes saved, trees planted)' },
   ];
 
-  // Bound to the Start Date input's [min] so past dates aren't selectable
-  // at all, rather than only being rejected after submit. Computed once —
-  // this app is zoneless, but a static value read at construction time
-  // doesn't need a signal since nothing ever writes to it again.
+  readonly challengeTypeOptions: { value: ChallengeType; label: string }[] = [
+    { value: 'CARBON_REDUCTION', label: 'Carbon Reduction' },
+    { value: 'ACTIVITY_BASED', label: 'Activity Based' },
+  ];
+
+  readonly weekDayLabels = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+
+  // Bound to the Start Date calendar's day-disabling so past dates aren't
+  // selectable at all, rather than only being rejected after submit.
+  // Computed once — this app is zoneless, but a static value read at
+  // construction time doesn't need a signal since nothing ever writes to
+  // it again.
   //
   // Uses toLocalDateString, NOT .toISOString() — toISOString() converts to
   // UTC first, which silently shifts the date backward by one day for any
@@ -199,6 +263,33 @@ export class Challenges implements OnInit {
   //      only rejecting it after submit.
   private static readonly MIN_DURATION_DAYS = 7;
 
+  // Which month each calendar is currently showing. Kept separate from
+  // form.startDate/endDate (the actual selected value) since the admin can
+  // browse months without having picked a date yet.
+  startViewMonth = signal<Date>(new Date());
+  endViewMonth = signal<Date>(new Date());
+
+  startCalendarDays = computed(() => this.buildCalendarDays(this.startViewMonth()));
+  endCalendarDays = computed(() => this.buildCalendarDays(this.endViewMonth()));
+
+  private buildCalendarDays(viewMonth: Date): CalendarCell[] {
+    const year = viewMonth.getFullYear();
+    const month = viewMonth.getMonth();
+    const firstOfMonth = new Date(year, month, 1);
+    const gridStart = new Date(year, month, 1 - firstOfMonth.getDay());
+
+    // Always 42 cells (6 full weeks) so the grid's height doesn't jump
+    // around as the admin flips between shorter and longer months.
+    return Array.from({ length: 42 }, (_, i) => {
+      const d = new Date(gridStart.getFullYear(), gridStart.getMonth(), gridStart.getDate() + i);
+      return {
+        date: Challenges.toLocalDateString(d),
+        day: d.getDate(),
+        inMonth: d.getMonth() === month,
+      };
+    });
+  }
+
   // Formats a Date using its LOCAL calendar fields (not UTC) — see the
   // minDate comment above for why .toISOString() is the wrong tool here.
   private static toLocalDateString(date: Date): string {
@@ -206,6 +297,17 @@ export class Challenges implements OnInit {
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
+  }
+
+  // yyyy-mm-dd -> local Date, deliberately not `new Date(dateStr)` — that
+  // parses as UTC midnight and can render as the previous day locally in
+  // any timezone ahead of UTC, same class of bug as the .toISOString() note
+  // above.
+  private parseLocalDate(dateStr: string): Date | null {
+    if (!dateStr) return null;
+    const [y, m, d] = dateStr.split('-').map(Number);
+    if (!y || !m || !d) return null;
+    return new Date(y, m - 1, d);
   }
 
   get endMinDate(): string {
@@ -253,25 +355,12 @@ export class Challenges implements OnInit {
   }
 
   // ── Card Header / Badge image dropdown-selects ──
-  // Only one of the two can be open at a time (toggling one closes the
-  // other), matching how a row of native <select>s behaves — opening one
-  // doesn't leave a stray option list from a different field hanging open.
   toggleCardPicker(): void {
-    this.cardPickerOpen.update(v => !v);
-    this.badgePickerOpen.set(false);
+    this.togglePicker(this.cardPickerOpen);
   }
 
   toggleBadgePicker(): void {
-    this.badgePickerOpen.update(v => !v);
-    this.cardPickerOpen.set(false);
-  }
-
-  // Bound to a full-screen transparent backdrop that only exists in the DOM
-  // while a picker is open, so a click anywhere outside the panel closes it
-  // — no document-level listener needed.
-  closePickers(): void {
-    this.cardPickerOpen.set(false);
-    this.badgePickerOpen.set(false);
+    this.togglePicker(this.badgePickerOpen);
   }
 
   selectCardImage(url: string): void {
@@ -292,6 +381,139 @@ export class Challenges implements OnInit {
     return this.badgeImages.find(i => i.url === this.form.badgeImageUrl)?.label ?? 'Select image';
   }
 
+  // ── Category dropdown ──
+  toggleCategoryPicker(): void {
+    this.togglePicker(this.categoryPickerOpen);
+  }
+
+  selectCategory(category: ChallengeCategory): void {
+    this.form.category = category;
+    this.categoryPickerOpen.set(false);
+  }
+
+  getCategoryTriggerLabel(): string {
+    return this.form.category ? this.categoryLabel(this.form.category) : 'Select category';
+  }
+
+  // ── Challenge Type dropdown ──
+  toggleTypePicker(): void {
+    this.togglePicker(this.typePickerOpen);
+  }
+
+  selectChallengeType(type: ChallengeType): void {
+    this.form.challengeType = type;
+    this.typePickerOpen.set(false);
+    this.onChallengeTypeChange();
+  }
+
+  getChallengeTypeTriggerLabel(): string {
+    return this.challengeTypeOptions.find(o => o.value === this.form.challengeType)?.label ?? 'Select type';
+  }
+
+  // ── Tracking Type dropdown ──
+  toggleTrackingPicker(): void {
+    this.togglePicker(this.trackingPickerOpen);
+  }
+
+  selectTrackingType(trackingType: TrackingType): void {
+    this.form.trackingType = trackingType;
+    this.trackingPickerOpen.set(false);
+  }
+
+  getTrackingTypeTriggerLabel(): string {
+    return this.trackingTypes.find(t => t.value === this.form.trackingType)?.label ?? 'Select tracking type';
+  }
+
+  // ── Start / End Date calendars ──
+  toggleStartPicker(): void {
+    this.togglePicker(this.startPickerOpen, () => {
+      const base = this.parseLocalDate(this.form.startDate) ?? new Date();
+      this.startViewMonth.set(new Date(base.getFullYear(), base.getMonth(), 1));
+    });
+  }
+
+  toggleEndPicker(): void {
+    this.togglePicker(this.endPickerOpen, () => {
+      const base = this.parseLocalDate(this.form.endDate)
+        ?? this.parseLocalDate(this.endMinDate)
+        ?? new Date();
+      this.endViewMonth.set(new Date(base.getFullYear(), base.getMonth(), 1));
+    });
+  }
+
+  shiftStartMonth(delta: number): void {
+    const m = this.startViewMonth();
+    this.startViewMonth.set(new Date(m.getFullYear(), m.getMonth() + delta, 1));
+  }
+
+  shiftEndMonth(delta: number): void {
+    const m = this.endViewMonth();
+    this.endViewMonth.set(new Date(m.getFullYear(), m.getMonth() + delta, 1));
+  }
+
+  isDayDisabled(dateStr: string, which: 'start' | 'end'): boolean {
+    const floor = which === 'start' ? this.minDate : this.endMinDate;
+    return dateStr < floor;
+  }
+
+  isDaySelected(dateStr: string, which: 'start' | 'end'): boolean {
+    return which === 'start' ? this.form.startDate === dateStr : this.form.endDate === dateStr;
+  }
+
+  isTodayDate(dateStr: string): boolean {
+    return dateStr === Challenges.toLocalDateString(new Date());
+  }
+
+  selectStartDate(dateStr: string): void {
+    if (this.isDayDisabled(dateStr, 'start')) return;
+    this.form.startDate = dateStr;
+    this.onStartDateChange();
+    this.startPickerOpen.set(false);
+  }
+
+  selectEndDate(dateStr: string): void {
+    if (this.isDayDisabled(dateStr, 'end')) return;
+    this.form.endDate = dateStr;
+    this.endPickerOpen.set(false);
+  }
+
+  clearStartDate(): void {
+    this.form.startDate = '';
+    this.onStartDateChange();
+    this.startPickerOpen.set(false);
+  }
+
+  clearEndDate(): void {
+    this.form.endDate = '';
+    this.endPickerOpen.set(false);
+  }
+
+  goToTodayStart(): void {
+    const today = Challenges.toLocalDateString(new Date());
+    this.startViewMonth.set(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
+    if (!this.isDayDisabled(today, 'start')) {
+      this.selectStartDate(today);
+    }
+  }
+
+  goToTodayEnd(): void {
+    const today = Challenges.toLocalDateString(new Date());
+    this.endViewMonth.set(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
+    if (!this.isDayDisabled(today, 'end')) {
+      this.selectEndDate(today);
+    }
+  }
+
+  formatDisplayDate(dateStr: string): string {
+    const d = this.parseLocalDate(dateStr);
+    if (!d) return '';
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  formatMonthLabel(viewMonth: Date): string {
+    return viewMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  }
+
   openCreateForm(): void {
     this.editingChallengeId.set(null);
     this.form = { ...EMPTY_FORM };
@@ -310,7 +532,7 @@ export class Challenges implements OnInit {
       // COUNT and DURATION were folded into BOOLEAN and DISTANCE
       // respectively when the dropdown went from 4 options to 2 — they
       // behave identically on the backend either way, so remap here
-      // purely so the <select> doesn't render blank when editing a
+      // purely so the picker doesn't render blank when editing a
       // challenge created before this change.
       trackingType: this.normalizeTrackingType(challenge.trackingType),
       targetValue: challenge.targetValue,
@@ -356,9 +578,10 @@ export class Challenges implements OnInit {
   }
 
   // If Start Date moves forward and that pushes the 7-day floor past an
-  // already-picked End Date, [min] alone won't un-pick it — it only blocks
-  // new invalid selections, not ones already sitting in the model. Clear
-  // it so the admin can't submit a now-too-short range without noticing.
+  // already-picked End Date, the calendar's day-disabling alone won't
+  // un-pick it — it only blocks new invalid selections, not ones already
+  // sitting in the model. Clear it so the admin can't submit a now-too-
+  // short range without noticing.
   onStartDateChange(): void {
     if (this.form.endDate && this.form.endDate < this.endMinDate) {
       this.form.endDate = '';

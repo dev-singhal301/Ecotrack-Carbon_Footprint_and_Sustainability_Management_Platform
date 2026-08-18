@@ -509,7 +509,14 @@
   color: var(--admin-accent);
 }
 
-/* Upward opening panel, extended width for comfortable larger thumbnails */
+/* Upward opening panel, extended width for comfortable larger thumbnails.
+   This 125% width is only safe once there's a form-row breakpoint that
+   guarantees enough room either side (desktop, >768px) — see the 768px
+   query below, which caps it back to 100% for every narrower layout
+   instead of only doing so at the 640px phone breakpoint. Without that,
+   a 641–768px tablet renders the image-picker-row in its two-column
+   desktop layout but inside the same 640px-capped .form-panel, and a
+   125%-wide panel can hang past the modal edge. */
 .dropdown-panel {
   position: absolute;
   bottom: calc(100% + 8px);
@@ -600,6 +607,179 @@
   line-height: 1;
   padding: 2px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+/* ── Text-list dropdowns (Category / Challenge Type / Tracking Type) ──
+   Same dropdown-select/dropdown-trigger/dropdown-panel shell as the image
+   pickers, but with a single-column list of text rows instead of an
+   image grid — these fields have no thumbnail to show. */
+.trigger-text.placeholder {
+  color: var(--admin-muted, #94a3b8);
+}
+
+.dropdown-panel.text-list {
+  display: flex;
+  flex-direction: column;
+  grid-template-columns: none;
+  gap: 2px;
+  padding: 6px;
+}
+
+.dropdown-option.text-option {
+  height: auto;
+  justify-content: space-between;
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 0.86rem;
+  color: var(--admin-ink);
+  border-width: 1px;
+  line-height: 1.4;
+}
+
+.dropdown-option.text-option .check-icon-inline {
+  flex-shrink: 0;
+  margin-left: 10px;
+  font-size: 0.78rem;
+  color: var(--admin-accent);
+}
+
+/* Category/Type/Tracking sit near the top of the form; Start/End Date sit
+   further down but still well above the image pickers. Opening those
+   panels upward (the image pickers' default — see .dropdown-panel above)
+   would push them toward/past the top of a scrolled modal. Downward is
+   the natural direction for anything that isn't hugging the bottom of
+   the form. */
+.dropdown-panel.opens-down {
+  bottom: auto;
+  top: calc(100% + 8px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+}
+
+/* ── Calendar widget (Start / End Date) ── */
+.date-trigger-icon {
+  color: var(--admin-muted);
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.dropdown-panel.calendar-panel {
+  display: block;
+  width: 280px;
+  min-width: 0;
+  max-height: none;
+  overflow: visible;
+  padding: 12px;
+}
+
+.calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.calendar-month-label {
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: var(--admin-ink);
+}
+
+.calendar-nav-btn {
+  border: 1px solid var(--admin-border);
+  background-color: #fff;
+  color: var(--admin-ink-soft);
+  width: 26px;
+  height: 26px;
+  border-radius: var(--admin-radius-s);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.72rem;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.calendar-nav-btn:hover {
+  background-color: var(--admin-surface);
+  border-color: #c7ced2;
+}
+
+.calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  margin-bottom: 4px;
+}
+
+.calendar-weekdays span {
+  text-align: center;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--admin-muted-2);
+  text-transform: uppercase;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.calendar-day {
+  border: none;
+  background-color: transparent;
+  color: var(--admin-ink);
+  font-size: 0.8rem;
+  font-family: inherit;
+  aspect-ratio: 1;
+  border-radius: var(--admin-radius-s);
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.calendar-day:hover:not(:disabled):not(.selected) {
+  background-color: var(--admin-surface);
+}
+
+.calendar-day.out-of-month {
+  color: var(--admin-muted-2);
+}
+
+.calendar-day.today {
+  font-weight: 700;
+  color: var(--admin-accent);
+}
+
+.calendar-day.selected {
+  background-color: var(--admin-accent);
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.calendar-day:disabled {
+  color: var(--admin-border);
+  cursor: not-allowed;
+}
+
+.calendar-footer {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--admin-border-soft);
+}
+
+.calendar-text-btn {
+  border: none;
+  background: none;
+  color: var(--admin-accent);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 4px 6px;
+}
+
+.calendar-text-btn:hover {
+  text-decoration: underline;
 }
 
 .dropdown-backdrop {
@@ -718,14 +898,236 @@
   .page-header {
     flex-direction: column;
     gap: 12px;
+    align-items: stretch;
+  }
+
+  .page-header h1 {
+    font-size: 1.35rem;
+  }
+
+  .create-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Filter bar: one control per row, same reasoning as the Users page —
+     inline wrapping leaves selects too narrow to read on a phone. */
+  .filter-bar {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 12px 14px;
+  }
+
+  .filter-bar .search-input,
+  .filter-bar select {
+    width: 100%;
+  }
+
+  /* Same fix as users.css: .search-input's flex: 1 1 200px is sized for
+     the desktop row layout (200px = a minimum width, flex-grow fills
+     leftover horizontal space). Once .filter-bar flips to a column
+     here, that flex-basis governs height instead, forcing the box to at
+     least 200px tall and letting flex-grow keep expanding it — which is
+     what was pushing everything below it off-screen. */
+  .filter-bar .search-input {
+    flex: none;
+  }
+
+  .clear-filters-btn {
+    margin-left: 0;
+    align-self: flex-end;
+  }
+
+  .pagination-bar {
+    justify-content: center;
+    text-align: center;
+  }
+
+  .pagination-info {
+    width: 100%;
+  }
+
+  .pagination-controls {
+    justify-content: center;
+    width: 100%;
   }
 
   .form-row {
     flex-direction: column;
   }
 
+  /* .image-picker-row sets align-items: flex-start above so the two
+     pickers don't stretch to match each other's height in the desktop
+     row layout. Once .form-row above flips this to a column, that same
+     flex-start now governs the *horizontal* axis instead — each
+     .dropdown-select shrinks to fit its own trigger/label content
+     instead of filling the row, which is why Card Header/Badge were
+     only using part of the available width on mobile. Restretch. */
+  .image-picker-row {
+    align-items: stretch;
+  }
+
+  .form-panel {
+    padding: 22px 18px;
+  }
+}
+
+@media (max-width: 420px) {
+  /* Three thumbnails per row gets cramped once the panel itself is
+     capped to the viewport width — two keeps them tappable. */
+  .dropdown-panel {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ── Card layout (<=768px) ──
+   Same rationale as the Users table: an 8-column table has no good
+   narrow-viewport answer besides horizontal scroll, so each row becomes
+   a card below 768px, using the data-label attributes in challenges.html
+   to print a label next to each value. Title gets its own full-width
+   row as the card header; Edit/Cancel become full-width stacked buttons.
+
+   The image-picker panel width cap also lives in this query rather than
+   the 640px one above: .form-row only goes single-column at 640px, but
+   the modal itself (max-width: 640px) is already at its capped width by
+   768px, so a 125%-wide dropdown-panel needs reining in at the same
+   768px threshold, not just on phones. */
+@media (max-width: 768px) {
+  /* Same fix as users.css — see that file's comment for the full
+     reasoning. Short version: overflow:visible on .table-wrapper below
+     (needed for the card layout) means rendered cards spill past its
+     flex-allotted box, but .pagination-bar still lays out right after
+     that box's *calculated* height, so it renders on top of the cards
+     instead of below them. Letting the whole page scroll instead of
+     pinning header/filter/pagination fixes the overlap and stops the
+     table fighting the filter bar for a fixed slice of the screen. */
+  .admin-challenges {
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  .table-wrapper {
+    flex: none;
+    min-height: 0;
+  }
+
   .dropdown-panel {
     min-width: 100%;
     width: 100%;
+  }
+
+  /* .text-list and .calendar-panel each carry a second class, which gives
+     them higher specificity than the plain .dropdown-panel rule directly
+     above — without repeating the override here, they'd keep their
+     desktop widths (125% / a fixed 280px) and overflow again on exactly
+     the screens this fix is for. */
+  .dropdown-panel.text-list,
+  .dropdown-panel.calendar-panel {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .table-wrapper {
+    border: none;
+    background-color: transparent;
+    box-shadow: none;
+    overflow: visible;
+  }
+
+  .challenges-table,
+  .challenges-table tbody,
+  .challenges-table tr,
+  .challenges-table td {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .challenges-table thead {
+    display: none;
+  }
+
+  .challenges-table tbody tr {
+    background-color: #ffffff;
+    border: 1px solid var(--admin-border);
+    border-radius: var(--admin-radius-l);
+    box-shadow: var(--admin-shadow-card);
+    padding: 14px 16px;
+    margin-bottom: 12px;
+  }
+
+  .challenges-table tbody tr:last-child {
+    margin-bottom: 0;
+  }
+
+  .challenges-table tbody tr:hover {
+    background-color: #ffffff;
+  }
+
+  .challenges-table td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--admin-border-soft);
+    text-align: right;
+    white-space: normal;
+  }
+
+  .challenges-table td:last-child {
+    border-bottom: none;
+  }
+
+  .challenges-table td::before {
+    content: attr(data-label);
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--admin-muted-2);
+    flex-shrink: 0;
+  }
+
+  /* Title is the card header — no label, left-aligned, own row. */
+  .challenges-table td.title-cell {
+    padding-top: 0;
+    justify-content: flex-start;
+    text-align: left;
+    font-weight: 700;
+    font-size: 0.98rem;
+  }
+
+  .challenges-table td.title-cell::before {
+    display: none;
+  }
+
+  /* Edit/Cancel: no label, full-width, stacked buttons instead of the
+     fixed two-column grid used at desktop width. */
+  .challenges-table td.actions-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-top: 12px;
+  }
+
+  .challenges-table td.actions-cell::before {
+    display: none;
+  }
+
+  .edit-btn,
+  .cancel-btn {
+    width: 100%;
+    padding: 10px;
+  }
+
+  .challenges-table td.empty-row {
+    display: block;
+    text-align: center;
+    border: none;
+  }
+
+  .challenges-table td.empty-row::before {
+    display: none;
   }
 }

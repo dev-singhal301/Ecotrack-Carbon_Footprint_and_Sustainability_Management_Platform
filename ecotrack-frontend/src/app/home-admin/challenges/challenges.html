@@ -71,19 +71,19 @@
       </thead>
       <tbody>
         <tr *ngFor="let challenge of pagedChallenges()">
-          <td>{{ challenge.title }}</td>
-          <td>{{ categoryLabel(challenge.category) }}</td>
-          <td>{{ challenge.challengeType === 'CARBON_REDUCTION' ? 'Carbon' : 'Activity' }}</td>
-          <td>{{ challenge.targetValue }}{{ challenge.unit ? ' ' + challenge.unit : '' }}</td>
-          <td>{{ challenge.startDate | date:'mediumDate' }}</td>
-          <td>{{ challenge.endDate | date:'mediumDate' }}</td>
-          <td>
+          <td data-label="Title" class="title-cell">{{ challenge.title }}</td>
+          <td data-label="Category">{{ categoryLabel(challenge.category) }}</td>
+          <td data-label="Type">{{ challenge.challengeType === 'CARBON_REDUCTION' ? 'Carbon' : 'Activity' }}</td>
+          <td data-label="Target">{{ challenge.targetValue }}{{ challenge.unit ? ' ' + challenge.unit : '' }}</td>
+          <td data-label="Start">{{ challenge.startDate | date:'mediumDate' }}</td>
+          <td data-label="End">{{ challenge.endDate | date:'mediumDate' }}</td>
+          <td data-label="Status">
             <span class="status-badge" [ngClass]="'status-' + (challenge.status || 'upcoming').toLowerCase()">
               <span class="status-dot"></span>
               {{ challenge.status }}
             </span>
           </td>
-          <td class="actions-cell">
+          <td class="actions-cell" data-label="">
             <button
               class="edit-btn"
               *ngIf="canEdit(challenge)"
@@ -154,33 +154,75 @@
         </label>
 
         <div class="form-row">
-          <label>
-            Category
-            <select [(ngModel)]="form.category" name="category" required>
-              <option value="" disabled>Select category</option>
-              <option *ngFor="let c of categories" [value]="c">{{ categoryLabel(c) }}</option>
-            </select>
-          </label>
+          <!-- Category (custom dropdown — see class comment on Challenges
+               for why this replaced a native <select>) -->
+          <div class="dropdown-select" [class.open]="categoryPickerOpen()">
+            <label class="picker-label">Category</label>
+            <button type="button" class="dropdown-trigger" (click)="toggleCategoryPicker()">
+              <span class="trigger-content">
+                <span class="trigger-text" [class.placeholder]="!form.category">{{ getCategoryTriggerLabel() }}</span>
+              </span>
+              <i class="fa-solid fa-chevron-down dropdown-caret"></i>
+            </button>
 
-          <label>
-            Challenge Type
-            <select [(ngModel)]="form.challengeType" name="challengeType" (ngModelChange)="onChallengeTypeChange()" required>
-              <option value="" disabled>Select type</option>
-              <option value="CARBON_REDUCTION">Carbon Reduction</option>
-              <option value="ACTIVITY_BASED">Activity Based</option>
-            </select>
-          </label>
+            <div class="dropdown-panel opens-down text-list" *ngIf="categoryPickerOpen()">
+              <div
+                *ngFor="let c of categories"
+                class="dropdown-option text-option"
+                [class.selected]="form.category === c"
+                (click)="selectCategory(c)">
+                <span>{{ categoryLabel(c) }}</span>
+                <i class="fa-solid fa-check check-icon-inline" *ngIf="form.category === c"></i>
+              </div>
+            </div>
+          </div>
+
+          <!-- Challenge Type (custom dropdown) -->
+          <div class="dropdown-select" [class.open]="typePickerOpen()">
+            <label class="picker-label">Challenge Type</label>
+            <button type="button" class="dropdown-trigger" (click)="toggleTypePicker()">
+              <span class="trigger-content">
+                <span class="trigger-text" [class.placeholder]="!form.challengeType">{{ getChallengeTypeTriggerLabel() }}</span>
+              </span>
+              <i class="fa-solid fa-chevron-down dropdown-caret"></i>
+            </button>
+
+            <div class="dropdown-panel opens-down text-list" *ngIf="typePickerOpen()">
+              <div
+                *ngFor="let t of challengeTypeOptions"
+                class="dropdown-option text-option"
+                [class.selected]="form.challengeType === t.value"
+                (click)="selectChallengeType(t.value)">
+                <span>{{ t.label }}</span>
+                <i class="fa-solid fa-check check-icon-inline" *ngIf="form.challengeType === t.value"></i>
+              </div>
+            </div>
+          </div>
         </div>
 
         <ng-container *ngIf="form.challengeType === 'ACTIVITY_BASED'; else rewardXpAlone">
           <div class="form-row">
-            <label>
-              Tracking Type
-              <select [(ngModel)]="form.trackingType" name="trackingType" required>
-                <option value="" disabled>Select tracking type</option>
-                <option *ngFor="let t of trackingTypes" [value]="t.value">{{ t.label }}</option>
-              </select>
-            </label>
+            <!-- Tracking Type (custom dropdown) -->
+            <div class="dropdown-select" [class.open]="trackingPickerOpen()">
+              <label class="picker-label">Tracking Type</label>
+              <button type="button" class="dropdown-trigger" (click)="toggleTrackingPicker()">
+                <span class="trigger-content">
+                  <span class="trigger-text" [class.placeholder]="!form.trackingType">{{ getTrackingTypeTriggerLabel() }}</span>
+                </span>
+                <i class="fa-solid fa-chevron-down dropdown-caret"></i>
+              </button>
+
+              <div class="dropdown-panel opens-down text-list" *ngIf="trackingPickerOpen()">
+                <div
+                  *ngFor="let t of trackingTypes"
+                  class="dropdown-option text-option"
+                  [class.selected]="form.trackingType === t.value"
+                  (click)="selectTrackingType(t.value)">
+                  <span>{{ t.label }}</span>
+                  <i class="fa-solid fa-check check-icon-inline" *ngIf="form.trackingType === t.value"></i>
+                </div>
+              </div>
+            </div>
 
             <label>
               Reward XP
@@ -211,16 +253,98 @@
         </div>
 
         <div class="form-row">
-          <label>
-            Start Date
-            <input type="date" [(ngModel)]="form.startDate" name="startDate" [min]="minDate"
-                   (ngModelChange)="onStartDateChange()" required />
-          </label>
+          <!-- Start Date (custom calendar — see class comment on Challenges
+               for why this replaced a native <input type="date">) -->
+          <div class="dropdown-select date-picker-select" [class.open]="startPickerOpen()">
+            <label class="picker-label">Start Date</label>
+            <button type="button" class="dropdown-trigger date-trigger" (click)="toggleStartPicker()">
+              <span class="trigger-content">
+                <i class="fa-solid fa-calendar-days date-trigger-icon"></i>
+                <span class="trigger-text" [class.placeholder]="!form.startDate">
+                  {{ form.startDate ? formatDisplayDate(form.startDate) : 'mm/dd/yyyy' }}
+                </span>
+              </span>
+              <i class="fa-solid fa-chevron-down dropdown-caret"></i>
+            </button>
 
-          <label>
-            End Date
-            <input type="date" [(ngModel)]="form.endDate" name="endDate" [min]="endMinDate" required />
-          </label>
+            <div class="dropdown-panel opens-down calendar-panel" *ngIf="startPickerOpen()">
+              <div class="calendar-header">
+                <button type="button" class="calendar-nav-btn" (click)="shiftStartMonth(-1)" aria-label="Previous month">
+                  <i class="fa-solid fa-chevron-left"></i>
+                </button>
+                <span class="calendar-month-label">{{ formatMonthLabel(startViewMonth()) }}</span>
+                <button type="button" class="calendar-nav-btn" (click)="shiftStartMonth(1)" aria-label="Next month">
+                  <i class="fa-solid fa-chevron-right"></i>
+                </button>
+              </div>
+              <div class="calendar-weekdays">
+                <span *ngFor="let wd of weekDayLabels">{{ wd }}</span>
+              </div>
+              <div class="calendar-grid">
+                <button
+                  type="button"
+                  *ngFor="let cell of startCalendarDays()"
+                  class="calendar-day"
+                  [class.out-of-month]="!cell.inMonth"
+                  [class.selected]="isDaySelected(cell.date, 'start')"
+                  [class.today]="isTodayDate(cell.date)"
+                  [disabled]="isDayDisabled(cell.date, 'start')"
+                  (click)="selectStartDate(cell.date)">
+                  {{ cell.day }}
+                </button>
+              </div>
+              <div class="calendar-footer">
+                <button type="button" class="calendar-text-btn" (click)="clearStartDate()">Clear</button>
+                <button type="button" class="calendar-text-btn" (click)="goToTodayStart()">Today</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- End Date (custom calendar) -->
+          <div class="dropdown-select date-picker-select" [class.open]="endPickerOpen()">
+            <label class="picker-label">End Date</label>
+            <button type="button" class="dropdown-trigger date-trigger" (click)="toggleEndPicker()">
+              <span class="trigger-content">
+                <i class="fa-solid fa-calendar-days date-trigger-icon"></i>
+                <span class="trigger-text" [class.placeholder]="!form.endDate">
+                  {{ form.endDate ? formatDisplayDate(form.endDate) : 'mm/dd/yyyy' }}
+                </span>
+              </span>
+              <i class="fa-solid fa-chevron-down dropdown-caret"></i>
+            </button>
+
+            <div class="dropdown-panel opens-down calendar-panel" *ngIf="endPickerOpen()">
+              <div class="calendar-header">
+                <button type="button" class="calendar-nav-btn" (click)="shiftEndMonth(-1)" aria-label="Previous month">
+                  <i class="fa-solid fa-chevron-left"></i>
+                </button>
+                <span class="calendar-month-label">{{ formatMonthLabel(endViewMonth()) }}</span>
+                <button type="button" class="calendar-nav-btn" (click)="shiftEndMonth(1)" aria-label="Next month">
+                  <i class="fa-solid fa-chevron-right"></i>
+                </button>
+              </div>
+              <div class="calendar-weekdays">
+                <span *ngFor="let wd of weekDayLabels">{{ wd }}</span>
+              </div>
+              <div class="calendar-grid">
+                <button
+                  type="button"
+                  *ngFor="let cell of endCalendarDays()"
+                  class="calendar-day"
+                  [class.out-of-month]="!cell.inMonth"
+                  [class.selected]="isDaySelected(cell.date, 'end')"
+                  [class.today]="isTodayDate(cell.date)"
+                  [disabled]="isDayDisabled(cell.date, 'end')"
+                  (click)="selectEndDate(cell.date)">
+                  {{ cell.day }}
+                </button>
+              </div>
+              <div class="calendar-footer">
+                <button type="button" class="calendar-text-btn" (click)="clearEndDate()">Clear</button>
+                <button type="button" class="calendar-text-btn" (click)="goToTodayEnd()">Today</button>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Custom Image Selector Dropdowns -->
@@ -276,7 +400,7 @@
           </div>
         </div>
 
-        <div class="dropdown-backdrop" *ngIf="cardPickerOpen() || badgePickerOpen()" (click)="closePickers()"></div>
+        <div class="dropdown-backdrop" *ngIf="anyPickerOpen()" (click)="closePickers()"></div>
 
         <div class="form-actions">
           <button type="button" class="cancel-form-btn" (click)="closeForm()">Cancel</button>

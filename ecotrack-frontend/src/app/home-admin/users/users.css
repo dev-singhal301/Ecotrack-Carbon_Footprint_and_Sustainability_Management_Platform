@@ -426,8 +426,233 @@
   cursor: not-allowed;
 }
 
+/* ── Responsive ── */
+
 @media (max-width: 640px) {
   .admin-users {
     padding: 24px 20px;
+  }
+
+  .page-header h1 {
+    font-size: 1.35rem;
+  }
+
+  /* Filter bar: one control per row, full-width — the wrapped-inline
+     version reads fine on tablet but on a phone the select boxes get
+     too narrow to read their own selected value. */
+  .filter-bar {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 12px 14px;
+  }
+
+  .filter-bar .search-input,
+  .filter-bar select,
+  .date-range-label {
+    width: 100%;
+  }
+
+  /* .search-input's flex: 1 1 200px above is sized for the DESKTOP row
+     layout, where 200px is a minimum *width* and flex-grow lets it fill
+     whatever horizontal space the selects don't use. Once .filter-bar
+     flips to a column here, that same flex-basis governs *height*
+     instead — the box was demanding to be at least 200px tall, and
+     flex-grow: 1 let it keep expanding to fill the column's remaining
+     space, which is what was pushing the selects/table off-screen.
+     Resetting to auto-sizing lets height come from padding/line-height
+     like a normal text input again. */
+  .filter-bar .search-input {
+    flex: none;
+  }
+
+  .date-range-label input[type='date'] {
+    width: 100%;
+    min-width: 0;
+  }
+
+  /* Caption + 2 date inputs + separator all fighting for one row's width
+     is what was clipping "mm/dd/yyyy" and overlapping the native
+     calendar icon. Wrap the caption onto its own line and let the two
+     inputs split the row evenly below it instead — each input now gets
+     roughly half the label's full width rather than a sliver left over
+     after "JOINED" and the "–" are subtracted from a single row. */
+  .date-range-label {
+    flex-wrap: wrap;
+    height: auto;
+    row-gap: 6px;
+    padding: 8px 12px;
+  }
+
+  .date-range-label .field-caption {
+    width: 100%;
+  }
+
+  .date-range-label input[type='date'] {
+    flex: 1 1 0;
+    width: auto;
+  }
+
+  .date-range-sep {
+    flex: 0 0 auto;
+  }
+
+  .clear-filters-btn {
+    margin-left: 0;
+    align-self: flex-end;
+  }
+
+  /* Pagination: stack the "Page X of Y" label above the controls and
+     center everything so it doesn't look lopsided at narrow widths. */
+  .pagination-bar {
+    justify-content: center;
+    text-align: center;
+  }
+
+  .pagination-info {
+    width: 100%;
+  }
+
+  .pagination-controls {
+    justify-content: center;
+    width: 100%;
+  }
+}
+
+/* ── Card layout (<=768px) ──
+   A wide table with 7 columns has no good narrow-viewport answer other
+   than horizontal scroll, which hides data and is awkward with one
+   thumb on a phone. Below 768px each row becomes a self-contained card:
+   the header row is hidden, and every <td> prints its own label (from
+   the data-label attribute added in users.html) via ::before, stacked
+   as label/value pairs with the identity cell promoted to a card title
+   and the action button pinned full-width at the bottom. */
+@media (max-width: 768px) {
+  /* The desktop layout pins header/filter/pagination and only scrolls
+     .table-wrapper internally (via :host/.admin-users height:100% +
+     overflow:hidden above, and .table-wrapper's flex:1 1 auto further
+     down). That works when .table-wrapper clips its own overflow, but
+     the card layout below deliberately sets overflow:visible instead
+     (so a card's shadow/border isn't clipped and cards aren't squeezed
+     into a cramped scrollbox). With visible overflow, the *rendered*
+     cards spill past .table-wrapper's flex-allotted box while
+     .pagination-bar still lays out immediately after that box's
+     calculated height — not its actual content height — so pagination
+     renders on top of the cards instead of below them.
+     Simplest correct fix for a phone: stop pinning things and let the
+     whole page scroll normally, header/filters/cards/pagination all in
+     one flow, same as any ordinary mobile page. This also fixes the
+     table getting almost no visible room — it's no longer fighting the
+     filter bar for a fixed slice of a 100vh box. */
+  .admin-users {
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  .table-wrapper {
+    flex: none;
+    min-height: 0;
+  }
+
+  .table-wrapper {
+    border: none;
+    background-color: transparent;
+    box-shadow: none;
+    overflow: visible;
+  }
+
+  .users-table,
+  .users-table tbody,
+  .users-table tr,
+  .users-table td {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .users-table thead {
+    display: none;
+  }
+
+  .users-table tbody tr {
+    background-color: #ffffff;
+    border: 1px solid var(--admin-border);
+    border-radius: var(--admin-radius-l);
+    box-shadow: var(--admin-shadow-card);
+    padding: 14px 16px;
+    margin-bottom: 12px;
+  }
+
+  .users-table tbody tr:last-child {
+    margin-bottom: 0;
+  }
+
+  .users-table tbody tr:hover {
+    background-color: #ffffff;
+  }
+
+  .users-table td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--admin-border-soft);
+    text-align: right;
+  }
+
+  .users-table td:last-child {
+    border-bottom: none;
+  }
+
+  .users-table td::before {
+    content: attr(data-label);
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--admin-muted-2);
+    flex-shrink: 0;
+  }
+
+  /* Identity cell (avatar + name) is the card's title — no label,
+     left-aligned, given its own row. */
+  .users-table td:first-child {
+    padding-top: 0;
+    justify-content: flex-start;
+  }
+
+  .users-table td:first-child::before {
+    display: none;
+  }
+
+  .email-cell {
+    word-break: break-all;
+  }
+
+  /* Action button cell gets no label and spans full width so the
+     Deactivate/Reactivate button is a comfortable tap target. */
+  .users-table td.actions-cell {
+    padding-top: 12px;
+    justify-content: stretch;
+  }
+
+  .users-table td.actions-cell::before {
+    display: none;
+  }
+
+  .deactivate-btn,
+  .reactivate-btn {
+    width: 100%;
+    padding: 10px;
+  }
+
+  .users-table td.empty-row {
+    display: block;
+    text-align: center;
+    border: none;
+  }
+
+  .users-table td.empty-row::before {
+    display: none;
   }
 }

@@ -29,20 +29,24 @@
       <option value="DISABLED">Disabled</option>
     </select>
 
-    <label class="date-range-label">
-      <span class="field-caption">Joined</span>
+    <div class="date-range-label">
+      <span class="field-caption" id="joined-range-caption">Joined</span>
       <input
         type="date"
+        aria-label="Joined from"
+        aria-describedby="joined-range-caption"
         [ngModel]="joinedFrom()"
         (ngModelChange)="joinedFrom.set($event)"
         [max]="joinedTo() || undefined" />
       <span class="date-range-sep">–</span>
       <input
         type="date"
+        aria-label="Joined to"
+        aria-describedby="joined-range-caption"
         [ngModel]="joinedTo()"
         (ngModelChange)="joinedTo.set($event)"
         [min]="joinedFrom() || undefined" />
-    </label>
+    </div>
 
     <select [ngModel]="xpSort()" (ngModelChange)="xpSort.set($event)">
       <option value="NONE">XP: unsorted</option>
@@ -81,7 +85,7 @@
       </thead>
       <tbody>
         <tr *ngFor="let user of pagedUsers()">
-          <td>
+          <td data-label="User">
             <div class="user-cell">
               <span class="avatar" [class.avatar-admin]="user.role === 'ROLE_ADMIN'">
                 {{ initials(user.name) }}
@@ -89,24 +93,24 @@
               <span class="user-name">{{ user.name }}</span>
             </div>
           </td>
-          <td class="email-cell">{{ user.email }}</td>
-          <td>
+          <td class="email-cell" data-label="Email">{{ user.email }}</td>
+          <td data-label="Role">
             <span class="role-badge" [class.admin]="user.role === 'ROLE_ADMIN'">
               <i class="fa-solid" [class.fa-crown]="user.role === 'ROLE_ADMIN'" [class.fa-user]="user.role !== 'ROLE_ADMIN'"></i>
               {{ user.role === 'ROLE_ADMIN' ? 'Admin' : 'User' }}
             </span>
           </td>
-          <td>
+          <td data-label="XP">
             <span class="xp-value">{{ user.currentXp }}</span>
           </td>
-          <td class="joined-cell">{{ user.createdAt | date:'mediumDate' }}</td>
-          <td>
+          <td class="joined-cell" data-label="Joined">{{ user.createdAt | date:'mediumDate' }}</td>
+          <td data-label="Status">
             <span class="status-badge" [class.disabled]="!user.enabled">
               <span class="status-dot"></span>
               {{ user.enabled ? 'Active' : 'Disabled' }}
             </span>
           </td>
-          <td>
+          <td class="actions-cell" data-label="">
             <button
               class="deactivate-btn"
               *ngIf="user.enabled"
