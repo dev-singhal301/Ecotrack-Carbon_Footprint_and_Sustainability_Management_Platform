@@ -43,6 +43,14 @@ public interface UserRepository extends JpaRepository<User, Long> {
     long countByRole_Name(String roleName);
 
     long countByCreatedAtAfter(java.time.LocalDateTime after);
+
+    /**
+     * Admin "pending account deletions" queue — users who self-requested
+     * deletion via eco-identity (deletionRequestedAt is set), oldest first
+     * so tech support naturally works through the backlog in request order.
+     */
+    List<User> findByDeletionRequestedAtIsNotNullOrderByDeletionRequestedAtAsc();
+
     // ── Leaderboard & Gamification Additions ──
 
     /**

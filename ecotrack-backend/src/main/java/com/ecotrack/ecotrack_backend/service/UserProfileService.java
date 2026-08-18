@@ -12,6 +12,7 @@ import com.ecotrack.ecotrack_backend.util.GamificationUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -251,6 +252,36 @@ public class UserProfileService {
         return user.getAvatarUrl();
     }
 
+    /**
+     * SOFT delete — this is what the eco-identity "Delete Account" button now
+     * calls. Disables the account (immediate logout/lockout, same mechanism as
+     * admin deactivation) and stamps deletionRequestedAt so tech support can
+     * tell this apart from an ordinary moderation deactivation and follow up
+     * with the real permanent purge later.
+     *
+     * Deliberately does NOT touch any of the user's data — carbon entries,
+     * goals, badges, XP, etc. all stay intact until deleteAccountByEmail()
+     * below is run manually.
+     */
+    @Transactional
+    public void requestAccountDeletion(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with email: " + email));
+        user.setEnabled(false);
+        user.setDeletionRequestedAt(LocalDateTime.now());
+        userRepository.save(user);
+    }
+
+    /**
+     * HARD delete — permanently removes the user row and, via the DB-level
+     * ON DELETE CASCADE constraints, every dependent row (carbon entries,
+     * goals, carbon footprint, challenges they created, participation,
+     * XP transactions, badges, notifications, recommendations).
+     *
+     * No longer wired to the "/me" self-service endpoint — kept here as the
+     * method tech support's manual purge tooling calls once a pending
+     * deletion request has been reviewed.
+     */
     @Transactional
     public void deleteAccountByEmail(String email) {
         User user = userRepository.findByEmail(email)

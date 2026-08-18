@@ -464,3 +464,8 @@ ALTER TABLE recommendations ALTER COLUMN suggestion_text TYPE VARCHAR(2000);
 -- can be satisfied by the index instead of a separate sort.
 CREATE INDEX IF NOT EXISTS idx_recommendations_user_impact
     ON recommendations(user_id, impact_estimate DESC);
+
+-- Marks when a user requested account deletion via the eco-identity page.
+-- NULL + enabled=false  => admin-deactivated (moderation)
+-- set  + enabled=false  => user-requested deletion, pending permanent purge
+ALTER TABLE users ADD COLUMN IF NOT EXISTS deletion_requested_at TIMESTAMP DEFAULT NULL;

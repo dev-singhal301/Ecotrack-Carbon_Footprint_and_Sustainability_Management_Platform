@@ -2,6 +2,7 @@ package com.ecotrack.ecotrack_backend.controller;
 
 import com.ecotrack.ecotrack_backend.dto.AdminDashboardSummaryResponse;
 import com.ecotrack.ecotrack_backend.dto.AdminParticipationResponse;
+import com.ecotrack.ecotrack_backend.dto.AdminPendingDeletionResponse;
 import com.ecotrack.ecotrack_backend.dto.AdminUserResponse;
 import com.ecotrack.ecotrack_backend.dto.ChallengeRequest;
 import com.ecotrack.ecotrack_backend.dto.ChallengeResponse;
@@ -76,6 +77,34 @@ public class AdminController {
     public ResponseEntity<Map<String, String>> reactivateUser(@PathVariable Long id) {
         adminService.reactivateUser(id);
         return ResponseEntity.ok(Map.of("message", "User reactivated successfully"));
+    }
+
+    // ── Pending Account Deletions (user-initiated, soft-deleted) ──
+
+    /**
+     * GET /api/admin/users/pending-deletion
+     * Users who hit "Delete Account" in eco-identity — soft-deactivated and
+     * awaiting tech support's manual review + permanent purge. Distinct from
+     * ordinary moderation deactivations (those never set deletionRequestedAt).
+     */
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/users/pending-deletion")
+    public ResponseEntity<List<AdminPendingDeletionResponse>> getPendingDeletions() {
+        return ResponseEntity.ok(adminService.getPendingDeletions());
+    }
+
+    /**
+     * DELETE /api/admin/users/{id}/purge
+     * Permanently deletes a user who requested account deletion — the real,
+     * irreversible hard delete (cascades to every dependent row). Separate
+     * from the ordinary deactivateUser endpoint above on purpose, so a
+     * routine moderation action can never be mistaken for a permanent purge.
+     */
+    @PreAuthorize("hasRole('ADMIN')")
+    @DeleteMapping("/users/{id}/purge")
+    public ResponseEntity<Map<String, String>> permanentlyDeleteUser(@PathVariable Long id) {
+        adminService.permanentlyDeleteUser(id);
+        return ResponseEntity.ok(Map.of("message", "User permanently deleted"));
     }
 
     // ── Challenge Management ──
