@@ -5,12 +5,14 @@ import com.ecotrack.ecotrack_backend.dto.LoginRequest;
 import com.ecotrack.ecotrack_backend.dto.RegisterRequest;
 import com.ecotrack.ecotrack_backend.entity.Role;
 import com.ecotrack.ecotrack_backend.entity.User;
+import com.ecotrack.ecotrack_backend.exception.AccountPendingDeletionException;
 import com.ecotrack.ecotrack_backend.repository.RoleRepository;
 import com.ecotrack.ecotrack_backend.repository.UserRepository;
 import com.ecotrack.ecotrack_backend.security.GoogleTokenVerifier;
 import com.ecotrack.ecotrack_backend.security.JwtUtil;
 import com.ecotrack.ecotrack_backend.security.GoogleTokenVerifier;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -69,11 +71,29 @@ public class AuthService {
         return new AuthResponse(null, user.getName(), user.getEmail(), true, user.getRole().getName());
     }
 
-   public AuthResponse login(LoginRequest request) {
+    /*
+     * Authenticates via Spring Security. If the account is disabled, we need
+     * to know *why* before deciding what to tell the caller: a plain
+     * moderation deactivation gets the generic "contact an administrator"
+     * message (handled in AuthController), but an account the user
+     * themselves marked for deletion (deletionRequestedAt != null) should
+     * instead point them toward reactivating via support — so we re-throw
+     * as AccountPendingDeletionException, a DisabledException subtype, and
+     * let the controller's more specific exception handler pick it up.
+     */
+    public AuthResponse login(LoginRequest request) {
 
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
-        );
+        try {
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
+            );
+        } catch (DisabledException ex) {
+            User disabledUser = userRepository.findByEmail(request.getEmail()).orElse(null);
+            if (disabledUser != null && disabledUser.getDeletionRequestedAt() != null) {
+                throw new AccountPendingDeletionException("Account is pending deletion.");
+            }
+            throw ex;
+        }
 
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new IllegalStateException(
