@@ -24,6 +24,8 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import com.ecotrack.ecotrack_backend.repository.BadgeRepository;
+import com.ecotrack.ecotrack_backend.repository.UserBadgeRepository;
 
 @ExtendWith(MockitoExtension.class)
 class XPFlowTest {
@@ -33,6 +35,12 @@ class XPFlowTest {
 
     @Mock
     private XpTransactionRepository xpTransactionRepository;
+
+    @Mock
+    private BadgeRepository badgeRepository;
+
+    @Mock
+    private UserBadgeRepository userBadgeRepository;
 
     @InjectMocks
     private UserXpService userXpService;
@@ -68,37 +76,41 @@ class XPFlowTest {
     @DisplayName("GamificationUtils Mathematical Boundary Tests")
     class GamificationUtilsTests {
 
+        // Actual curve (from GamificationUtils' static init): cumulative XP to
+        // REACH level N — 0, 50, 150, 350, 750, 1550, 2590... (doubling through
+        // level 6, then 1.3x/1.2x/1.15x/1.1x multipliers beyond).
+
         @Test
-        @DisplayName("Level 1 boundaries (0 - 499 XP)")
+        @DisplayName("Level 1 boundaries (0 - 49 XP)")
         void testLevelOneBoundaries() {
             testUser.setCurrentXp(0);
             assertEquals(1, GamificationUtils.getLevel(testUser));
 
-            testUser.setCurrentXp(250);
+            testUser.setCurrentXp(49);
             assertEquals(1, GamificationUtils.getLevel(testUser));
 
-            testUser.setCurrentXp(499);
-            assertEquals(1, GamificationUtils.getLevel(testUser));
+            testUser.setCurrentXp(50); // boundary — level 2 starts here
+            assertEquals(2, GamificationUtils.getLevel(testUser));
         }
 
         @Test
-        @DisplayName("Level progression boundaries (500+ XP per level)")
+        @DisplayName("Level progression boundaries")
         void testLevelProgressionBoundaries() {
-            testUser.setCurrentXp(500);
-            assertEquals(2, GamificationUtils.getLevel(testUser));
-
-            testUser.setCurrentXp(1000);
+            testUser.setCurrentXp(150); // level 3 starts here
             assertEquals(3, GamificationUtils.getLevel(testUser));
+
+            testUser.setCurrentXp(350); // level 4 starts here
+            assertEquals(4, GamificationUtils.getLevel(testUser));
         }
 
         @Test
         @DisplayName("Next Level XP Target calculation accuracy")
         void testNextLevelTarget() {
-            testUser.setCurrentXp(250); // Level 1 -> Target 500
-            assertEquals(500, GamificationUtils.getNextLevelXpTarget(testUser));
+            testUser.setCurrentXp(0); // Level 1 -> target is level 2's threshold (50)
+            assertEquals(50, GamificationUtils.getNextLevelXpTarget(testUser));
 
-            testUser.setCurrentXp(500); // Level 2 -> Target 1000
-            assertEquals(1000, GamificationUtils.getNextLevelXpTarget(testUser));
+            testUser.setCurrentXp(350); // Level 4 -> target is level 5's threshold (750)
+            assertEquals(750, GamificationUtils.getNextLevelXpTarget(testUser));
         }
 
         @Test
@@ -107,8 +119,11 @@ class XPFlowTest {
             testUser.setCurrentXp(0); // Level 1
             assertEquals("Novice Eco", GamificationUtils.getRankTitle(testUser));
 
-            testUser.setCurrentXp(500); // Level 2
+            testUser.setCurrentXp(50); // Level 2
             assertEquals("Eco Scout", GamificationUtils.getRankTitle(testUser));
+
+            testUser.setCurrentXp(150); // Level 3
+            assertEquals("Eco Explorer", GamificationUtils.getRankTitle(testUser));
 
             testUser.setCurrentXp(2500); // Level 6 (>= 5 is Eco Pioneer)
             assertEquals("Eco Pioneer", GamificationUtils.getRankTitle(testUser));
@@ -127,7 +142,9 @@ class XPFlowTest {
         void awardXp_NoLevelUp() {
             when(userRepository.findById(100L)).thenReturn(Optional.of(testUser));
 
-            userXpService.awardXpAndPoints(100L, 50, 20, "CARBON_ENTRY", 1L);
+            // 40 XP stays under the Level 2 threshold (50), so this genuinely
+            // stays Level 1 — award of exactly 50 would cross it.
+            userXpService.awardXpAndPoints(100L, 40, 20, "CARBON_ENTRY", 1L);
 
             verify(userRepository).save(userCaptor.capture());
             verify(xpTransactionRepository).save(transactionCaptor.capture());
@@ -135,11 +152,11 @@ class XPFlowTest {
             User savedUser = userCaptor.getValue();
             XpTransaction savedTx = transactionCaptor.getValue();
 
-            assertEquals(50, savedUser.getCurrentXp());
+            assertEquals(40, savedUser.getCurrentXp());
             assertEquals(20, savedUser.getRewardPoints());
             assertEquals(1, savedUser.getUserLevel()); // Still Level 1
 
-            assertEquals(50, savedTx.getXpAmount());
+            assertEquals(40, savedTx.getXpAmount());
             assertEquals("CARBON_ENTRY", savedTx.getSourceType());
             assertEquals(1L, savedTx.getSourceId());
         }
@@ -222,17 +239,17 @@ class XPFlowTest {
         @DisplayName("Monthly leaderboard maps raw object array native projections cleanly")
         void getMonthlyLeaderboard_MapsRawNativeQuery() {
             // Simulated Object[] row returned by native SQL query:
-            // [userId, name, userRank, userLevel, monthlyXp, denseRank]
-            Object[] rawRow = new Object[]{100L, "Eco Warrior", "Novice Eco", 1, 250L, 1L};
-            
+            // [userId, name, avatarUrl, userRank, userLevel, monthlyXp, denseRank]
+            Object[] rawRow = new Object[]{100L, "Eco Warrior", "https://example.com/avatar.png", "Novice Eco", 1, 250L, 1L};
+
             when(xpTransactionRepository.findMonthlyLeaderboardRaw(10))
                     .thenReturn(java.util.Collections.singletonList(rawRow));
-        
+
             List<LeaderboardUserDto> leaderboard = leaderboardService.getMonthlyLeaderboard(10);
-        
+
             assertNotNull(leaderboard);
             assertEquals(1, leaderboard.size());
-        
+
             LeaderboardUserDto dto = leaderboard.get(0);
             assertEquals(100L, dto.getUserId());
             assertEquals("Eco Warrior", dto.getName());

@@ -50,11 +50,17 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                     // its natural 1hr expiry, so every request would keep
                     // succeeding in the meantime. Cut the session here
                     // instead, with a clear reason instead of a silent 403.
+                    //
+                    // "reason":"DEACTIVATED" mirrors AuthController's login
+                    // response shape, so the frontend interceptor/redirect
+                    // that consumes this body can carry the same reason
+                    // code through to the login page and show the same
+                    // support contact details there.
                     SecurityContextHolder.clearContext();
                     response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                     response.setContentType("application/json");
                     response.getWriter().write(
-                            "{\"message\":\"Your account has been suspended. Please contact an administrator.\"}"
+                            "{\"message\":\"Your account has been suspended.\",\"reason\":\"DEACTIVATED\"}"
                     );
                     return;
                 }

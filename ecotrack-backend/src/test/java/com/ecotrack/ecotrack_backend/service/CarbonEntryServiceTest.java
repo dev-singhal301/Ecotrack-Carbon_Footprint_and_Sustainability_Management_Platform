@@ -16,6 +16,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import com.ecotrack.ecotrack_backend.repository.GoalRepository;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -35,6 +36,18 @@ class CarbonEntryServiceTest {
 
     @Mock
     private EmissionFactorRepository emissionFactorRepository;
+
+    @Mock
+    private GoalRepository goalRepository;
+
+    @Mock
+    private GoalService goalService;
+
+    @Mock
+    private LeaderboardService leaderboardService;
+
+    @Mock
+    private UserChallengeService userChallengeService;
 
     @InjectMocks
     private CarbonEntryService carbonEntryService;

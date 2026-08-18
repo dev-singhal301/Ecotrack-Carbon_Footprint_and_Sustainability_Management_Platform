@@ -128,10 +128,17 @@ public class UserController {
 
     /**
      * DELETE /api/users/me
-     * Permanently deletes the authenticated user's account and all associated
-     * data (cascades handle carbon entries, goals, challenges, badges, XP
-     * transactions, notifications, and recommendations at the DB level).
-     * Also best-effort removes their uploaded avatar file from disk.
+     *
+     * SOFT delete. This no longer permanently removes the account on the spot.
+     * It disables the user (same immediate-lockout mechanism as an admin
+     * deactivation — JwtAuthFilter force-logs out any live session right
+     * away) and stamps deletionRequestedAt so tech support can find it later
+     * and distinguish it from an ordinary moderation deactivation.
+     *
+     * The account, avatar, and all associated data (carbon entries, goals,
+     * challenges, badges, XP) are left untouched. Permanent removal happens
+     * separately via UserProfileService#deleteAccountByEmail, run manually
+     * by tech support after reviewing the pending-deletion queue.
      */
     @DeleteMapping("/me")
     public ResponseEntity<Void> deleteAccount(@AuthenticationPrincipal UserDetails principal) {
@@ -139,23 +146,7 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        User user = userRepository.findByEmail(principal.getUsername())
-                .orElseThrow(() -> new IllegalArgumentException("Authenticated user not found: " + principal.getUsername()));
-
-        String avatarUrl = user.getAvatarUrl();
-
-        userProfileService.deleteAccountByEmail(principal.getUsername());
-
-        // Best-effort cleanup of the user's uploaded avatar file. Not fatal if it
-        // fails — the account record is already gone by this point.
-        if (avatarUrl != null && avatarUrl.startsWith("/uploads/")) {
-            try {
-                Path avatarPath = Paths.get(avatarUrl.substring(1)); // strip leading '/'
-                Files.deleteIfExists(avatarPath);
-            } catch (IOException e) {
-                System.err.println("Failed to delete avatar file during account deletion: " + e.getMessage());
-            }
-        }
+        userProfileService.requestAccountDeletion(principal.getUsername());
 
         return ResponseEntity.noContent().build();
     }

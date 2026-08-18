@@ -29,11 +29,12 @@
 /* Main Background Page Canvas */
 .auth-page {
     display: flex;
+    flex-direction: column; /* Stacked vertically to seat footer below card */
     align-items: center;
     justify-content: center;
     min-height: 100vh;
     background-color: var(--eco-bg-light);
-    padding: 44px;
+    padding: 44px 20px;
     box-sizing: border-box;
 }
 
@@ -42,8 +43,8 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     width: 100%;
-    max-width: 960px;       /* CHANGED: Increased from 820px to scale up the center box */
-    min-height: 560px;      /* CHANGED: Increased from 520px for better vertical balance */
+    max-width: 960px;
+    min-height: 560px;
     background: var(--eco-white);
     border-radius: 24px;
     overflow: hidden;
@@ -53,7 +54,6 @@
 /* ---------------- Left half: visual panel ---------------- */
 .visual-panel {
     position: relative;
-    /* Layer 1 (Backmost): Updated asset url route path placement */
     background-image: url('/login.avif');
     background-size: cover;
     background-position: center;
@@ -143,54 +143,52 @@ label {
 }
 
 .password-field {
-  position: relative;
-  display: flex;
-  align-items: center;
+    position: relative;
+    display: flex;
+    align-items: center;
 }
 
 .password-field input {
-  padding-right: 40px; /* room for the icon */
+    padding-right: 40px;
 }
 
 .password-toggle-btn {
-  position: absolute;
-  right: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  background: none;
-  border: none;
-  padding: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--eco-text-muted);
-  cursor: pointer;
-  transition: color 0.15s ease;
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--eco-text-muted);
+    cursor: pointer;
+    transition: color 0.15s ease;
 }
 
 .password-toggle-btn:hover {
-  color: var(--eco-text-main);
+    color: var(--eco-text-main);
 }
 
 .password-toggle-btn:focus-visible {
-  outline: 2px solid var(--eco-green);
-  outline-offset: 2px;
-  border-radius: 4px;
+    outline: 2px solid var(--eco-green);
+    outline-offset: 2px;
+    border-radius: 4px;
 }
 
-/* Hide native browser password-reveal/clear icons (Edge/Chrome) so only
-   our custom toggle button shows */
 .password-field input::-ms-reveal,
 .password-field input::-ms-clear {
-  display: none;
+    display: none;
 }
 
 .password-field input::-webkit-credentials-auto-fill-button,
 .password-field input::-webkit-strong-password-auto-fill-button {
-  visibility: hidden;
-  pointer-events: none;
-  position: absolute;
-  right: 0;
+    visibility: hidden;
+    pointer-events: none;
+    position: absolute;
+    right: 0;
 }
 
 input {
@@ -211,7 +209,6 @@ input:focus {
     box-shadow: 0 0 0 3px rgba(96, 186, 117, 0.15);
 }
 
-/* Red outline and glow style for form structural errors */
 input.invalid-input {
     border-color: var(--eco-red) !important;
     background-color: rgba(239, 68, 68, 0.02);
@@ -274,10 +271,36 @@ input.invalid-input:focus {
     cursor: not-allowed;
 }
 
+/* ---------------- Support Footer ---------------- */
+.auth-support-footer {
+    margin-top: 20px;
+    text-align: center;
+    z-index: 2;
+}
+
+.auth-support-footer p {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--eco-slate-800);
+    font-weight: 500;
+    line-height: 1.5;
+}
+
+.support-link {
+    color: var(--eco-slate-900);
+    font-weight: 700;
+    text-decoration: underline;
+    transition: color 0.2s ease;
+}
+
+.support-link:hover {
+    color: var(--eco-green-dark);
+}
+
 /* ---------------- Mobile Responsive Stack Override ---------------- */
 @media (max-width: 768px) {
     .auth-page {
-        padding: 16px;
+        padding: 20px 16px;
     }
 
     .center-box {
@@ -310,6 +333,20 @@ input.invalid-input:focus {
         border-radius: 20px;
         padding: 32px 24px;
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-        margin: 20px 0;
+        margin: 10px 0 0 0;
+    }
+
+    /* Mobile readability enhancement for support footer */
+    .auth-support-footer p {
+        color: var(--eco-white);
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+    }
+
+    .support-link {
+        color: var(--eco-white);
+    }
+
+    .support-link:hover {
+        color: var(--eco-bg-light);
     }
 }

@@ -17,6 +17,8 @@ import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import com.ecotrack.ecotrack_backend.dto.AiRecommendationDetail;
+import java.util.ArrayList;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -42,6 +44,9 @@ class RecommendationServiceTest {
 
     @Mock
     private RecommendationRuleEngine ruleEngine;
+
+    @Mock
+    private AiTipService aiTipService;
 
     @InjectMocks
     private RecommendationService recommendationService;
@@ -72,6 +77,18 @@ class RecommendationServiceTest {
         when(userRepository.getReferenceById(USER_ID)).thenReturn(testUser);
     }
 
+    private void stubAiTipServiceReturnsFallback() {
+        when(aiTipService.generateBatch(any(), any(), any()))
+                .thenAnswer(inv -> {
+                    List<AiTipService.CategoryCandidate> candidates = inv.getArgument(0);
+                    List<AiRecommendationDetail> result = new ArrayList<>();
+                    for (AiTipService.CategoryCandidate c : candidates) {
+                        result.add(new AiRecommendationDetail(
+                                c.category().name() + " tip", "why", "action", List.of(), "impact", "STANDARD"));
+                    }
+                    return result;
+                });
+    }
     // --- Decision B: first-ever GET with no prior refresh auto-computes and persists ---
 
     @Test
@@ -89,6 +106,7 @@ class RecommendationServiceTest {
 
         stubUserReference();
         stubSaveAllReturnsInput();
+        stubAiTipServiceReturnsFallback();
 
         RecommendationResponse response = recommendationService.getRecommendations(USER_ID);
 
@@ -147,6 +165,7 @@ class RecommendationServiceTest {
     void refreshRecommendations_deletesBeforeInsertingNewOnes_eachRefresh() {
         stubUserReference();
         stubSaveAllReturnsInput();
+        stubAiTipServiceReturnsFallback();
 
         when(carbonEntryRepository.findByUserIdAndActivityDateBetween(eq(USER_ID), any(), any()))
                 .thenReturn(List.of(
@@ -182,6 +201,7 @@ class RecommendationServiceTest {
     void refreshRecommendations_fewerThanThreeNonzeroCategories_returnsOnlyThose() {
         stubUserReference();
         stubSaveAllReturnsInput();
+        stubAiTipServiceReturnsFallback();
 
         when(carbonEntryRepository.findByUserIdAndActivityDateBetween(eq(USER_ID), any(), any()))
                 .thenReturn(List.of(
@@ -205,6 +225,7 @@ class RecommendationServiceTest {
     void refreshRecommendations_tieInContribution_bothCategoriesIncluded() {
         stubUserReference();
         stubSaveAllReturnsInput();
+        stubAiTipServiceReturnsFallback();
 
         when(carbonEntryRepository.findByUserIdAndActivityDateBetween(eq(USER_ID), any(), any()))
                 .thenReturn(List.of(
@@ -228,6 +249,7 @@ class RecommendationServiceTest {
     void refreshRecommendations_impactEstimateUsesCarbonEmission_notAmount() {
         stubUserReference();
         stubSaveAllReturnsInput();
+        stubAiTipServiceReturnsFallback();
 
         when(carbonEntryRepository.findByUserIdAndActivityDateBetween(eq(USER_ID), any(), any()))
                 .thenReturn(List.of(

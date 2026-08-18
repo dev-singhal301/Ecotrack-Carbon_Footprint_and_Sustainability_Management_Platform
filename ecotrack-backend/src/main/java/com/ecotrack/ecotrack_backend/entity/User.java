@@ -64,6 +64,13 @@ public class User {
     @Column(name = "token_expiry_date")
     private LocalDateTime tokenExpiryDate;
 
+    // Set when the user themself requests account deletion (eco-identity "Delete
+    // Account" flow). NULL means the account was never asked to be deleted — an
+    // enabled=false with this still NULL is an admin/moderation deactivation, not
+    // a deletion request. Cleared automatically if the account is ever reactivated.
+    @Column(name = "deletion_requested_at")
+    private LocalDateTime deletionRequestedAt;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -218,6 +225,14 @@ public class User {
 
     public void setTokenExpiryDate(LocalDateTime tokenExpiryDate) {
         this.tokenExpiryDate = tokenExpiryDate;
+    }
+
+    public LocalDateTime getDeletionRequestedAt() {
+        return deletionRequestedAt;
+    }
+
+    public void setDeletionRequestedAt(LocalDateTime deletionRequestedAt) {
+        this.deletionRequestedAt = deletionRequestedAt;
     }
 
     public LocalDateTime getCreatedAt() {

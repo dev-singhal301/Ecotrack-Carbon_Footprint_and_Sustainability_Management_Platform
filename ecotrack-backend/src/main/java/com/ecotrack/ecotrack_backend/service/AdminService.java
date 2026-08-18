@@ -1,6 +1,7 @@
 package com.ecotrack.ecotrack_backend.service;
 
 import com.ecotrack.ecotrack_backend.dto.AdminDashboardSummaryResponse;
+import com.ecotrack.ecotrack_backend.dto.AdminPendingDeletionResponse;
 import com.ecotrack.ecotrack_backend.dto.AdminUserResponse;
 import com.ecotrack.ecotrack_backend.entity.User;
 import com.ecotrack.ecotrack_backend.repository.UserRepository;
@@ -19,9 +20,11 @@ import java.util.List;
 public class AdminService {
 
     private final UserRepository userRepository;
+    private final UserProfileService userProfileService;
 
-    public AdminService(UserRepository userRepository) {
+    public AdminService(UserRepository userRepository, UserProfileService userProfileService) {
         this.userRepository = userRepository;
+        this.userProfileService = userProfileService;
     }
 
     public AdminDashboardSummaryResponse getDashboardSummary() {
@@ -53,6 +56,11 @@ public class AdminService {
      * requestingAdminEmail guards against an admin deactivating their own
      * account by mistake mid-session (which would otherwise be an easy way
      * to accidentally lock yourself out with no other admin around).
+     *
+     * This is the moderation path — deletionRequestedAt is left untouched
+     * (stays NULL for a user who never asked to be deleted), which is what
+     * distinguishes an ordinary moderation deactivation from a user's own
+     * pending deletion request over in getPendingDeletions().
      */
     public void deactivateUser(Long userId, String requestingAdminEmail) {
         User user = userRepository.findById(userId)
@@ -75,17 +83,48 @@ public class AdminService {
      * can log in again. No self-check needed here (an admin reactivating
      * their own already-enabled account is a no-op, not a footgun), but
      * kept idempotent the same way deactivate is.
+     *
+     * Also clears deletionRequestedAt: if a user changed their mind after
+     * requesting deletion (e.g. contacted support), reactivating them should
+     * pull them fully out of the pending-deletion queue, not leave a stale
+     * timestamp that would make them look like they're still awaiting purge.
      */
     public void reactivateUser(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("No user found with id: " + userId));
 
-        if (user.isEnabled()) {
-            return; // already active — idempotent, no error needed
-        }
-
         user.setEnabled(true);
+        user.setDeletionRequestedAt(null);
         userRepository.save(user);
+    }
+
+    /**
+     * Admin "pending account deletions" queue — every user who hit Delete
+     * Account on their own profile and is now soft-deleted, waiting for
+     * tech support to review and permanently purge.
+     */
+    public List<AdminPendingDeletionResponse> getPendingDeletions() {
+        return userRepository.findByDeletionRequestedAtIsNotNullOrderByDeletionRequestedAtAsc().stream()
+                .map(u -> new AdminPendingDeletionResponse(
+                        u.getId(),
+                        u.getName(),
+                        u.getEmail(),
+                        u.getDeletionRequestedAt()
+                ))
+                .toList();
+    }
+
+    /**
+     * Permanently purges a user who requested deletion — the real hard
+     * delete, cascading to every dependent row at the DB level. Only meant
+     * to be called against accounts already in the pending-deletion queue,
+     * after tech support has reviewed them; nothing here enforces that by
+     * itself, so this is a manual, deliberate action on the admin side.
+     */
+    public void permanentlyDeleteUser(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("No user found with id: " + userId));
+        userProfileService.deleteAccountByEmail(user.getEmail());
     }
 
     private AdminUserResponse toResponse(User user) {

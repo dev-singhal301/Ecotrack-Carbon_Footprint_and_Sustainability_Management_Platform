@@ -12,6 +12,7 @@ import com.ecotrack.ecotrack_backend.repository.CarbonEntryRepository;
 import com.ecotrack.ecotrack_backend.repository.GoalProgressRepository;
 import com.ecotrack.ecotrack_backend.repository.GoalRepository;
 import com.ecotrack.ecotrack_backend.repository.UserRepository;
+import org.springframework.context.ApplicationEventPublisher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -45,6 +46,12 @@ public class GoalIsolationServiceTest {
 
     @Mock
     private CarbonEntryRepository carbonEntryRepository;
+
+    @Mock
+    private UserXpService userXpService;
+
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
     private GoalService goalService;
@@ -171,7 +178,7 @@ public class GoalIsolationServiceTest {
         assertNotNull(response);
         assertEquals("EXPIRED", mockGoal.getStatus());
         assertFalse(response.isCompleted());
-        verify(goalRepository).save(mockGoal);
+        verify(goalRepository, times(2)).save(mockGoal);
     }
 
     // ---------------------------------------------------------------
@@ -179,7 +186,7 @@ public class GoalIsolationServiceTest {
     // ---------------------------------------------------------------
 
     @Test
-    @DisplayName("Complete Goal: Should credit XP and Reward Points to User on goal completion")
+    @DisplayName("Complete Goal: Should credit XP and Reward Points via UserXpService on goal completion")
     void testCompleteGoalCreditsXpAndRewardPointsToUser() {
         Long goalId = 3L;
         Goal mockGoal = new Goal();
@@ -189,24 +196,21 @@ public class GoalIsolationServiceTest {
         mockGoal.setXpReward(200);
         mockGoal.setRewardPoints(50);
 
-        when(userRepository.findById(userId)).thenReturn(Optional.of(mockUser));
         when(goalRepository.findById(goalId)).thenReturn(Optional.of(mockGoal));
         when(goalProgressRepository.findByGoalGoalId(goalId)).thenReturn(Optional.of(new GoalProgress()));
 
         // Act
         goalService.completeGoal(userId, goalId);
 
-        // Verify User saved with updated XP (500 + 200 = 700) and Points (100 + 50 = 150)
-        ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
-        verify(userRepository).save(userCaptor.capture());
+        // XP/points crediting is delegated to UserXpService, using the goal's own reward config
+        verify(userXpService).awardXpAndPoints(userId, 200, 50, "GOAL", goalId);
 
-        User updatedUser = userCaptor.getValue();
-        assertEquals(700, updatedUser.getCurrentXp());
-        assertEquals(150, updatedUser.getRewardPoints());
-
-        // Verify Goal updated to COMPLETED
+        // Goal flips to COMPLETED and is persisted
         assertEquals("COMPLETED", mockGoal.getStatus());
         verify(goalRepository).save(mockGoal);
+
+        // Completion event fires for downstream listeners (e.g. notifications)
+        verify(eventPublisher).publishEvent(any(GoalCompletedEvent.class));
     }
 
     @Test
@@ -218,7 +222,6 @@ public class GoalIsolationServiceTest {
         completedGoal.setUser(mockUser);
         completedGoal.setStatus("COMPLETED");
 
-        when(userRepository.findById(userId)).thenReturn(Optional.of(mockUser));
         when(goalRepository.findById(goalId)).thenReturn(Optional.of(completedGoal));
 
         // Act & Assert

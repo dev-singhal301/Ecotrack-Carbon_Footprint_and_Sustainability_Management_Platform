@@ -1132,6 +1132,29 @@
   opacity: 0.8;
 }
 
+.danger-modal-support-note {
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0 0 20px 0;
+  font-size: 0.8rem;
+  color: var(--eco-text-muted);
+  line-height: 1.5;
+  background: var(--eco-input-field-bg);
+  border: 1px solid var(--eco-input-border);
+  border-radius: 10px;
+  padding: 10px 14px;
+}
+
+.danger-modal-support-note a {
+  color: var(--eco-green);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.danger-modal-support-note a:hover {
+  text-decoration: underline;
+}
+
 /* ==========================================================================
    Responsive Rules (matches breakpoints used in dashboard.css/tracking.css)
    ========================================================================== */

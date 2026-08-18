@@ -7,6 +7,7 @@ import com.ecotrack.ecotrack_backend.dto.ForgotPasswordRequest;
 import com.ecotrack.ecotrack_backend.dto.GoogleLoginRequest;
 import com.ecotrack.ecotrack_backend.dto.ResetPasswordRequest;
 import com.ecotrack.ecotrack_backend.dto.SetPasswordRequest;
+import com.ecotrack.ecotrack_backend.exception.AccountPendingDeletionException;
 import com.ecotrack.ecotrack_backend.service.AuthService;
 import com.ecotrack.ecotrack_backend.service.EmailService;
 import jakarta.validation.Valid;
@@ -111,13 +112,34 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(messageBody(ex.getMessage()));
     }
 
+    /*
+     * AccountPendingDeletionException is a subtype of DisabledException —
+     * this handler is more specific, so Spring resolves it ahead of the
+     * generic DisabledException handler below for exactly this case,
+     * without needing any reordering. The "reason" code tells the frontend
+     * to render the reactivation contact details (support email / phone).
+     */
+    @ExceptionHandler(AccountPendingDeletionException.class)
+    public ResponseEntity<Map<String, String>> handleAccountPendingDeletion(AccountPendingDeletionException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of(
+                "message", "Your account has been deactivated and is pending deletion.",
+                "reason", "PENDING_DELETION"
+        ));
+    }
+
     // DisabledException is a subtype of AuthenticationException — this
     // handler is more specific, so Spring resolves it ahead of the generic
     // one below for exactly this case, without needing any reordering.
+    // "reason":"DEACTIVATED" tells the frontend to render the same support
+    // contact details as PENDING_DELETION, just with different lead-in
+    // copy — "contact an administrator" was previously a dead end with no
+    // way to actually do that.
     @ExceptionHandler(DisabledException.class)
     public ResponseEntity<Map<String, String>> handleDisabledException(DisabledException ex) {
-        return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(messageBody("Your account has been suspended. Please contact an administrator."));
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of(
+                "message", "Your account has been suspended.",
+                "reason", "DEACTIVATED"
+        ));
     }
 
     @ExceptionHandler(AuthenticationException.class)
@@ -138,5 +160,5 @@ public class AuthController {
     private Map<String, String> messageBody(String message) {
         return Map.of("message", message != null ? message : "An unexpected error occurred.");
     }
-    
+
 }
