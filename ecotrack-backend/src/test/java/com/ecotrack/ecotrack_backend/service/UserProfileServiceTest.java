@@ -29,6 +29,9 @@ class UserProfileServiceTest {
     private UserRepository userRepository;
 
     @Mock
+    private CarbonEntryRepository carbonEntryRepository;
+
+    @Mock
     private BadgeRepository badgeRepository;
 
     @Mock
@@ -64,7 +67,7 @@ class UserProfileServiceTest {
         mockBadge.setBadgeId(10L);
         mockBadge.setName("Tree Planter");
         mockBadge.setDescription("Planted 5 trees");
-        mockBadge.setCategory("FORESTRY");
+        mockBadge.setCategory("LEADERBOARD");
         mockBadge.setIconUrl("https://example.com/badge.png");
         mockBadge.setRequiredXp(100);
 
@@ -75,12 +78,23 @@ class UserProfileServiceTest {
     @DisplayName("getUserProfile - Successfully retrieves profile, stats, and mapped badges")
     void getUserProfile_Success() {
         when(userRepository.findById(1L)).thenReturn(Optional.of(mockUser));
-        when(goalRepository.countByUserIdAndStatus(1L, "COMPLETED")).thenReturn(5L);
-        when(goalRepository.countByUserIdAndStatus(1L, "EXPIRED")).thenReturn(2L);
+
+        when(goalRepository.countByUserIdAndStatusIn(eq(1L),
+                argThat(list -> list != null && list.contains("COMPLETED"))))
+                .thenReturn(5L);
+        when(goalRepository.countByUserIdAndStatusIn(eq(1L),
+                argThat(list -> list != null && list.contains("EXPIRED"))))
+                .thenReturn(2L);
+        when(goalRepository.countByUserIdAndStatusIn(eq(1L),
+                argThat(list -> list != null && list.contains("ACTIVE"))))
+                .thenReturn(3L);
+
         when(userChallengeRepository.countByUserIdAndStatus(1L, UserChallengeStatus.COMPLETED)).thenReturn(8L);
         when(userChallengeRepository.countByUserIdAndStatusIn(eq(1L), any())).thenReturn(1L);
 
-        when(badgeRepository.findAll()).thenReturn(List.of(mockBadge));
+        when(carbonEntryRepository.countByUserId(1L)).thenReturn(42L);
+
+        when(badgeRepository.findByCategory("LEADERBOARD")).thenReturn(List.of(mockBadge));
         when(userBadgeRepository.findByUserId(1L)).thenReturn(List.of(mockUserBadge));
 
         UserProfileDto profile = userProfileService.getUserProfile(1L);
@@ -92,15 +106,22 @@ class UserProfileServiceTest {
 
         assertEquals(5L, profile.getGoalsAccomplished());
         assertEquals(2L, profile.getGoalsFailed());
+        assertEquals(3L, profile.getActiveGoals());
         assertEquals(8L, profile.getChallengesAccomplished());
         assertEquals(1L, profile.getChallengesFailed());
+        assertEquals(42L, profile.getTotalEntries());
 
-        assertEquals(1, profile.getBadges().size());
+        // 1 leaderboard badge (stubbed, unlocked) + 3 auto-derived milestone badges
+        // for a Level 3 user (Novice Eco, Eco Scout, Eco Explorer) = 4 total.
+        // Leaderboard badges are appended first in getUserBadges(), so index 0
+        // is still the Tree Planter badge.
+        assertEquals(4, profile.getBadges().size());
         UserProfileDto.BadgeDto badgeDto = profile.getBadges().get(0);
         assertEquals(10L, badgeDto.getBadgeId());
         assertTrue(badgeDto.isUnlocked());
 
-        verify(userRepository, times(1)).findById(1L);
+        // Called once in getUserProfile, once more inside the getUserBadges() call it makes
+        verify(userRepository, times(2)).findById(1L);
     }
 
     @Test
