@@ -152,35 +152,38 @@
 }
 
 .metric-badge {
-    background: rgba(40, 45, 55, 0.85); /* Darker, more solid background */
+    background: rgba(30, 41, 59, 0.45); /* Darker slate, highly translucent for the glass effect */
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    padding: 16px 24px; /* Larger padding */
+    border: 1px solid rgba(255, 255, 255, 0.15); /* Soft border to define the edges */
+    padding: 16px 24px;
     border-radius: 12px;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
-    min-width: 130px; /* Wider footprint */
+    justify-content: center;
+    /* REMOVED: align-items: center; (This was forcing all text to the center) */
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+    min-width: 130px; 
 }
 
 .metric-value {
     font-family: var(--eco-font);
-    font-size: 1.6rem; /* Larger numeric value */
+    font-size: 1.6rem; 
     font-weight: 800;
     color: var(--eco-green);
     line-height: 1.2;
+    width: 100%; /* Ensures the element spans full width so text-align works */
 }
 
 .metric-label {
     font-family: var(--eco-font);
-    font-size: 0.8rem; /* Clearer subtext */
+    font-size: 0.8rem; 
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: rgba(255, 255, 255, 0.95);
     margin-top: 4px;
+    width: 100%; /* Ensures the element spans full width so text-align works */
 }
 
 /* Layer 3: Fact title + text */
@@ -544,4 +547,29 @@ input.invalid-input:focus {
     .support-link:hover {
         color: var(--eco-bg-light);
     }
+}
+
+/* ---------------- Smooth Form Transitions ---------------- */
+.collapsable-wrapper {
+    display: grid;
+    grid-template-rows: 0fr;
+    opacity: 0;
+    visibility: hidden;
+    transition: grid-template-rows 0.4s cubic-bezier(0.4, 0, 0.2, 1), 
+                opacity 0.35s ease-in-out, 
+                visibility 0.4s;
+}
+
+.collapsable-wrapper.expanded {
+    grid-template-rows: 1fr;
+    opacity: 1;
+    visibility: visible;
+}
+
+.collapsable-inner {
+    overflow: hidden;
+    /* The tiny padding and negative margin cancel each other out dimensionally,
+       but prevent the green "focus" outline ring from clipping on inputs! */
+    padding: 4px;
+    margin: -4px;
 }
