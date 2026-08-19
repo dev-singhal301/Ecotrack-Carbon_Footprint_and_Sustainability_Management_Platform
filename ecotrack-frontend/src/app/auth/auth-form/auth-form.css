@@ -14,8 +14,8 @@
     --eco-slate-700: #334155;
     --eco-slate-400: #94a3b8;
 
-    /* Centralized Layer Masks */
-    --eco-desktop-mask: linear-gradient(180deg, rgba(15, 30, 20, 0.35) 0%, rgba(15, 30, 20, 0.05) 30%, rgba(15, 30, 20, 0.05) 55%, rgba(10, 20, 14, 0.55) 78%, rgba(8, 16, 11, 0.82) 100%);
+    /* Adjusted Layer Masks - Darkened to ensure text readability on bright images */
+    --eco-desktop-mask: linear-gradient(180deg, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0.3) 30%, rgba(0, 0, 0, 0.35) 60%, rgba(0, 0, 0, 0.9) 100%);
     --eco-mobile-mask: rgba(15, 23, 42, 0.65);
     --eco-mobile-glass-bg: rgba(255, 255, 255, 0.9);
     --eco-toggle-track: #f1f5f9;
@@ -34,7 +34,7 @@
 .auth-page {
     position: relative;
     display: flex;
-    flex-direction: column; /* Stacked vertically to seat footer below card */
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     min-height: 100vh;
@@ -45,7 +45,6 @@
     font-family: var(--eco-font);
 }
 
-/* Backmost layer: fills the whole page behind the card */
 .page-bg-img {
     position: absolute;
     inset: 0;
@@ -75,9 +74,10 @@
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    background-color: #1a1a1a; /* Solid base color behind slides */
 }
 
-/* Layer 1 (backmost within the panel): rotating photos, crossfaded */
+/* Layer 1: rotating photos */
 .slide-bg {
     position: absolute;
     inset: 0;
@@ -92,8 +92,7 @@
     opacity: 1;
 }
 
-/* Layer 2: Translucent mask — lighter through the middle, darker only where
-   the brand mark and caption text need contrast */
+/* Layer 2: Translucent dark mask */
 .visual-panel::before {
     content: '';
     position: absolute;
@@ -102,40 +101,42 @@
     z-index: 2;
 }
 
-/* Layer 3: Persistent brand mark — fixed at the top, does not crossfade */
+/* Layer 3: Persistent brand mark */
 .panel-brand {
     position: absolute;
-    top: 32px;
+    top: 40px;
     left: 40px;
     z-index: 4;
 }
 
 .panel-brand-mark {
     font-family: var(--eco-font);
-    font-size: 1.5rem;
+    font-size: 2.2rem; /* Significantly increased size */
     font-weight: 800;
     letter-spacing: 0.02em;
     color: var(--eco-white);
-    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
 }
 
 /* Layer 3: Dynamic overlay metrics panel */
 .slide-center-container {
     position: absolute;
-    top: 42%;
+    top: 45%; /* Centered nicely between logo and bottom text */
     left: 50%;
     transform: translate(-50%, -50%);
     z-index: 3;
-    width: calc(100% - 80px);
+    width: 100%;
     display: flex;
     justify-content: center;
+    padding: 0 20px;
+    box-sizing: border-box;
 }
 
 .slide-center-card {
     position: absolute;
     display: flex;
     justify-content: center;
-    gap: 12px;
+    gap: 16px; /* Space between the two metric boxes */
     width: 100%;
     opacity: 0;
     transform: translateY(14px);
@@ -151,22 +152,22 @@
 }
 
 .metric-badge {
-    background: rgba(15, 23, 42, 0.5);
+    background: rgba(40, 45, 55, 0.85); /* Darker, more solid background */
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    padding: 10px 16px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    padding: 16px 24px; /* Larger padding */
     border-radius: 12px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
-    min-width: 90px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+    min-width: 130px; /* Wider footprint */
 }
 
 .metric-value {
     font-family: var(--eco-font);
-    font-size: 1.2rem;
+    font-size: 1.6rem; /* Larger numeric value */
     font-weight: 800;
     color: var(--eco-green);
     line-height: 1.2;
@@ -174,15 +175,15 @@
 
 .metric-label {
     font-family: var(--eco-font);
-    font-size: 0.72rem;
+    font-size: 0.8rem; /* Clearer subtext */
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: rgba(255, 255, 255, 0.88);
-    margin-top: 2px;
+    letter-spacing: 0.05em;
+    color: rgba(255, 255, 255, 0.95);
+    margin-top: 4px;
 }
 
-/* Layer 3: Fact title + text, crossfaded in sync with the photo */
+/* Layer 3: Fact title + text */
 .slide-content {
     position: absolute;
     left: 0;
@@ -211,21 +212,21 @@
 .slide-text h3 {
     font-family: var(--eco-font);
     color: var(--eco-white);
-    font-size: 1.3rem;
+    font-size: 1.4rem;
     margin: 0 0 8px;
     font-weight: 800;
-    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
 }
 
 .slide-text p {
     font-family: var(--eco-font);
-    color: rgba(255, 255, 255, 0.92);
-    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.95);
+    font-size: 0.95rem;
     font-weight: 500;
     line-height: 1.5;
     margin: 0;
     max-width: 420px;
-    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
 }
 
 /* Layer 4: Manual navigation dots */
@@ -242,8 +243,8 @@
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.35);
-    border: 1.5px solid rgba(255, 255, 255, 0.6);
+    background: rgba(255, 255, 255, 0.4);
+    border: 1.5px solid rgba(255, 255, 255, 0.7);
     padding: 0;
     cursor: pointer;
     transition: all 0.3s ease;
@@ -362,14 +363,6 @@ label {
     display: none;
 }
 
-.password-field input::-webkit-credentials-auto-fill-button,
-.password-field input::-webkit-strong-password-auto-fill-button {
-    visibility: hidden;
-    pointer-events: none;
-    position: absolute;
-    right: 0;
-}
-
 input {
     width: 100%;
     padding: 10px 12px;
@@ -409,31 +402,27 @@ input.invalid-input:focus {
     font-weight: 600;
 }
 
-.error-banner {
-    background: rgba(239, 68, 68, 0.06);
-    border: 1px solid rgba(239, 68, 68, 0.2);
-    color: var(--eco-red);
+.error-banner, .success-banner {
     padding: 10px;
     border-radius: 8px;
     font-family: var(--eco-font);
     font-size: 0.85rem;
     font-weight: 600;
     margin-bottom: 16px;
+}
+
+.error-banner {
+    background: rgba(239, 68, 68, 0.06);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    color: var(--eco-red);
 }
 
 .success-banner {
     background: rgba(34, 197, 94, 0.06);
     border: 1px solid rgba(34, 197, 94, 0.2);
     color: var(--eco-green-dark);
-    padding: 10px;
-    border-radius: 8px;
-    font-family: var(--eco-font);
-    font-size: 0.85rem;
-    font-weight: 600;
-    margin-bottom: 16px;
 }
 
-/* Primary Form Submit Button Styles */
 .submit-btn {
     width: 100%;
     padding: 12px;
@@ -504,19 +493,24 @@ input.invalid-input:focus {
         box-shadow: none;
     }
 
+    /* Set the specific AVIF image as the static background for mobile */
     .visual-panel {
         position: fixed;
         inset: 0;
         z-index: 0;
+        background-image: url('/login/login-mobile.avif');
+        background-size: cover;
+        background-position: center;
+    }
+
+    /* Completely hide the slideshow images on mobile so they don't block the background */
+    .slide-bg {
+        display: none !important;
     }
 
     .visual-panel::before {
         background: var(--eco-mobile-mask);
         z-index: 1;
-    }
-
-    .slide-bg {
-        z-index: 0;
     }
 
     .panel-brand,
@@ -538,7 +532,6 @@ input.invalid-input:focus {
         margin: 10px 0 0 0;
     }
 
-    /* Mobile readability enhancement for support footer */
     .auth-support-footer p {
         color: var(--eco-white);
         text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
