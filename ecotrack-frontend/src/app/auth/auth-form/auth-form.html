@@ -10,6 +10,25 @@
                    [style.background-image]="'url(/login/' + slide.image + ')'"></div>
             }
 
+            <!-- Persistent brand mark — stays fixed above every slide, never crossfades -->
+            <div class="panel-brand">
+                <span class="panel-brand-mark">EcoTrack</span>
+            </div>
+
+            <!-- Central Data Overlay Section -->
+            <div class="slide-center-container">
+                @for (slide of slides; track slide.image; let i = $index) {
+                  <div class="slide-center-card" [class.active]="i === currentSlideIndex()">
+                    @for (metric of slide.metrics; track metric.label) {
+                      <div class="metric-badge">
+                        <span class="metric-value">{{ metric.value }}</span>
+                        <span class="metric-label">{{ metric.label }}</span>
+                      </div>
+                    }
+                  </div>
+                }
+            </div>
+
             <div class="slide-content">
                 @for (slide of slides; track slide.image; let i = $index) {
                   <div class="slide-text" [class.active]="i === currentSlideIndex()">

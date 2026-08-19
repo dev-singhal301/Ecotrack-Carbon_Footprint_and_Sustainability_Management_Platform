@@ -4,26 +4,22 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { notOnlyWhitespace } from '../validators';
 import { Auth } from '../auth';
 
-// Google Identity Services loads a global `google` object from the script
-// tag in index.html — this tells TypeScript it exists, without needing an npm package.
 declare const google: any;
 
-// Replace with your actual Client ID from Google Cloud Console.
-// This is safe to expose publicly — it's not a secret, unlike a client *secret*.
 const GOOGLE_CLIENT_ID = '1060715159333-01t5hgjdc1ke4ltra4e4edn3562vnjot.apps.googleusercontent.com';
 
-interface VisualSlide {
+export interface SlideMetric {
+  label: string;
+  value: string;
+}
+
+export interface VisualSlide {
   image: string;
   title: string;
   text: string;
+  metrics: SlideMetric[];
 }
 
-/**
- * Single unified authentication component. Replaces the separate Login and
- * Register components — toggling between modes is a client-side signal
- * flip, not a route change, per the design spec. Supports Login, Registration,
- * and a sliding Forgot Password dynamic view state.
- */
 @Component({
   selector: 'app-auth-form',
   standalone: true,
@@ -34,55 +30,78 @@ interface VisualSlide {
 export class AuthForm implements AfterViewInit, OnInit, OnDestroy {
   @ViewChild('googleBtn') googleBtnRef!: ElementRef;
   isLoginMode = signal(true);
-  isForgotPasswordMode = signal(false); // Third dynamic state state link
+  isForgotPasswordMode = signal(false);
   isSubmitting = signal(false);
   errorMessage = signal('');
   successMessage = signal('');
   showPassword = signal(false);
 
-  // ---- Visual panel slideshow ----
-  // Images live at public/login/1.avif ... 6.avif. Facts are paired 1:1 with
-  // each image in array order — reorder this array to change the pairing.
+  // ---- Visual panel slideshow with clean central data ----
   readonly slides: VisualSlide[] = [
     {
       image: '1.avif',
       title: 'The Ozone Layer Is Healing',
       text: 'Global phase-outs under the Montreal Protocol have Earth\'s protective ozone layer on track to fully recover by 2040.',
+      metrics: [
+        { label: 'Recovery Target', value: '2040' },
+        { label: 'Global Accord', value: 'Montreal Protocol' }
+      ]
     },
     {
       image: '2.avif',
       title: 'The Air Quality Crisis',
       text: 'Toxic PM2.5 pollution contributes to over 1.6 million premature deaths in India every year, cutting life expectancy across the Indo-Gangetic plain.',
+      metrics: [
+        { label: 'Annual Impact', value: '1.6M+ Lives' },
+        { label: 'Primary Contaminant', value: 'PM2.5' }
+      ]
     },
     {
       image: '3.avif',
       title: '99.6% Railway Electrification',
       text: 'Indian Railways has electrified over 99.6% of its broad-gauge network, aiming for a net-zero carbon railway by 2030.',
+      metrics: [
+        { label: 'Electrified Network', value: '99.6%' },
+        { label: 'Net-Zero Goal', value: '2030' }
+      ]
     },
     {
       image: '4.avif',
       title: 'A Global Solar Leader',
       text: 'India hosts some of the world\'s largest solar parks, including the 2,245 MW Bhadla Solar Park, and co-founded the 120+ nation International Solar Alliance.',
+      metrics: [
+        { label: 'Bhadla Capacity', value: '2,245 MW' },
+        { label: 'Member Alliance', value: '120+ Nations' }
+      ]
     },
     {
       image: '5.avif',
       title: 'The Cost of Extreme Weather',
       text: 'Heatwaves, erratic monsoons, and flooding threaten over 80% of India\'s population, costing billions in lost crops and damaged infrastructure yearly.',
+      metrics: [
+        { label: 'Population At Risk', value: '> 80%' },
+        { label: 'Primary Drivers', value: 'Heatwaves & Floods' }
+      ]
     },
     {
       image: '6.avif',
       title: 'The Plastic Pollution Problem',
       text: 'India generates over 3.4 million tonnes of plastic waste annually, much of it choking drainage systems and polluting coastlines.',
+      metrics: [
+        { label: 'Annual Generation', value: '3.4M Tonnes' },
+        { label: 'Critical Zones', value: 'Coasts & Drainage' }
+      ]
     },
   ];
 
   currentSlideIndex = signal(0);
+  currentSlide = computed(() => this.slides[this.currentSlideIndex()]);
+
   private slideshowTimer: ReturnType<typeof setInterval> | null = null;
   private readonly SLIDE_INTERVAL_MS = 5000;
 
   authForm: FormGroup;
 
-  // Header rewrites dynamically across all 3 view orientations
   headerText = computed(() => {
     if (this.isForgotPasswordMode()) {
       return 'Reset Password';
@@ -90,7 +109,6 @@ export class AuthForm implements AfterViewInit, OnInit, OnDestroy {
     return this.isLoginMode() ? 'Welcome Back' : 'Sign Up for Free';
   });
 
-  // Action labels match processing operations exactly
   submitLabel = computed(() => {
     if (this.isSubmitting()) {
       if (this.isForgotPasswordMode()) return 'Sending request...';
@@ -103,7 +121,6 @@ export class AuthForm implements AfterViewInit, OnInit, OnDestroy {
   constructor(private fb: FormBuilder, private auth: Auth, private router: Router, private route: ActivatedRoute) {
     this.authForm = this.fb.group({
       name: [''],
-      // Enforce strict syntax formatting via Regex to completely filter out incomplete inputs
       email: ['', [
         Validators.required,
         Validators.email,
@@ -115,14 +132,9 @@ export class AuthForm implements AfterViewInit, OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    // The jwtInterceptor redirects here with this param when a session was
-    // force-ended mid-use (token became invalid, or the account was
-    // deactivated) — surface that reason instead of a silent empty form.
     const sessionMessage = this.route.snapshot.queryParamMap.get('sessionMessage');
     if (sessionMessage) {
       this.errorMessage.set(sessionMessage);
-      // Strip the query param so a manual page refresh doesn't keep
-      // re-showing a stale message.
       this.router.navigate([], { relativeTo: this.route, queryParams: {}, replaceUrl: true });
     }
 
@@ -156,7 +168,6 @@ export class AuthForm implements AfterViewInit, OnInit, OnDestroy {
     this.waitForGoogleScript();
   }
 
-  // ---- Slideshow controls ----
   private startSlideshow(): void {
     this.stopSlideshow();
     this.slideshowTimer = setInterval(() => {
@@ -171,17 +182,14 @@ export class AuthForm implements AfterViewInit, OnInit, OnDestroy {
     }
   }
 
-  /** Pauses auto-advance — bound to (mouseenter) on the visual panel. */
   pauseSlideshow(): void {
     this.stopSlideshow();
   }
 
-  /** Resumes auto-advance — bound to (mouseleave) on the visual panel. */
   resumeSlideshow(): void {
     this.startSlideshow();
   }
 
-  /** Jumps to a specific slide (dot click) and restarts the 5s timer. */
   goToSlide(index: number): void {
     this.currentSlideIndex.set(index);
     this.startSlideshow();
@@ -206,7 +214,6 @@ export class AuthForm implements AfterViewInit, OnInit, OnDestroy {
       return;
     }
 
-    // Script not ready yet — wait 100ms and try again
     setTimeout(() => this.waitForGoogleScript(retries - 1), 100);
   }
 
@@ -219,8 +226,6 @@ export class AuthForm implements AfterViewInit, OnInit, OnDestroy {
       next: (authResponse) => {
         this.isSubmitting.set(false);
         if (!authResponse.hasPassword) {
-          // Must set a password before going anywhere else — takes priority
-          // over role, an admin who signed up via Google still needs this.
           this.router.navigate(['/set-password']);
         } else if (this.auth.isAdmin()) {
           this.router.navigate(['/home-admin']);
@@ -236,15 +241,11 @@ export class AuthForm implements AfterViewInit, OnInit, OnDestroy {
     });
   }
 
-  /**
-   * Flips between Sign Up and Log In styles. Clears the form values and resets
-   * custom flags so components scale cleanly.
-   */
   switchMode(toLogin: boolean): void {
     if (this.isLoginMode() === toLogin && !this.isForgotPasswordMode()) {
       return;
     }
-    this.isForgotPasswordMode.set(false); // Pull out of password recovery mode if moving models
+    this.isForgotPasswordMode.set(false);
     this.isLoginMode.set(toLogin);
     this.errorMessage.set('');
     this.successMessage.set('');
@@ -279,7 +280,6 @@ export class AuthForm implements AfterViewInit, OnInit, OnDestroy {
       nameControl?.clearValidators();
       passwordControl?.clearValidators();
     } else {
-      // Standard auth state configurations
       passwordControl?.setValidators([Validators.required, Validators.minLength(6), notOnlyWhitespace]);
       if (this.isLoginMode()) {
         nameControl?.clearValidators();
@@ -309,7 +309,6 @@ export class AuthForm implements AfterViewInit, OnInit, OnDestroy {
 
     const email = emailControl?.value;
 
-    // Ensure you add forgotPassword(email) to your frontend Auth file
     this.auth.forgotPassword(email).subscribe({
       next: (res: any) => {
         this.isSubmitting.set(false);

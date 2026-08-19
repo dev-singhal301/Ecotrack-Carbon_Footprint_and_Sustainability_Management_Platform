@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap');
+
 :host {
     /* Centralized Palette */
     --eco-bg-light: #B1D3B9;
@@ -13,7 +15,7 @@
     --eco-slate-400: #94a3b8;
 
     /* Centralized Layer Masks */
-    --eco-desktop-mask: linear-gradient(160deg, rgba(20, 48, 32, 0.45) 0%, rgba(15, 23, 42, 0.55) 100%);
+    --eco-desktop-mask: linear-gradient(180deg, rgba(15, 30, 20, 0.35) 0%, rgba(15, 30, 20, 0.05) 30%, rgba(15, 30, 20, 0.05) 55%, rgba(10, 20, 14, 0.55) 78%, rgba(8, 16, 11, 0.82) 100%);
     --eco-mobile-mask: rgba(15, 23, 42, 0.65);
     --eco-mobile-glass-bg: rgba(255, 255, 255, 0.9);
     --eco-toggle-track: #f1f5f9;
@@ -22,8 +24,10 @@
     --eco-text-main: #1e293b;
     --eco-text-muted: #64748b;
     --eco-text-label: #475569;
+    --eco-font: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 
     display: block;
+    font-family: var(--eco-font);
 }
 
 /* Main Background Page Canvas */
@@ -38,6 +42,7 @@
     padding: 44px 20px;
     box-sizing: border-box;
     overflow: hidden;
+    font-family: var(--eco-font);
 }
 
 /* Backmost layer: fills the whole page behind the card */
@@ -87,7 +92,8 @@
     opacity: 1;
 }
 
-/* Layer 2: Translucent mask overlay */
+/* Layer 2: Translucent mask — lighter through the middle, darker only where
+   the brand mark and caption text need contrast */
 .visual-panel::before {
     content: '';
     position: absolute;
@@ -96,12 +102,92 @@
     z-index: 2;
 }
 
+/* Layer 3: Persistent brand mark — fixed at the top, does not crossfade */
+.panel-brand {
+    position: absolute;
+    top: 32px;
+    left: 40px;
+    z-index: 4;
+}
+
+.panel-brand-mark {
+    font-family: var(--eco-font);
+    font-size: 1.5rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    color: var(--eco-white);
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+}
+
+/* Layer 3: Dynamic overlay metrics panel */
+.slide-center-container {
+    position: absolute;
+    top: 42%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 3;
+    width: calc(100% - 80px);
+    display: flex;
+    justify-content: center;
+}
+
+.slide-center-card {
+    position: absolute;
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    width: 100%;
+    opacity: 0;
+    transform: translateY(14px);
+    transition: opacity 0.9s ease, transform 0.9s ease;
+    pointer-events: none;
+}
+
+.slide-center-card.active {
+    position: relative;
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+.metric-badge {
+    background: rgba(15, 23, 42, 0.5);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 10px 16px;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+    min-width: 90px;
+}
+
+.metric-value {
+    font-family: var(--eco-font);
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: var(--eco-green);
+    line-height: 1.2;
+}
+
+.metric-label {
+    font-family: var(--eco-font);
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: rgba(255, 255, 255, 0.88);
+    margin-top: 2px;
+}
+
 /* Layer 3: Fact title + text, crossfaded in sync with the photo */
 .slide-content {
     position: absolute;
     left: 0;
     right: 0;
-    bottom: 56px;
+    bottom: 64px;
     padding: 0 40px;
     z-index: 3;
     min-height: 110px;
@@ -123,16 +209,19 @@
 }
 
 .slide-text h3 {
+    font-family: var(--eco-font);
     color: var(--eco-white);
     font-size: 1.3rem;
     margin: 0 0 8px;
-    font-weight: 700;
+    font-weight: 800;
     text-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
 }
 
 .slide-text p {
+    font-family: var(--eco-font);
     color: rgba(255, 255, 255, 0.92);
     font-size: 0.9rem;
+    font-weight: 500;
     line-height: 1.5;
     margin: 0;
     max-width: 420px;
@@ -143,7 +232,7 @@
 .slide-dots {
     position: absolute;
     left: 40px;
-    bottom: 24px;
+    bottom: 28px;
     z-index: 4;
     display: flex;
     gap: 8px;
@@ -153,8 +242,8 @@
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.4);
-    border: none;
+    background: rgba(255, 255, 255, 0.35);
+    border: 1.5px solid rgba(255, 255, 255, 0.6);
     padding: 0;
     cursor: pointer;
     transition: all 0.3s ease;
@@ -162,6 +251,7 @@
 
 .dot.active {
     background: var(--eco-white);
+    border-color: var(--eco-white);
     width: 22px;
     border-radius: 4px;
 }
@@ -174,6 +264,7 @@
     background: var(--eco-white);
     padding: 48px;
     box-sizing: border-box;
+    font-family: var(--eco-font);
 }
 
 .auth-card {
@@ -196,7 +287,8 @@
     color: var(--eco-text-muted);
     padding: 10px 0;
     border-radius: 999px;
-    font-weight: 600;
+    font-family: var(--eco-font);
+    font-weight: 700;
     font-size: 0.9rem;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -209,10 +301,11 @@
 }
 
 .form-header {
+    font-family: var(--eco-font);
     color: var(--eco-text-main);
     font-size: 1.5rem;
     margin: 0 0 20px;
-    font-weight: 700;
+    font-weight: 800;
 }
 
 .form-group {
@@ -222,9 +315,10 @@
 label {
     display: block;
     margin-bottom: 6px;
+    font-family: var(--eco-font);
     font-size: 0.85rem;
     color: var(--eco-text-label);
-    font-weight: 500;
+    font-weight: 600;
 }
 
 .password-field {
@@ -284,7 +378,9 @@ input {
     border: 1px solid var(--eco-input-border);
     border-radius: 8px;
     color: var(--eco-text-main);
+    font-family: var(--eco-font);
     font-size: 0.95rem;
+    font-weight: 500;
     transition: all 0.2s ease;
 }
 
@@ -308,8 +404,9 @@ input.invalid-input:focus {
     display: block;
     margin-top: 4px;
     color: var(--eco-red);
+    font-family: var(--eco-font);
     font-size: 0.8rem;
-    font-weight: 500;
+    font-weight: 600;
 }
 
 .error-banner {
@@ -318,7 +415,9 @@ input.invalid-input:focus {
     color: var(--eco-red);
     padding: 10px;
     border-radius: 8px;
+    font-family: var(--eco-font);
     font-size: 0.85rem;
+    font-weight: 600;
     margin-bottom: 16px;
 }
 
@@ -328,7 +427,9 @@ input.invalid-input:focus {
     color: var(--eco-green-dark);
     padding: 10px;
     border-radius: 8px;
+    font-family: var(--eco-font);
     font-size: 0.85rem;
+    font-weight: 600;
     margin-bottom: 16px;
 }
 
@@ -340,8 +441,10 @@ input.invalid-input:focus {
     color: var(--eco-white);
     border: none;
     border-radius: 8px;
-    font-weight: 700;
+    font-family: var(--eco-font);
+    font-weight: 800;
     font-size: 0.95rem;
+    letter-spacing: 0.01em;
     cursor: pointer;
     transition: background-color 0.2s;
 }
@@ -366,15 +469,16 @@ input.invalid-input:focus {
 
 .auth-support-footer p {
     margin: 0;
+    font-family: var(--eco-font);
     font-size: 0.85rem;
     color: var(--eco-slate-800);
-    font-weight: 500;
+    font-weight: 600;
     line-height: 1.5;
 }
 
 .support-link {
     color: var(--eco-slate-900);
-    font-weight: 700;
+    font-weight: 800;
     text-decoration: underline;
     transition: color 0.2s ease;
 }
@@ -415,6 +519,8 @@ input.invalid-input:focus {
         z-index: 0;
     }
 
+    .panel-brand,
+    .slide-center-container,
     .slide-content,
     .slide-dots {
         display: none;
