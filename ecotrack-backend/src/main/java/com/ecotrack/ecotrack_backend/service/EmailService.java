@@ -1,11 +1,14 @@
 package com.ecotrack.ecotrack_backend.service;
 
 import jakarta.mail.MessagingException;
+import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
+
+import java.io.UnsupportedEncodingException;
 
 @Service
 public class EmailService {
@@ -14,6 +17,14 @@ public class EmailService {
 
     @Value("${app.frontend.base-url}")
     private String frontendBaseUrl;
+
+    // Same address used for spring.mail.username — the account emails are
+    // actually sent from. Kept as its own property (rather than reusing
+    // spring.mail.username directly) so it can be overridden separately if
+    // this ever moves behind a provider where the auth user and the "From"
+    // address differ (e.g. some transactional email APIs).
+    @Value("${app.mail.from:${spring.mail.username}}")
+    private String fromAddress;
 
     public EmailService(JavaMailSender mailSender) {
         this.mailSender = mailSender;
@@ -39,14 +50,28 @@ public class EmailService {
                 </div>
                 """.formatted(resetLink, resetLink, resetLink);
 
+        // Plain-text alternative for clients that don't render HTML, and
+        // because a multipart/alternative message (plain text + HTML,
+        // rather than HTML-only) reads as more legitimate to spam filters.
+        String plainText = """
+                Reset your EcoTrack password
+
+                We received a request to reset your password. Open the link below to choose a new one. This link expires in 15 minutes.
+
+                %s
+
+                If you didn't request this, you can safely ignore this email.
+                """.formatted(resetLink);
+
         try {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true);
             helper.setTo(toEmail);
+            helper.setFrom(new InternetAddress(fromAddress, "EcoTrack Support"));
             helper.setSubject("EcoTrack — Reset your password");
-            helper.setText(html, true); // true = this is HTML, not plain text
+            helper.setText(plainText, html); // sets both parts; mail client picks the one it renders
             mailSender.send(message);
-        } catch (MessagingException ex) {
+        } catch (MessagingException | UnsupportedEncodingException ex) {
             throw new RuntimeException("Failed to build password reset email", ex);
         }
     }

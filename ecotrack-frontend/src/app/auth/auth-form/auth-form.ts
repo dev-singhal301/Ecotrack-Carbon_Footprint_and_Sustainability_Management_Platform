@@ -1,4 +1,4 @@
-import { Component, computed, signal, AfterViewInit, OnInit, ElementRef, ViewChild } from '@angular/core';
+import { Component, computed, signal, AfterViewInit, OnInit, OnDestroy, ElementRef, ViewChild } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { notOnlyWhitespace } from '../validators';
@@ -25,7 +25,7 @@ const GOOGLE_CLIENT_ID = '1060715159333-01t5hgjdc1ke4ltra4e4edn3562vnjot.apps.go
   templateUrl: './auth-form.html',
   styleUrl: './auth-form.css',
 })
-export class AuthForm implements AfterViewInit, OnInit {
+export class AuthForm implements AfterViewInit, OnInit, OnDestroy {
   @ViewChild('googleBtn') googleBtnRef!: ElementRef;
   isLoginMode = signal(true);
   isForgotPasswordMode = signal(false); // Third dynamic state state link
@@ -79,7 +79,31 @@ export class AuthForm implements AfterViewInit, OnInit {
       // re-showing a stale message.
       this.router.navigate([], { relativeTo: this.route, queryParams: {}, replaceUrl: true });
     }
+
+    // Cross-tab handoff: if this tab is left sitting on the "check your
+    // email" screen while the person clicks the reset link in a NEW tab
+    // (which they always will — Gmail opens links in a separate browsing
+    // context we have no control over), this tab has no idea anything
+    // happened. Auth.login() writes the JWT to localStorage on success,
+    // and the browser natively fires a `storage` event in every OTHER
+    // same-origin tab when that happens. Listening for it lets this tab
+    // catch up on its own once the reset+login completes elsewhere,
+    // instead of sitting there stale.
+    window.addEventListener('storage', this.handleCrossTabLogin);
   }
+
+  ngOnDestroy(): void {
+    window.removeEventListener('storage', this.handleCrossTabLogin);
+  }
+
+  private handleCrossTabLogin = (event: StorageEvent): void => {
+    if (event.key !== 'ecotrack_auth_token' || !event.newValue) {
+      return;
+    }
+    // Someone just logged in from another tab (e.g. after finishing a
+    // password reset there). Route this tab to the right home page too.
+    this.router.navigate([this.auth.isAdmin() ? '/home-admin' : '/home']);
+  };
 
   ngAfterViewInit(): void {
     this.waitForGoogleScript();
