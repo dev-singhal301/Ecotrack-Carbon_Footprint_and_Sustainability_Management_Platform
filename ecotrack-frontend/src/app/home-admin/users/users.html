@@ -17,42 +17,163 @@
       [ngModel]="searchQuery()"
       (ngModelChange)="searchQuery.set($event)" />
 
-    <select [ngModel]="roleFilter()" (ngModelChange)="roleFilter.set($event)">
-      <option value="ALL">All roles</option>
-      <option value="ROLE_ADMIN">Admin</option>
-      <option value="ROLE_USER">User</option>
-    </select>
+    <!-- Role / Status (custom dropdowns — native <select>'s option list
+         is a browser/OS top-layer popup outside this page's CSS, which
+         is what was causing it to overflow on mobile) -->
+    <div class="dropdown-select filter-picker" [class.open]="rolePickerOpen()">
+      <button type="button" class="dropdown-trigger" (click)="toggleRolePicker()">
+        <span class="trigger-content">
+          <span class="trigger-text">{{ getRoleTriggerLabel() }}</span>
+        </span>
+        <i class="fa-solid fa-chevron-down dropdown-caret"></i>
+      </button>
 
-    <select [ngModel]="statusFilter()" (ngModelChange)="statusFilter.set($event)">
-      <option value="ALL">All statuses</option>
-      <option value="ACTIVE">Active</option>
-      <option value="DISABLED">Disabled</option>
-    </select>
-
-    <div class="date-range-label">
-      <span class="field-caption" id="joined-range-caption">Joined</span>
-      <input
-        type="date"
-        aria-label="Joined from"
-        aria-describedby="joined-range-caption"
-        [ngModel]="joinedFrom()"
-        (ngModelChange)="joinedFrom.set($event)"
-        [max]="joinedTo() || undefined" />
-      <span class="date-range-sep">–</span>
-      <input
-        type="date"
-        aria-label="Joined to"
-        aria-describedby="joined-range-caption"
-        [ngModel]="joinedTo()"
-        (ngModelChange)="joinedTo.set($event)"
-        [min]="joinedFrom() || undefined" />
+      <div class="dropdown-panel opens-down text-list" *ngIf="rolePickerOpen()">
+        <div
+          *ngFor="let o of roleOptions"
+          class="dropdown-option text-option"
+          [class.selected]="roleFilter() === o.value"
+          (click)="selectRole(o.value)">
+          <span>{{ o.label }}</span>
+          <i class="fa-solid fa-check check-icon-inline" *ngIf="roleFilter() === o.value"></i>
+        </div>
+      </div>
     </div>
 
-    <select [ngModel]="xpSort()" (ngModelChange)="xpSort.set($event)">
-      <option value="NONE">XP: unsorted</option>
-      <option value="DESC">XP: high to low</option>
-      <option value="ASC">XP: low to high</option>
-    </select>
+    <div class="dropdown-select filter-picker" [class.open]="statusPickerOpen()">
+      <button type="button" class="dropdown-trigger" (click)="toggleStatusPicker()">
+        <span class="trigger-content">
+          <span class="trigger-text">{{ getStatusTriggerLabel() }}</span>
+        </span>
+        <i class="fa-solid fa-chevron-down dropdown-caret"></i>
+      </button>
+
+      <div class="dropdown-panel opens-down text-list" *ngIf="statusPickerOpen()">
+        <div
+          *ngFor="let o of statusOptions"
+          class="dropdown-option text-option"
+          [class.selected]="statusFilter() === o.value"
+          (click)="selectStatus(o.value)">
+          <span>{{ o.label }}</span>
+          <i class="fa-solid fa-check check-icon-inline" *ngIf="statusFilter() === o.value"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- Joined From/To (custom calendar dropdowns — a native
+         <input type="date">'s calendar popup is browser/OS-rendered and
+         sits outside this page's CSS entirely, which is what was causing
+         it to overflow on mobile. Same pattern as Start/End Date on the
+         Challenges create/edit form. -->
+    <div class="dropdown-select date-picker-select filter-picker" [class.open]="fromPickerOpen()">
+      <button type="button" class="dropdown-trigger date-trigger" (click)="toggleFromPicker()">
+        <span class="trigger-content">
+          <i class="fa-solid fa-calendar-days date-trigger-icon"></i>
+          <span class="trigger-text" [class.placeholder]="!joinedFrom()">
+            {{ joinedFrom() ? formatDisplayDate(joinedFrom()) : 'Joined from' }}
+          </span>
+        </span>
+        <i class="fa-solid fa-chevron-down dropdown-caret"></i>
+      </button>
+
+      <div class="dropdown-panel opens-down calendar-panel" *ngIf="fromPickerOpen()">
+        <div class="calendar-header">
+          <button type="button" class="calendar-nav-btn" (click)="shiftFromMonth(-1)" aria-label="Previous month">
+            <i class="fa-solid fa-chevron-left"></i>
+          </button>
+          <span class="calendar-month-label">{{ formatMonthLabel(fromViewMonth()) }}</span>
+          <button type="button" class="calendar-nav-btn" (click)="shiftFromMonth(1)" aria-label="Next month">
+            <i class="fa-solid fa-chevron-right"></i>
+          </button>
+        </div>
+        <div class="calendar-weekdays">
+          <span *ngFor="let wd of weekDayLabels">{{ wd }}</span>
+        </div>
+        <div class="calendar-grid">
+          <button
+            type="button"
+            *ngFor="let cell of fromCalendarDays()"
+            class="calendar-day"
+            [class.out-of-month]="!cell.inMonth"
+            [class.selected]="joinedFrom() === cell.date"
+            [class.today]="isTodayDate(cell.date)"
+            [disabled]="isFromDayDisabled(cell.date)"
+            (click)="selectFromDate(cell.date)">
+            {{ cell.day }}
+          </button>
+        </div>
+        <div class="calendar-footer">
+          <button type="button" class="calendar-text-btn" (click)="clearFromDate()">Clear</button>
+          <button type="button" class="calendar-text-btn" (click)="goToTodayFrom()">Today</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="dropdown-select date-picker-select filter-picker" [class.open]="toPickerOpen()">
+      <button type="button" class="dropdown-trigger date-trigger" (click)="toggleToPicker()">
+        <span class="trigger-content">
+          <i class="fa-solid fa-calendar-days date-trigger-icon"></i>
+          <span class="trigger-text" [class.placeholder]="!joinedTo()">
+            {{ joinedTo() ? formatDisplayDate(joinedTo()) : 'Joined to' }}
+          </span>
+        </span>
+        <i class="fa-solid fa-chevron-down dropdown-caret"></i>
+      </button>
+
+      <div class="dropdown-panel opens-down calendar-panel" *ngIf="toPickerOpen()">
+        <div class="calendar-header">
+          <button type="button" class="calendar-nav-btn" (click)="shiftToMonth(-1)" aria-label="Previous month">
+            <i class="fa-solid fa-chevron-left"></i>
+          </button>
+          <span class="calendar-month-label">{{ formatMonthLabel(toViewMonth()) }}</span>
+          <button type="button" class="calendar-nav-btn" (click)="shiftToMonth(1)" aria-label="Next month">
+            <i class="fa-solid fa-chevron-right"></i>
+          </button>
+        </div>
+        <div class="calendar-weekdays">
+          <span *ngFor="let wd of weekDayLabels">{{ wd }}</span>
+        </div>
+        <div class="calendar-grid">
+          <button
+            type="button"
+            *ngFor="let cell of toCalendarDays()"
+            class="calendar-day"
+            [class.out-of-month]="!cell.inMonth"
+            [class.selected]="joinedTo() === cell.date"
+            [class.today]="isTodayDate(cell.date)"
+            [disabled]="isToDayDisabled(cell.date)"
+            (click)="selectToDate(cell.date)">
+            {{ cell.day }}
+          </button>
+        </div>
+        <div class="calendar-footer">
+          <button type="button" class="calendar-text-btn" (click)="clearToDate()">Clear</button>
+          <button type="button" class="calendar-text-btn" (click)="goToTodayTo()">Today</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="dropdown-select filter-picker" [class.open]="xpSortPickerOpen()">
+      <button type="button" class="dropdown-trigger" (click)="toggleXpSortPicker()">
+        <span class="trigger-content">
+          <span class="trigger-text">{{ getXpSortTriggerLabel() }}</span>
+        </span>
+        <i class="fa-solid fa-chevron-down dropdown-caret"></i>
+      </button>
+
+      <div class="dropdown-panel opens-down text-list" *ngIf="xpSortPickerOpen()">
+        <div
+          *ngFor="let o of xpSortOptions"
+          class="dropdown-option text-option"
+          [class.selected]="xpSort() === o.value"
+          (click)="selectXpSort(o.value)">
+          <span>{{ o.label }}</span>
+          <i class="fa-solid fa-check check-icon-inline" *ngIf="xpSort() === o.value"></i>
+        </div>
+      </div>
+    </div>
+
+    <div class="dropdown-backdrop" *ngIf="anyPickerOpen()" (click)="closePickers()"></div>
 
     <button class="clear-filters-btn" (click)="resetFilters()">Clear filters</button>
   </div>

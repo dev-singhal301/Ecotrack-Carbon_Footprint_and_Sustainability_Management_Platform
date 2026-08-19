@@ -118,6 +118,97 @@ export class Challenges implements OnInit {
     this.typeFilter.set('ALL');
     this.statusFilter.set('ALL');
     this.currentPage.set(1);
+    this.closeAllFilterPickers();
+  }
+
+  // ── List filter bar: Category / Type / Status custom dropdowns ──
+  // Native <select>'s option list is a browser/OS top-layer popup outside
+  // this page's CSS, which is what was causing it to overflow on mobile —
+  // same fix as the Users page filter bar. Kept as a separate signal
+  // group from the create/edit form's pickers below (cardPickerOpen etc.)
+  // rather than folding into that group's closeAllPickers(): the form
+  // only exists behind its own full-screen overlay, so there's no
+  // scenario where a filter-bar picker and a form picker are ever
+  // visible at the same time, and keeping them separate means opening a
+  // filter dropdown can't have any effect on unrelated form state.
+  categoryFilterPickerOpen = signal(false);
+  typeFilterPickerOpen = signal(false);
+  statusFilterPickerOpen = signal(false);
+
+  anyFilterPickerOpen = computed(() =>
+    this.categoryFilterPickerOpen() || this.typeFilterPickerOpen() || this.statusFilterPickerOpen()
+  );
+
+  private closeAllFilterPickers(): void {
+    this.categoryFilterPickerOpen.set(false);
+    this.typeFilterPickerOpen.set(false);
+    this.statusFilterPickerOpen.set(false);
+  }
+
+  private toggleFilterPicker(openSignal: WritableSignal<boolean>): void {
+    const opening = !openSignal();
+    this.closeAllFilterPickers();
+    if (opening) {
+      openSignal.set(true);
+    }
+  }
+
+  closeFilterPickers(): void {
+    this.closeAllFilterPickers();
+  }
+
+  readonly typeFilterOptions: { value: TypeFilter; label: string }[] = [
+    { value: 'ALL', label: 'All types' },
+    { value: 'CARBON_REDUCTION', label: 'Carbon Reduction' },
+    { value: 'ACTIVITY_BASED', label: 'Activity Based' },
+  ];
+
+  readonly statusFilterOptions: { value: StatusFilter; label: string }[] = [
+    { value: 'ALL', label: 'All statuses' },
+    { value: 'UPCOMING', label: 'Upcoming' },
+    { value: 'ACTIVE', label: 'Active' },
+    { value: 'ENDED', label: 'Ended' },
+    { value: 'CANCELLED', label: 'Cancelled' },
+  ];
+
+  toggleCategoryFilterPicker(): void {
+    this.toggleFilterPicker(this.categoryFilterPickerOpen);
+  }
+
+  toggleTypeFilterPicker(): void {
+    this.toggleFilterPicker(this.typeFilterPickerOpen);
+  }
+
+  toggleStatusFilterPicker(): void {
+    this.toggleFilterPicker(this.statusFilterPickerOpen);
+  }
+
+  selectCategoryFilter(category: CategoryFilter): void {
+    this.categoryFilter.set(category);
+    this.categoryFilterPickerOpen.set(false);
+  }
+
+  selectTypeFilter(type: TypeFilter): void {
+    this.typeFilter.set(type);
+    this.typeFilterPickerOpen.set(false);
+  }
+
+  selectStatusFilter(status: StatusFilter): void {
+    this.statusFilter.set(status);
+    this.statusFilterPickerOpen.set(false);
+  }
+
+  getCategoryFilterTriggerLabel(): string {
+    const c = this.categoryFilter();
+    return c === 'ALL' ? 'All categories' : this.categoryLabel(c);
+  }
+
+  getTypeFilterTriggerLabel(): string {
+    return this.typeFilterOptions.find(o => o.value === this.typeFilter())?.label ?? 'All types';
+  }
+
+  getStatusFilterTriggerLabel(): string {
+    return this.statusFilterOptions.find(o => o.value === this.statusFilter())?.label ?? 'All statuses';
   }
 
   // ── Pagination ── same 10-per-page pattern as the Users table: paging

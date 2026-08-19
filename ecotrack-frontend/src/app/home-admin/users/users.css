@@ -85,51 +85,268 @@
   cursor: pointer;
 }
 
-/* ── Date range ── one bordered control at the same height as every
-   other filter, not two separately-boxed <input type="date">s with a
-   bare label floating in between (that mismatch was the main thing
-   making this filter bar read as "off"). */
-.date-range-label {
+/* ── Joined From/To (custom calendar dropdowns) ──
+   Same dropdown-select/dropdown-trigger/dropdown-panel shell used for
+   Category/Challenge Type/Start Date etc. on the Challenges form — ported
+   here since this component has its own scoped stylesheet (Angular view
+   encapsulation) and can't reach challenges.css's classes. Sized to sit
+   in the filter-bar's row alongside the plain <select>s rather than the
+   image-picker's larger flex:1 sizing. */
+.filter-bar .dropdown-select.filter-picker {
+  flex: 0 1 190px;
+  min-width: 150px;
+}
+
+.dropdown-select {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.dropdown-trigger {
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
   height: var(--admin-control-h);
   box-sizing: border-box;
-  padding: 0 10px 0 12px;
+  padding: 0 12px;
   border: 1px solid var(--admin-border);
   border-radius: var(--admin-radius-s);
   background-color: #ffffff;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.85rem;
+  color: var(--admin-ink);
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.date-range-label:focus-within {
+.dropdown-trigger:hover {
+  border-color: #c7ced2;
+}
+
+.dropdown-select.open .dropdown-trigger {
   border-color: var(--admin-accent);
   box-shadow: 0 0 0 3px var(--admin-accent-soft);
 }
 
-.date-range-label .field-caption {
+.trigger-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.trigger-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.trigger-text.placeholder {
+  color: var(--admin-muted);
+}
+
+/* ── Text-list dropdowns (Role / Status) ── same dropdown-select shell,
+   with a single-column list of text rows instead of the calendar grid. */
+.dropdown-panel.text-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px;
+  width: 200px;
+}
+
+.dropdown-option.text-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-radius: var(--admin-radius-s);
+  cursor: pointer;
+  text-align: left;
+  font-size: 0.86rem;
+  color: var(--admin-ink);
+  line-height: 1.4;
+  background-color: transparent;
+  transition: background-color 0.15s ease;
+}
+
+.dropdown-option.text-option:hover {
+  background-color: var(--admin-surface);
+}
+
+.dropdown-option.text-option.selected {
+  background-color: var(--admin-accent-soft);
+}
+
+.dropdown-option.text-option .check-icon-inline {
+  flex-shrink: 0;
+  margin-left: 10px;
+  font-size: 0.78rem;
+  color: var(--admin-accent);
+}
+
+.dropdown-caret {
+  font-size: 0.7rem;
+  color: var(--admin-muted);
+  flex-shrink: 0;
+  transition: transform 0.15s ease;
+}
+
+.dropdown-select.open .dropdown-caret {
+  transform: rotate(180deg);
+  color: var(--admin-accent);
+}
+
+.date-trigger-icon {
+  color: var(--admin-muted);
+  font-size: 0.82rem;
+  flex-shrink: 0;
+}
+
+.dropdown-panel {
+  position: absolute;
+  z-index: 30;
+  background-color: #fff;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-m);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+  box-sizing: border-box;
+}
+
+/* These filters sit at the top of the page with plenty of room below —
+   unlike the Challenges form's image pickers (which open upward because
+   they're near the bottom of a scrollable modal), these open downward. */
+.dropdown-panel.opens-down {
+  top: calc(100% + 8px);
+  left: 0;
+}
+
+.dropdown-panel.calendar-panel {
+  width: 280px;
+  max-width: 90vw;
+  padding: 12px;
+}
+
+.calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.calendar-month-label {
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: var(--admin-ink);
+}
+
+.calendar-nav-btn {
+  border: 1px solid var(--admin-border);
+  background-color: #fff;
+  color: var(--admin-ink-soft);
+  width: 26px;
+  height: 26px;
+  border-radius: var(--admin-radius-s);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.72rem;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.calendar-nav-btn:hover {
+  background-color: var(--admin-surface);
+  border-color: #c7ced2;
+}
+
+.calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  margin-bottom: 4px;
+}
+
+.calendar-weekdays span {
+  text-align: center;
   font-size: 0.68rem;
   font-weight: 700;
   color: var(--admin-muted-2);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  white-space: nowrap;
 }
 
-.date-range-label input[type="date"] {
-  height: 100%;
-  width: 118px;
-  padding: 0;
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.calendar-day {
   border: none;
-  background: transparent;
+  background-color: transparent;
   color: var(--admin-ink);
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-family: inherit;
-  outline: none;
+  aspect-ratio: 1;
+  border-radius: var(--admin-radius-s);
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
-.date-range-sep {
+.calendar-day:hover:not(:disabled):not(.selected) {
+  background-color: var(--admin-surface);
+}
+
+.calendar-day.out-of-month {
   color: var(--admin-muted-2);
+}
+
+.calendar-day.today {
+  font-weight: 700;
+  color: var(--admin-accent);
+}
+
+.calendar-day.selected {
+  background-color: var(--admin-accent);
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.calendar-day:disabled {
+  color: var(--admin-border);
+  cursor: not-allowed;
+}
+
+.calendar-footer {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--admin-border-soft);
+}
+
+.calendar-text-btn {
+  border: none;
+  background: none;
+  color: var(--admin-accent);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 4px 6px;
+}
+
+.calendar-text-btn:hover {
+  text-decoration: underline;
+}
+
+.dropdown-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  background: transparent;
 }
 
 .clear-filters-btn {
@@ -448,7 +665,7 @@
 
   .filter-bar .search-input,
   .filter-bar select,
-  .date-range-label {
+  .filter-bar .filter-picker {
     width: 100%;
   }
 
@@ -465,35 +682,34 @@
     flex: none;
   }
 
-  .date-range-label input[type='date'] {
+  /* .filter-picker's flex: 0 1 190px above is sized for the DESKTOP row
+     layout (190px = a target *width* sitting next to the other filter
+     controls). Once .filter-bar flips to a column here, that same
+     flex-basis governs *height* instead — each picker was demanding to
+     be 190px tall even though its actual content (just the trigger
+     button) is only ~46px. Since the dropdown panel's top:calc(100% + 8px)
+     is measured from that inflated box, the panel was rendering ~150px
+     further down than the trigger it belongs to — this is what was
+     causing the large blank gap between a trigger and its own open
+     panel. Same bug class, same fix, as .search-input above.
+     Selector has to repeat all three classes (.filter-bar .dropdown-select
+     .filter-picker), not just two — the desktop rule above has that same
+     specificity, and a lower-specificity override loses to it regardless
+     of which one is declared later or which media query it's nested in.
+     A two-class version of this selector silently did nothing. */
+  .filter-bar .dropdown-select.filter-picker {
+    flex: none;
+  }
+
+  /* Role/Status's .text-list and the calendar panels each have their own
+     fixed desktop width (200px / 280px) so they read comfortably sitting
+     next to the other filter-bar controls. On a phone, .filter-picker
+     above is now full-width, so let these match it instead of staying a
+     fixed size that's either too cramped or hangs past the edge. */
+  .dropdown-panel.text-list,
+  .dropdown-panel.calendar-panel {
     width: 100%;
-    min-width: 0;
-  }
-
-  /* Caption + 2 date inputs + separator all fighting for one row's width
-     is what was clipping "mm/dd/yyyy" and overlapping the native
-     calendar icon. Wrap the caption onto its own line and let the two
-     inputs split the row evenly below it instead — each input now gets
-     roughly half the label's full width rather than a sliver left over
-     after "JOINED" and the "–" are subtracted from a single row. */
-  .date-range-label {
-    flex-wrap: wrap;
-    height: auto;
-    row-gap: 6px;
-    padding: 8px 12px;
-  }
-
-  .date-range-label .field-caption {
-    width: 100%;
-  }
-
-  .date-range-label input[type='date'] {
-    flex: 1 1 0;
-    width: auto;
-  }
-
-  .date-range-sep {
-    flex: 0 0 auto;
+    max-width: 100%;
   }
 
   .clear-filters-btn {

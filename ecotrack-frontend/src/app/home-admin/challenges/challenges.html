@@ -20,24 +20,77 @@
       [ngModel]="searchQuery()"
       (ngModelChange)="searchQuery.set($event)" />
 
-    <select [ngModel]="categoryFilter()" (ngModelChange)="categoryFilter.set($event)">
-      <option value="ALL">All categories</option>
-      <option *ngFor="let c of categories" [value]="c">{{ categoryLabel(c) }}</option>
-    </select>
+    <!-- Category / Type / Status (custom dropdowns — native <select>'s
+         option list is a browser/OS top-layer popup outside this page's
+         CSS, which is what was causing it to overflow on mobile) -->
+    <div class="dropdown-select filter-picker" [class.open]="categoryFilterPickerOpen()">
+      <button type="button" class="dropdown-trigger" (click)="toggleCategoryFilterPicker()">
+        <span class="trigger-content">
+          <span class="trigger-text">{{ getCategoryFilterTriggerLabel() }}</span>
+        </span>
+        <i class="fa-solid fa-chevron-down dropdown-caret"></i>
+      </button>
 
-    <select [ngModel]="typeFilter()" (ngModelChange)="typeFilter.set($event)">
-      <option value="ALL">All types</option>
-      <option value="CARBON_REDUCTION">Carbon Reduction</option>
-      <option value="ACTIVITY_BASED">Activity Based</option>
-    </select>
+      <div class="dropdown-panel opens-down text-list" *ngIf="categoryFilterPickerOpen()">
+        <div
+          class="dropdown-option text-option"
+          [class.selected]="categoryFilter() === 'ALL'"
+          (click)="selectCategoryFilter('ALL')">
+          <span>All categories</span>
+          <i class="fa-solid fa-check check-icon-inline" *ngIf="categoryFilter() === 'ALL'"></i>
+        </div>
+        <div
+          *ngFor="let c of categories"
+          class="dropdown-option text-option"
+          [class.selected]="categoryFilter() === c"
+          (click)="selectCategoryFilter(c)">
+          <span>{{ categoryLabel(c) }}</span>
+          <i class="fa-solid fa-check check-icon-inline" *ngIf="categoryFilter() === c"></i>
+        </div>
+      </div>
+    </div>
 
-    <select [ngModel]="statusFilter()" (ngModelChange)="statusFilter.set($event)">
-      <option value="ALL">All statuses</option>
-      <option value="UPCOMING">Upcoming</option>
-      <option value="ACTIVE">Active</option>
-      <option value="ENDED">Ended</option>
-      <option value="CANCELLED">Cancelled</option>
-    </select>
+    <div class="dropdown-select filter-picker" [class.open]="typeFilterPickerOpen()">
+      <button type="button" class="dropdown-trigger" (click)="toggleTypeFilterPicker()">
+        <span class="trigger-content">
+          <span class="trigger-text">{{ getTypeFilterTriggerLabel() }}</span>
+        </span>
+        <i class="fa-solid fa-chevron-down dropdown-caret"></i>
+      </button>
+
+      <div class="dropdown-panel opens-down text-list" *ngIf="typeFilterPickerOpen()">
+        <div
+          *ngFor="let o of typeFilterOptions"
+          class="dropdown-option text-option"
+          [class.selected]="typeFilter() === o.value"
+          (click)="selectTypeFilter(o.value)">
+          <span>{{ o.label }}</span>
+          <i class="fa-solid fa-check check-icon-inline" *ngIf="typeFilter() === o.value"></i>
+        </div>
+      </div>
+    </div>
+
+    <div class="dropdown-select filter-picker" [class.open]="statusFilterPickerOpen()">
+      <button type="button" class="dropdown-trigger" (click)="toggleStatusFilterPicker()">
+        <span class="trigger-content">
+          <span class="trigger-text">{{ getStatusFilterTriggerLabel() }}</span>
+        </span>
+        <i class="fa-solid fa-chevron-down dropdown-caret"></i>
+      </button>
+
+      <div class="dropdown-panel opens-down text-list" *ngIf="statusFilterPickerOpen()">
+        <div
+          *ngFor="let o of statusFilterOptions"
+          class="dropdown-option text-option"
+          [class.selected]="statusFilter() === o.value"
+          (click)="selectStatusFilter(o.value)">
+          <span>{{ o.label }}</span>
+          <i class="fa-solid fa-check check-icon-inline" *ngIf="statusFilter() === o.value"></i>
+        </div>
+      </div>
+    </div>
+
+    <div class="dropdown-backdrop" *ngIf="anyFilterPickerOpen()" (click)="closeFilterPickers()"></div>
 
     <button class="clear-filters-btn" (click)="resetFilters()">Clear filters</button>
   </div>

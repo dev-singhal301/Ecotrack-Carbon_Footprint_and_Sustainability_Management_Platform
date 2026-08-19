@@ -112,6 +112,21 @@
   cursor: pointer;
 }
 
+/* Category/Type/Status filter-bar dropdowns — same dropdown-select shell
+   used by the create/edit form's Category/Type/Tracking Type pickers,
+   but sized to sit compactly in this row next to the search box and
+   other filters rather than the form's wider two-column sizing. Scoped
+   to .filter-bar so it can't affect the form's own dropdown-selects. */
+.filter-bar .dropdown-select.filter-picker {
+  flex: 0 1 190px;
+  min-width: 150px;
+}
+
+.filter-bar .dropdown-panel.text-list {
+  width: 200px;
+  min-width: 0;
+}
+
 .clear-filters-btn {
   border: none;
   background-color: transparent;
@@ -632,8 +647,26 @@
   text-align: left;
   font-size: 0.86rem;
   color: var(--admin-ink);
-  border-width: 1px;
   line-height: 1.4;
+  /* .dropdown-option above is styled as an image tile (2px border, grey
+     fill, fixed 70px height) for the Card Header/Badge picker grid.
+     text-option only overrode height/padding/alignment, so every
+     Category/Type/Status/Tracking row was still picking up that
+     border+background — that's what was making each row read as its
+     own boxed tile instead of a plain list row. Reset all three back
+     out here to match the flat, borderless row style used on the Users
+     page's Role/Status dropdowns. */
+  border: none;
+  background-color: transparent;
+  transition: background-color 0.15s ease;
+}
+
+.dropdown-option.text-option:hover {
+  background-color: var(--admin-surface);
+}
+
+.dropdown-option.text-option.selected {
+  background-color: var(--admin-accent-soft);
 }
 
 .dropdown-option.text-option .check-icon-inline {
@@ -919,7 +952,8 @@
   }
 
   .filter-bar .search-input,
-  .filter-bar select {
+  .filter-bar select,
+  .filter-bar .filter-picker {
     width: 100%;
   }
 
@@ -930,6 +964,18 @@
      least 200px tall and letting flex-grow keep expanding it — which is
      what was pushing everything below it off-screen. */
   .filter-bar .search-input {
+    flex: none;
+  }
+
+  /* .filter-picker's flex: 0 1 190px (set further up, for the desktop
+     row) governs height instead of width once .filter-bar goes column
+     here, same trap as .search-input just above — except the override
+     has to repeat all three classes (.filter-bar .dropdown-select
+     .filter-picker), matching the desktop rule's specificity exactly.
+     A two-class version silently loses to the three-class desktop rule
+     regardless of order or media query nesting — this exact mistake
+     shipped once already on the Users page before being caught. */
+  .filter-bar .dropdown-select.filter-picker {
     flex: none;
   }
 
@@ -1023,6 +1069,17 @@
      the screens this fix is for. */
   .dropdown-panel.text-list,
   .dropdown-panel.calendar-panel {
+    width: 100%;
+    min-width: 0;
+  }
+
+  /* .filter-bar .dropdown-panel.text-list (200px, set further up for the
+     desktop filter row) has higher specificity than the plain two-class
+     rule directly above — same trap as .text-list/.calendar-panel just
+     above it, just one selector wider. Without this, the filter-bar's
+     Category/Type/Status panels would keep their fixed 200px desktop
+     width here and overflow on exactly the screens this query targets. */
+  .filter-bar .dropdown-panel.text-list {
     width: 100%;
     min-width: 0;
   }

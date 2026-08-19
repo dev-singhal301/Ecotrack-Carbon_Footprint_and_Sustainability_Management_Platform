@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, computed } from '@angular/core';
+import { Component, OnInit, signal, computed, WritableSignal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminService } from '../admin.service';
@@ -7,6 +7,12 @@ import { AdminUser } from './users.model';
 export type RoleFilter = 'ALL' | 'ROLE_ADMIN' | 'ROLE_USER';
 export type StatusFilter = 'ALL' | 'ACTIVE' | 'DISABLED';
 export type XpSort = 'NONE' | 'ASC' | 'DESC';
+
+interface CalendarCell {
+  date: string;
+  day: number;
+  inMonth: boolean;
+}
 
 /**
  * Admin user-management table: list registered users, deactivate accounts.
@@ -128,6 +134,7 @@ export class Users implements OnInit {
     this.joinedTo.set('');
     this.xpSort.set('NONE');
     this.currentPage.set(1);
+    this.closePickers();
   }
 
   // ── Pagination ── 10 users per page. currentPage is the raw signal
@@ -189,6 +196,243 @@ export class Users implements OnInit {
 
   nextPage(): void {
     this.goToPage(this.safeCurrentPage() + 1);
+  }
+
+  // ── Role / Status / Joined date range: custom dropdowns ──
+  // Native <select> and <input type="date"> both render their open state
+  // (the option list, the OS calendar) as a browser/OS top-layer popup
+  // outside this page's DOM and CSS — no way to size, position, or style
+  // it, which is what caused both to overflow on mobile. All four filters
+  // below use the same custom dropdown-select/dropdown-panel pattern
+  // built for the Challenges create/edit form, so every popup here is
+  // regular in-DOM content this page actually controls.
+  rolePickerOpen = signal(false);
+  statusPickerOpen = signal(false);
+  fromPickerOpen = signal(false);
+  toPickerOpen = signal(false);
+  xpSortPickerOpen = signal(false);
+
+  anyPickerOpen = computed(() =>
+    this.rolePickerOpen() || this.statusPickerOpen()
+    || this.fromPickerOpen() || this.toPickerOpen() || this.xpSortPickerOpen()
+  );
+
+  private closeAllPickers(): void {
+    this.rolePickerOpen.set(false);
+    this.statusPickerOpen.set(false);
+    this.fromPickerOpen.set(false);
+    this.toPickerOpen.set(false);
+    this.xpSortPickerOpen.set(false);
+  }
+
+  private togglePicker(openSignal: WritableSignal<boolean>, onOpen?: () => void): void {
+    const opening = !openSignal();
+    this.closeAllPickers();
+    if (opening) {
+      onOpen?.();
+      openSignal.set(true);
+    }
+  }
+
+  closePickers(): void {
+    this.closeAllPickers();
+  }
+
+  readonly roleOptions: { value: RoleFilter; label: string }[] = [
+    { value: 'ALL', label: 'All roles' },
+    { value: 'ROLE_ADMIN', label: 'Admin' },
+    { value: 'ROLE_USER', label: 'User' },
+  ];
+
+  readonly statusOptions: { value: StatusFilter; label: string }[] = [
+    { value: 'ALL', label: 'All statuses' },
+    { value: 'ACTIVE', label: 'Active' },
+    { value: 'DISABLED', label: 'Disabled' },
+  ];
+
+  toggleRolePicker(): void {
+    this.togglePicker(this.rolePickerOpen);
+  }
+
+  toggleStatusPicker(): void {
+    this.togglePicker(this.statusPickerOpen);
+  }
+
+  selectRole(role: RoleFilter): void {
+    this.roleFilter.set(role);
+    this.rolePickerOpen.set(false);
+  }
+
+  selectStatus(status: StatusFilter): void {
+    this.statusFilter.set(status);
+    this.statusPickerOpen.set(false);
+  }
+
+  getRoleTriggerLabel(): string {
+    return this.roleOptions.find(o => o.value === this.roleFilter())?.label ?? 'All roles';
+  }
+
+  getStatusTriggerLabel(): string {
+    return this.statusOptions.find(o => o.value === this.statusFilter())?.label ?? 'All statuses';
+  }
+
+  readonly xpSortOptions: { value: XpSort; label: string }[] = [
+    { value: 'NONE', label: 'XP: unsorted' },
+    { value: 'DESC', label: 'XP: high to low' },
+    { value: 'ASC', label: 'XP: low to high' },
+  ];
+
+  toggleXpSortPicker(): void {
+    this.togglePicker(this.xpSortPickerOpen);
+  }
+
+  selectXpSort(sort: XpSort): void {
+    this.xpSort.set(sort);
+    this.xpSortPickerOpen.set(false);
+  }
+
+  getXpSortTriggerLabel(): string {
+    return this.xpSortOptions.find(o => o.value === this.xpSort())?.label ?? 'XP: unsorted';
+  }
+
+  // ── Joined date range: custom calendar pickers ──
+  readonly weekDayLabels = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+
+  // Which month each calendar is currently showing — separate from the
+  // actual selected joinedFrom/joinedTo value, since the admin can browse
+  // months without having picked a date yet.
+  fromViewMonth = signal<Date>(new Date());
+  toViewMonth = signal<Date>(new Date());
+
+  fromCalendarDays = computed(() => this.buildCalendarDays(this.fromViewMonth()));
+  toCalendarDays = computed(() => this.buildCalendarDays(this.toViewMonth()));
+
+  private buildCalendarDays(viewMonth: Date): CalendarCell[] {
+    const year = viewMonth.getFullYear();
+    const month = viewMonth.getMonth();
+    const firstOfMonth = new Date(year, month, 1);
+    const gridStart = new Date(year, month, 1 - firstOfMonth.getDay());
+
+    // Always 42 cells (6 full weeks) so the grid's height doesn't jump
+    // around as the admin flips between shorter and longer months.
+    return Array.from({ length: 42 }, (_, i) => {
+      const d = new Date(gridStart.getFullYear(), gridStart.getMonth(), gridStart.getDate() + i);
+      return {
+        date: Users.toLocalDateString(d),
+        day: d.getDate(),
+        inMonth: d.getMonth() === month,
+      };
+    });
+  }
+
+  // Formats a Date using its LOCAL calendar fields (not UTC) — new
+  // Date().toISOString() converts to UTC first, which silently shifts the
+  // date backward by one day for any timezone ahead of UTC.
+  private static toLocalDateString(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  // yyyy-mm-dd -> local Date, deliberately not `new Date(dateStr)` — that
+  // parses as UTC midnight and can render as the previous day locally in
+  // any timezone ahead of UTC.
+  private parseLocalDate(dateStr: string): Date | null {
+    if (!dateStr) return null;
+    const [y, m, d] = dateStr.split('-').map(Number);
+    if (!y || !m || !d) return null;
+    return new Date(y, m - 1, d);
+  }
+
+  toggleFromPicker(): void {
+    this.togglePicker(this.fromPickerOpen, () => {
+      const base = this.parseLocalDate(this.joinedFrom()) ?? new Date();
+      this.fromViewMonth.set(new Date(base.getFullYear(), base.getMonth(), 1));
+    });
+  }
+
+  toggleToPicker(): void {
+    this.togglePicker(this.toPickerOpen, () => {
+      const base = this.parseLocalDate(this.joinedTo()) ?? new Date();
+      this.toViewMonth.set(new Date(base.getFullYear(), base.getMonth(), 1));
+    });
+  }
+
+  shiftFromMonth(delta: number): void {
+    const m = this.fromViewMonth();
+    this.fromViewMonth.set(new Date(m.getFullYear(), m.getMonth() + delta, 1));
+  }
+
+  shiftToMonth(delta: number): void {
+    const m = this.toViewMonth();
+    this.toViewMonth.set(new Date(m.getFullYear(), m.getMonth() + delta, 1));
+  }
+
+  // Mirrors the old native inputs' [max]="joinedTo()" / [min]="joinedFrom()"
+  // constraints — From can't be picked after the current To, and vice
+  // versa. Neither has a "today" floor: unlike the Challenges form, a
+  // join date is a historical fact, not something being scheduled.
+  isFromDayDisabled(dateStr: string): boolean {
+    const to = this.joinedTo();
+    return !!to && dateStr > to;
+  }
+
+  isToDayDisabled(dateStr: string): boolean {
+    const from = this.joinedFrom();
+    return !!from && dateStr < from;
+  }
+
+  isTodayDate(dateStr: string): boolean {
+    return dateStr === Users.toLocalDateString(new Date());
+  }
+
+  selectFromDate(dateStr: string): void {
+    if (this.isFromDayDisabled(dateStr)) return;
+    this.joinedFrom.set(dateStr);
+    this.fromPickerOpen.set(false);
+  }
+
+  selectToDate(dateStr: string): void {
+    if (this.isToDayDisabled(dateStr)) return;
+    this.joinedTo.set(dateStr);
+    this.toPickerOpen.set(false);
+  }
+
+  clearFromDate(): void {
+    this.joinedFrom.set('');
+    this.fromPickerOpen.set(false);
+  }
+
+  clearToDate(): void {
+    this.joinedTo.set('');
+    this.toPickerOpen.set(false);
+  }
+
+  goToTodayFrom(): void {
+    const today = Users.toLocalDateString(new Date());
+    this.fromViewMonth.set(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
+    if (!this.isFromDayDisabled(today)) {
+      this.selectFromDate(today);
+    }
+  }
+
+  goToTodayTo(): void {
+    const today = Users.toLocalDateString(new Date());
+    this.toViewMonth.set(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
+    if (!this.isToDayDisabled(today)) {
+      this.selectToDate(today);
+    }
+  }
+
+  formatDisplayDate(dateStr: string): string {
+    const d = this.parseLocalDate(dateStr);
+    if (!d) return '';
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  formatMonthLabel(viewMonth: Date): string {
+    return viewMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
   }
 
   // Two-letter avatar initials from a display name, e.g. "Dev Singhal" -> "DS".
