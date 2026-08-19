@@ -12,6 +12,12 @@ declare const google: any;
 // This is safe to expose publicly — it's not a secret, unlike a client *secret*.
 const GOOGLE_CLIENT_ID = '1060715159333-01t5hgjdc1ke4ltra4e4edn3562vnjot.apps.googleusercontent.com';
 
+interface VisualSlide {
+  image: string;
+  title: string;
+  text: string;
+}
+
 /**
  * Single unified authentication component. Replaces the separate Login and
  * Register components — toggling between modes is a client-side signal
@@ -33,6 +39,46 @@ export class AuthForm implements AfterViewInit, OnInit, OnDestroy {
   errorMessage = signal('');
   successMessage = signal('');
   showPassword = signal(false);
+
+  // ---- Visual panel slideshow ----
+  // Images live at public/login/1.avif ... 6.avif. Facts are paired 1:1 with
+  // each image in array order — reorder this array to change the pairing.
+  readonly slides: VisualSlide[] = [
+    {
+      image: '1.avif',
+      title: 'The Ozone Layer Is Healing',
+      text: 'Global phase-outs under the Montreal Protocol have Earth\'s protective ozone layer on track to fully recover by 2040.',
+    },
+    {
+      image: '2.avif',
+      title: 'The Air Quality Crisis',
+      text: 'Toxic PM2.5 pollution contributes to over 1.6 million premature deaths in India every year, cutting life expectancy across the Indo-Gangetic plain.',
+    },
+    {
+      image: '3.avif',
+      title: '99.6% Railway Electrification',
+      text: 'Indian Railways has electrified over 99.6% of its broad-gauge network, aiming for a net-zero carbon railway by 2030.',
+    },
+    {
+      image: '4.avif',
+      title: 'A Global Solar Leader',
+      text: 'India hosts some of the world\'s largest solar parks, including the 2,245 MW Bhadla Solar Park, and co-founded the 120+ nation International Solar Alliance.',
+    },
+    {
+      image: '5.avif',
+      title: 'The Cost of Extreme Weather',
+      text: 'Heatwaves, erratic monsoons, and flooding threaten over 80% of India\'s population, costing billions in lost crops and damaged infrastructure yearly.',
+    },
+    {
+      image: '6.avif',
+      title: 'The Plastic Pollution Problem',
+      text: 'India generates over 3.4 million tonnes of plastic waste annually, much of it choking drainage systems and polluting coastlines.',
+    },
+  ];
+
+  currentSlideIndex = signal(0);
+  private slideshowTimer: ReturnType<typeof setInterval> | null = null;
+  private readonly SLIDE_INTERVAL_MS = 5000;
 
   authForm: FormGroup;
 
@@ -90,10 +136,11 @@ export class AuthForm implements AfterViewInit, OnInit, OnDestroy {
     // catch up on its own once the reset+login completes elsewhere,
     // instead of sitting there stale.
     window.addEventListener('storage', this.handleCrossTabLogin);
+    this.startSlideshow();
   }
 
   ngOnDestroy(): void {
-    window.removeEventListener('storage', this.handleCrossTabLogin);
+    this.stopSlideshow();
   }
 
   private handleCrossTabLogin = (event: StorageEvent): void => {
@@ -107,6 +154,37 @@ export class AuthForm implements AfterViewInit, OnInit, OnDestroy {
 
   ngAfterViewInit(): void {
     this.waitForGoogleScript();
+  }
+
+  // ---- Slideshow controls ----
+  private startSlideshow(): void {
+    this.stopSlideshow();
+    this.slideshowTimer = setInterval(() => {
+      this.currentSlideIndex.update(i => (i + 1) % this.slides.length);
+    }, this.SLIDE_INTERVAL_MS);
+  }
+
+  private stopSlideshow(): void {
+    if (this.slideshowTimer) {
+      clearInterval(this.slideshowTimer);
+      this.slideshowTimer = null;
+    }
+  }
+
+  /** Pauses auto-advance — bound to (mouseenter) on the visual panel. */
+  pauseSlideshow(): void {
+    this.stopSlideshow();
+  }
+
+  /** Resumes auto-advance — bound to (mouseleave) on the visual panel. */
+  resumeSlideshow(): void {
+    this.startSlideshow();
+  }
+
+  /** Jumps to a specific slide (dot click) and restarts the 5s timer. */
+  goToSlide(index: number): void {
+    this.currentSlideIndex.set(index);
+    this.startSlideshow();
   }
 
   private waitForGoogleScript(retries: number = 20): void {
@@ -137,7 +215,7 @@ export class AuthForm implements AfterViewInit, OnInit, OnDestroy {
     this.successMessage.set('');
     this.isSubmitting.set(true);
 
-this.auth.googleLogin(response.credential).subscribe({
+    this.auth.googleLogin(response.credential).subscribe({
       next: (authResponse) => {
         this.isSubmitting.set(false);
         if (!authResponse.hasPassword) {

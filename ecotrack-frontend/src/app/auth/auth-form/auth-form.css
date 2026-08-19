@@ -28,6 +28,7 @@
 
 /* Main Background Page Canvas */
 .auth-page {
+    position: relative;
     display: flex;
     flex-direction: column; /* Stacked vertically to seat footer below card */
     align-items: center;
@@ -36,10 +37,22 @@
     background-color: var(--eco-bg-light);
     padding: 44px 20px;
     box-sizing: border-box;
+    overflow: hidden;
+}
+
+/* Backmost layer: fills the whole page behind the card */
+.page-bg-img {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+    z-index: 0;
 }
 
 /* Centered Bounded Card Box Container */
 .center-box {
+    position: relative;
+    z-index: 1;
     display: grid;
     grid-template-columns: 1fr 1fr;
     width: 100%;
@@ -54,14 +67,27 @@
 /* ---------------- Left half: visual panel ---------------- */
 .visual-panel {
     position: relative;
-    background-image: url('/login.avif');
-    background-size: cover;
-    background-position: center;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
 }
 
-/* Layer 2 (Middle): Translucent mask overlay */
+/* Layer 1 (backmost within the panel): rotating photos, crossfaded */
+.slide-bg {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+    opacity: 0;
+    z-index: 1;
+    transition: opacity 1.4s ease-in-out;
+}
+
+.slide-bg.active {
+    opacity: 1;
+}
+
+/* Layer 2: Translucent mask overlay */
 .visual-panel::before {
     content: '';
     position: absolute;
@@ -70,15 +96,74 @@
     z-index: 2;
 }
 
-/* Layer 3 (Front): Dynamic foreground content graphic */
-.text-overlay-img {
+/* Layer 3: Fact title + text, crossfaded in sync with the photo */
+.slide-content {
     position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+    left: 0;
+    right: 0;
+    bottom: 56px;
+    padding: 0 40px;
     z-index: 3;
-    pointer-events: none;
+    min-height: 110px;
+}
+
+.slide-text {
+    position: absolute;
+    left: 40px;
+    right: 40px;
+    bottom: 0;
+    opacity: 0;
+    transform: translateY(14px);
+    transition: opacity 0.9s ease, transform 0.9s ease;
+}
+
+.slide-text.active {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.slide-text h3 {
+    color: var(--eco-white);
+    font-size: 1.3rem;
+    margin: 0 0 8px;
+    font-weight: 700;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+}
+
+.slide-text p {
+    color: rgba(255, 255, 255, 0.92);
+    font-size: 0.9rem;
+    line-height: 1.5;
+    margin: 0;
+    max-width: 420px;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
+}
+
+/* Layer 4: Manual navigation dots */
+.slide-dots {
+    position: absolute;
+    left: 40px;
+    bottom: 24px;
+    z-index: 4;
+    display: flex;
+    gap: 8px;
+}
+
+.dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.4);
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.dot.active {
+    background: var(--eco-white);
+    width: 22px;
+    border-radius: 4px;
 }
 
 /* ---------------- Right half: form panel ---------------- */
@@ -273,9 +358,10 @@ input.invalid-input:focus {
 
 /* ---------------- Support Footer ---------------- */
 .auth-support-footer {
+    position: relative;
+    z-index: 1;
     margin-top: 20px;
     text-align: center;
-    z-index: 2;
 }
 
 .auth-support-footer p {
@@ -303,6 +389,10 @@ input.invalid-input:focus {
         padding: 20px 16px;
     }
 
+    .page-bg-img {
+        display: none;
+    }
+
     .center-box {
         grid-template-columns: 1fr;
         max-width: 420px;
@@ -316,17 +406,23 @@ input.invalid-input:focus {
         z-index: 0;
     }
 
-    .text-overlay-img {
-        display: none;
-    }
-
     .visual-panel::before {
         background: var(--eco-mobile-mask);
         z-index: 1;
     }
 
+    .slide-bg {
+        z-index: 0;
+    }
+
+    .slide-content,
+    .slide-dots {
+        display: none;
+    }
+
     .form-panel {
         z-index: 2;
+        position: relative;
         background: var(--eco-mobile-glass-bg);
         backdrop-filter: blur(16px);
         -webkit-backdrop-filter: blur(16px);

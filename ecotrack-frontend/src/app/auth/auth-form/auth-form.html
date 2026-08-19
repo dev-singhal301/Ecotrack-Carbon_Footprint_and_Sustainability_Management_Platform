@@ -1,8 +1,30 @@
 <div class="auth-page">
+    <div class="page-bg-img" style="background-image: url('/login-2.png');"></div>
+
     <div class="center-box">
 
-        <div class="visual-panel">
-            <img src="login-2.png" class="text-overlay-img" alt="EcoTrack Analytics Portal Layout" />
+        <div class="visual-panel" (mouseenter)="pauseSlideshow()" (mouseleave)="resumeSlideshow()">
+
+            @for (slide of slides; track slide.image; let i = $index) {
+              <div class="slide-bg" [class.active]="i === currentSlideIndex()"
+                   [style.background-image]="'url(/login/' + slide.image + ')'"></div>
+            }
+
+            <div class="slide-content">
+                @for (slide of slides; track slide.image; let i = $index) {
+                  <div class="slide-text" [class.active]="i === currentSlideIndex()">
+                    <h3>{{ slide.title }}</h3>
+                    <p>{{ slide.text }}</p>
+                  </div>
+                }
+            </div>
+
+            <div class="slide-dots">
+                @for (slide of slides; track slide.image; let i = $index) {
+                  <button type="button" class="dot" [class.active]="i === currentSlideIndex()"
+                          (click)="goToSlide(i)" [attr.aria-label]="'Show slide ' + (i + 1)"></button>
+                }
+            </div>
         </div>
 
         <div class="form-panel">
