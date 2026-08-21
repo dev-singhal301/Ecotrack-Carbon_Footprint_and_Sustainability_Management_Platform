@@ -1,7 +1,13 @@
 <div align= "center">
 
 <h2>Powered-Carbon-Footprint-Sustainability-Management-Platform</h2>
-<h3>🌍 EcoTrack</h3>
+<div align="center">
+  <a href="https://github.com/Springboard-mentor-4721/Ecotrack-Group-2/tree/milestone_4" target="_blank">
+    <img src="./assets/logo.png" width="140" alt="EcoTrack Logo" />
+  </a>
+  <h2>EcoTrack</h2>
+  <p><b>Powered Carbon Footprint & Sustainability Management Platform</b></p>
+</div>
 
 ![](https://img.shields.io/badge/Angular-DD0031?style=for-the-badge&logo=angular&logoColor=white)
 ![](https://img.shields.io/badge/Spring_Boot-6DB33F?style=for-the-badge&logo=springboot&logoColor=white)
