@@ -176,25 +176,25 @@ EcoTrack's AI Tips feature uses **Google Gemini** to generate personalized recom
 
 **Login**
 <br>
-<img src="<img width="1917" height="1031" alt="login" src="https://github.com/user-attachments/assets/225de9db-fe82-4f25-906a-8fd3d4430db8" />" width="80%">
+<img width="80%" alt="login" src="https://github.com/user-attachments/assets/225de9db-fe82-4f25-906a-8fd3d4430db8" />
 
 <br><br>
 
 **Dashboard**
 <br>
-<img src="<img width="1917" height="1030" alt="dashboard" src="https://github.com/user-attachments/assets/bf17e5b1-ecc0-4072-a420-a4f78a6acabe" />" width="80%">
+<img width="80%" alt="dashboard" src="https://github.com/user-attachments/assets/bf17e5b1-ecc0-4072-a420-a4f78a6acabe" />
 
 <br><br>
 
 **Tracking**
 <br>
-<img src="<img width="1917" height="1032" alt="tracking" src="https://github.com/user-attachments/assets/cfce62c6-3476-4e62-a303-8df3bf5bc478" />" width="80%">
+<img width="80%" alt="tracking" src="https://github.com/user-attachments/assets/cfce62c6-3476-4e62-a303-8df3bf5bc478" />
 
 <br><br>
 
 **Admin Dashboard**
 <br>
-<img src="<img width="1917" height="1007" alt="admin-dashboard" src="https://github.com/user-attachments/assets/d32d41fb-3796-4932-844e-5dbce1d9b6d9" />" width="80%">
+<img width="80%" alt="admin-dashboard" src="https://github.com/user-attachments/assets/d32d41fb-3796-4932-844e-5dbce1d9b6d9" />
 
 </div>
 
