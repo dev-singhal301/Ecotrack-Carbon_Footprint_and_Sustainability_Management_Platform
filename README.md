@@ -3,7 +3,7 @@
 <h2>Powered-Carbon-Footprint-Sustainability-Management-Platform</h2>
 <div align="center">
   <a href="https://github.com/Springboard-mentor-4721/Ecotrack-Group-2/tree/milestone_4" target="_blank">
-    <img src="<img width="593" height="421" alt="logo" src="https://github.com/user-attachments/assets/e098ed9a-b323-4bcc-a071-97138863d7f0" />" width="140" alt="EcoTrack Logo" />
+    <img width="593" height="421" alt="logo" src="https://github.com/user-attachments/assets/e098ed9a-b323-4bcc-a071-97138863d7f0" />
   </a>
   <h2>EcoTrack</h2>
   <p><b>Powered Carbon Footprint & Sustainability Management Platform</b></p>
