@@ -3,7 +3,7 @@
 <h2>Powered-Carbon-Footprint-Sustainability-Management-Platform</h2>
 <div align="center">
   <a href="https://github.com/Springboard-mentor-4721/Ecotrack-Group-2/tree/milestone_4" target="_blank">
-    <img src="./assets/logo.png" width="140" alt="EcoTrack Logo" />
+    <img src=".github/assets/logo.png" width="140" alt="EcoTrack Logo" />
   </a>
   <h2>EcoTrack</h2>
   <p><b>Powered Carbon Footprint & Sustainability Management Platform</b></p>
@@ -176,25 +176,25 @@ EcoTrack's AI Tips feature uses **Google Gemini** to generate personalized recom
 
 **Login**
 <br>
-<img src="./assets/login.png" width="80%">
+<img src=".github/assets/login.png" width="80%">
 
 <br><br>
 
 **Dashboard**
 <br>
-<img src="./assets/dashboard.png" width="80%">
+<img src=".github/assets/dashboard.png" width="80%">
 
 <br><br>
 
 **Tracking**
 <br>
-<img src="./assets/tracking.png" width="80%">
+<img src=".github/assets/tracking.png" width="80%">
 
 <br><br>
 
 **Admin Dashboard**
 <br>
-<img src="./assets/admin-dashboard.png" width="80%">
+<img src=".github/assets/admin-dashboard.png" width="80%">
 
 </div>
 
