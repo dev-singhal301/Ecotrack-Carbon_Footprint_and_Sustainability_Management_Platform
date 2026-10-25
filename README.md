@@ -105,7 +105,7 @@ To get a local copy of this project up and running, follow these steps.
 
 2. **Configure the backend:**
 
-   In `ecotrack-backend/src/main/resources/application.properties`, set the following:
+   In `ecotrack-backend/src/main/resources/application.properties.example`, set the following:
 
    ```properties
    # Application Name
