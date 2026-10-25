@@ -99,13 +99,13 @@ To get a local copy of this project up and running, follow these steps.
 1. **Clone the repository:**
 
    ```bash
-   git clone https://github.com/Springboard-mentor-4721/Ecotrack-Group-2
-   cd Ecotrack-Group-2
+   git clone https://github.com/dev-singhal301/Ecotrack-Carbon_Footprint_and_Sustainability_Management_Platform
+   cd Ecotrack-Carbon_Footprint_and_Sustainability_Management_Platform
    ```
 
 2. **Configure the backend:**
 
-   In `ecotrack-backend/src/main/resources/application.properties.example`, set the following:
+   Rename `ecotrack-backend/src/main/resources/application.properties.example` to `application.properties` in the same folder, then set the following:
 
    ```properties
    # Application Name
