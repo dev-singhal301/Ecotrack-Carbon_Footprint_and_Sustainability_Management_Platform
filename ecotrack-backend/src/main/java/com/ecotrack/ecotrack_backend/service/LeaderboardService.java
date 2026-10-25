@@ -117,14 +117,22 @@ public class LeaderboardService {
     }
 
     /**
-     * Gets the overall standing/rank position of a specific user.
+     * Gets the current user's SEASONAL (this calendar month) standing/rank —
+     * matches what the "Season Rankings" / monthly leaderboard actually
+     * measures. Previously this used lifetime current_xp + a lifetime rank
+     * (countByCurrentXpGreaterThan), which duplicated the Dashboard's
+     * all-time XP number under a "Monthly XP" label and didn't line up
+     * with the true monthly totals shown just below it on the Leaderboard
+     * page. Now sourced the same way DashboardService.getDashboardSummary()
+     * already does it, via the two purpose-built monthly queries.
      */
     @Transactional(readOnly = true)
     public LeaderboardUserDto getUserRankPosition(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + userId));
 
-        long rankPosition = userRepository.countByCurrentXpGreaterThan(user.getCurrentXp()) + 1;
+        Long monthlyXp = xpTransactionRepository.findCurrentMonthXpByUserId(userId);
+        Long monthlyRank = xpTransactionRepository.findCurrentMonthRankByUserId(userId);
         String name = (user.getName() != null && !user.getName().isBlank()) ? user.getName() : user.getEmail();
 
         return new LeaderboardUserDto(
@@ -133,8 +141,8 @@ public class LeaderboardService {
                 user.getAvatarUrl(),
                 user.getUserRank(),
                 user.getUserLevel(),
-                (long) user.getCurrentXp(),
-                rankPosition
+                monthlyXp != null ? monthlyXp : 0L,
+                monthlyRank != null ? monthlyRank : 1L
         );
     }
 

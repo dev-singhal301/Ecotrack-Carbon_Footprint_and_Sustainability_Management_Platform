@@ -23,7 +23,7 @@ public class JwtUtil {
         this.secretKey = Keys.hmacShaKeyFor(secretKeyString.getBytes());
     }
 
-    private final long expirationTimeMs = 1000 * 60 * 60; // Expiration time : 1 hour
+    private final long expirationTimeMs = 1000 * 60 * 60 * 6; // Expiration time : 6 hour
 
     public String generateToken(String email) {
         Date now = new Date();
