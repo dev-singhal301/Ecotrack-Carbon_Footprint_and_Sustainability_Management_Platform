@@ -1,0 +1,34 @@
+# Copy this file to application.properties (same folder) and fill in your own values.
+# application.properties is git-ignored, so never commit real credentials.
+
+spring.application.name=ecotrack-backend
+
+spring.datasource.url=jdbc:postgresql://localhost:5432/ecotrack_db
+spring.datasource.username=postgres
+spring.datasource.password=your_postgres_password
+spring.datasource.driver-class-name=org.postgresql.Driver
+
+spring.sql.init.mode=always
+spring.jpa.defer-datasource-initialization=false
+
+jwt.secret=your_long_random_jwt_secret
+
+spring.jpa.hibernate.ddl-auto=validate
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
+
+google.client.id=your_google_client_id.apps.googleusercontent.com
+
+# Gmail SMTP with an App Password (myaccount.google.com/apppasswords)
+spring.mail.host=smtp.gmail.com
+spring.mail.port=587
+spring.mail.username=${MAIL_USERNAME:your_email@gmail.com}
+spring.mail.password=${MAIL_PASSWORD:your_gmail_app_password}
+spring.mail.properties.mail.smtp.auth=true
+spring.mail.properties.mail.smtp.starttls.enable=true
+
+app.frontend.base-url=${FRONTEND_BASE_URL:http://localhost:4200}
+
+# Optional: Gemini AI tips (falls back to the rule engine if empty)
+gemini.api.key=${GEMINI_API_KEY:}
+gemini.model=gemini-flash-latest
